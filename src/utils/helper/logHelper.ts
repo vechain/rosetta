@@ -24,7 +24,7 @@ export class LogHelper
             log4js.addLayout('json', function (config) {
                 return function (logEvent) { return JSON.stringify(logEvent); }
             });
-            log4js.configure(this.initConfig(this._environmentConfig));
+            log4js.configure(this._initConfig(this._environmentConfig));
             const logger = log4js.getLogger('default');
             console.trace = logger.trace.bind(logger);
             console.debug = logger.debug.bind(logger);
@@ -39,7 +39,7 @@ export class LogHelper
 
         if(environmentConfig.logEnvLevel != EnvType.TEST){
             this._environmentConfig = environmentConfig;
-            log4js.configure(this.initConfig(this._environmentConfig));
+            log4js.configure(this._initConfig(this._environmentConfig));
             const logger = log4js.getLogger('default');
             console.trace = logger.trace.bind(logger);
             console.debug = logger.debug.bind(logger);
@@ -48,14 +48,11 @@ export class LogHelper
             console.error = logger.error.bind(logger);
         }
     }
+
     public healthLogger(){
         var loggerhealth = log4js.getLogger('health');
         loggerhealth.warn("alive");
     }
-
-    private static readonly DEFAULT_ELK: string = '{remoteAdd} {requestTime} "{method} {url} HTTP/{httpVersion}" {status} {contentLength} {responseTime} {body}';
-    private static readonly DEBUG_FORMAT:string = '{remoteAdd} {requestTime} "{method} {url} Headers:{header}]Body:[{body} QueryString:{querystring} HTTP/{httpVersion} {status} {contentLength} {responseTime} Response {response}';
-
 
     public httpLogger: Router.IMiddleware = async (ctx: Router.IRouterContext, next: () => Promise<any>) => {
         let querystring= ctx.querystring;
@@ -97,8 +94,8 @@ export class LogHelper
         if (parames.status >= 300) { logLevel = LogHelperLevel.WARN };
         if (parames.status >= 400) { logLevel = LogHelperLevel.WARN };
         if (parames.status >= 500) { logLevel = LogHelperLevel.ERROR };
-        let logMessage = format(LogHelper.DEFAULT_ELK, parames);
-        let debuglogMessage = format(LogHelper.DEBUG_FORMAT, parames);
+        let logMessage = format(LogHelper._DEFAULT_ELK, parames);
+        let debuglogMessage = format(LogHelper._DEBUG_FORMAT, parames);
         let logger = log4js.getLogger("http");
 
         switch (this._environmentConfig.logLevel) {
@@ -269,7 +266,7 @@ export class LogHelper
         this.log(LogHelperLevel.ERROR,message,args);
     }
 
-    private initConfig(environmentConfig: any): log4js.Configuration {
+    private _initConfig(environmentConfig: any): log4js.Configuration {
         let serviceName = environmentConfig.serviceName;
         let logDir = path.join(__dirname, "../../../log/", serviceName);
         let log4jsConfig: log4js.Configuration = {
@@ -326,6 +323,9 @@ export class LogHelper
     }
 
     private _environmentConfig:any;
+
+    private static readonly _DEFAULT_ELK: string = '{remoteAdd} {requestTime} "{method} {url} HTTP/{httpVersion}" {status} {contentLength} {responseTime} {body}';
+    private static readonly _DEBUG_FORMAT:string = '{remoteAdd} {requestTime} "{method} {url} Headers:{header}]Body:[{body} QueryString:{querystring} HTTP/{httpVersion} {status} {contentLength} {responseTime} Response {response}';
 }
 
 export enum LogHelperLevel

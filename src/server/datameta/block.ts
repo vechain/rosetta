@@ -1,6 +1,6 @@
 import { Transaction } from "./transaction";
 
-export class Block{
+export class BlockDetail{
     public block_identifier:BlockIdentifier = new BlockIdentifier();
     public parent_block_identifier:BlockIdentifier = new BlockIdentifier();
     public timestamp:number = 0;
@@ -10,5 +10,5 @@ export class Block{
 
 export class BlockIdentifier{
     public index:number = 0;
-    public hash:String = "";
+    public hash:string = "";
 }

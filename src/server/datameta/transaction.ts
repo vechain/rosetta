@@ -1,20 +1,21 @@
 import { AccountIdentifier } from "./account";
 import { Amount } from "./amount";
+import { OperationStatus } from "./rosetta";
 
 export class Transaction {
     public transaction_identifier:TransactionIdentifier = new TransactionIdentifier();
-    public operations:Operation = new Operation();
+    public operations:Array<Operation> = new Array<Operation>();
     public metadata:any | undefined;
 }
 
 export class TransactionIdentifier {
-    public hash:String = "";
+    public hash:string = "";
 }
 
 export class Operation{
     public operation_identifier:OperationIdentifier = new OperationIdentifier();
     public related_operations:Array<OperationIdentifier> | undefined;
-    public type:OperationType = OperationType.Transfer;
+    public type:OperationType = OperationType.None;
     public status:OperationStatus = OperationStatus.None;
     public account:AccountIdentifier | undefined;
     public amount:Amount | undefined;
@@ -26,13 +27,9 @@ export class OperationIdentifier {
     public network_index:number | undefined;
 }
 
-export enum OperationType{
-    Transfer = "Transfer"
+export class OperationType{
+    public static None:string = "None";
+    public static Send:string = "Send";
+    public static Receive:string = "Receive";
 }
 
-export enum OperationStatus{
-    None = "None",
-    Succeeded = "Succeeded",
-    Reverted = "Reverted",
-    Pendding = "Pendding"
-}

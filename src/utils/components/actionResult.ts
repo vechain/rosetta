@@ -6,7 +6,6 @@ export class ActionResult
     public Code:string;
     public Message:string;
     public ErrorData:any|null|undefined;
-    private _ErrorData:any|null|undefined;
 
     constructor(){
         this.Result = false;
@@ -20,7 +19,7 @@ export class ActionResult
         this.Result = source.Result;
         this.Code = source.Code;
         this.Message = source.Message;
-        this._ErrorData = source.ErrorData;
+        this.ErrorData = source.ErrorData;
     }
 
     public initKnowError(knowerror:IKnowErrorInfo)

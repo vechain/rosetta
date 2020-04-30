@@ -1,5 +1,4 @@
 import * as Router from 'koa-router';
-
 export class URLCodeMiddleware
 {
     public static async URLDecoder(ctx:Router.IRouterContext,next:()=>Promise<any>){

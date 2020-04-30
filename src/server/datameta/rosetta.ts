@@ -1,3 +1,6 @@
+import { IRosettaError } from "./rosettaError";
+
+
 export class RosettaVersion{
     public rosetta_version:String = "";
     public node_version:String = "";
@@ -6,25 +9,18 @@ export class RosettaVersion{
 }
 
 export class RosettaAllow{
-    public operation_statuses:Array<RosettaOperationStatus> = new Array<RosettaOperationStatus>();
+    public operation_statuses:Array<OperationStatus> = new Array<OperationStatus>();
     public operation_types:Array<String> = new Array<String>();
-    public errors:Array<RosettaError> = new Array<RosettaError>();
+    public errors:Array<IRosettaError> = new Array<IRosettaError>();
 }
 
-export class RosettaOperationStatus
-{
-    public status:String = "";
-    public successful:boolean = false;
+export interface IOperationStatus{
+    status:string;
+    successful:boolean
 }
 
-export class RosettaError{
-    public code:number = 0;
-    public message:String = "";
-    public retriable:boolean = false;
-
-    constructor(code:number,message:String,retriable:boolean = false){
-        this.code = code;
-        this.message = message;
-        this.retriable = retriable;
-    }
+export class OperationStatus{
+    public static None:IOperationStatus = {status:"None",successful:false};
+    public static Succeeded:IOperationStatus = {status:"Succeeded",successful:true};
+    public static Reverted:IOperationStatus = {status:"Reverted",successful:false};
 }

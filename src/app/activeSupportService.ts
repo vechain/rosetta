@@ -1,7 +1,8 @@
-import { GlobalEnvironment } from "./globalEnvironment";
+import { GlobalEnvironment, iConfig } from "./globalEnvironment";
 import { ActionResult, ActionResultWithData } from "../utils/components/actionResult";
-import { Framework } from "@vechain/connex-framework";
-import { Driver, SimpleNet } from '@vechain/connex-driver'
+import { SimpleNet } from '@vechain/connex-driver'
+import ConnexEx from "../utils/helper/connexEx";
+import { NetworkType } from "../server/datameta/networkType";
 const format = require('string-format');
 
 export default class ActiveSupportServices
@@ -10,18 +11,20 @@ export default class ActiveSupportServices
         let result = new ActionResult();
 
         if(environment.config.vechainThorNodeConfig.mainnet_node_api_addr != null){
-            let mainnetConnexResult = await this.instantiationConnex(environment.config.vechainThorNodeConfig.mainnet_node_api_addr,"mainnet");
-            if(mainnetConnexResult.Result){
+            let mainnetConnexResult = await this._instantiationConnex(environment.config.vechainThorNodeConfig.mainnet_node_api_addr,NetworkType.MainNet);
+            if(mainnetConnexResult.Result && mainnetConnexResult.Data){
                 result.Result = true;
-                environment.connex = mainnetConnexResult.Data;
+                environment.mainNetconnex = mainnetConnexResult.Data;
+                environment.mainNetconnex.nodeVersion = (environment.config as iConfig).vechainThorNodeConfig.mainnet_node_version;
             }
         }
 
         if(environment.config.vechainThorNodeConfig.testnet_node_api_addr != null){
-            let testnetConnexResult = await this.instantiationConnex(environment.config.vechainThorNodeConfig.testnet_node_api_addr,"testnet");
-            if(testnetConnexResult.Result){
+            let testnetConnexResult = await this._instantiationConnex(environment.config.vechainThorNodeConfig.testnet_node_api_addr,NetworkType.TestNet);
+            if(testnetConnexResult.Result && testnetConnexResult.Data){
                 result.Result = true;
                 environment.testNetConnex = testnetConnexResult.Data;
+                environment.testNetConnex.nodeVersion = (environment.config as iConfig).vechainThorNodeConfig.testnet_node_version;
             }
         }
 
@@ -32,12 +35,11 @@ export default class ActiveSupportServices
         return result;
     }
 
-    private static async instantiationConnex(api_addr:string,network:string = "mainnet"):Promise<ActionResultWithData<Connex>>{
-        let result = new ActionResultWithData<Connex>();
+    private static async _instantiationConnex(api_addr:string,network:NetworkType):Promise<ActionResultWithData<ConnexEx>>{
+        let result = new ActionResultWithData<ConnexEx>();
 
         try{
-            let driver = await Driver.connect(new SimpleNet(api_addr));
-            const connex = new Framework(driver);
+            let connex = await ConnexEx.Create(new SimpleNet(api_addr))
             let genesisBlockID = connex.thor.genesis.id;
 
             if(network == "mainnet" && genesisBlockID == "0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a"){

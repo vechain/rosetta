@@ -5,10 +5,12 @@ module.exports = {
     logEnvLevel:"local",
     port:8030,
     vechainThorNodeConfig:{
-        mainnet_node_api_addr:"http://47.57.94.244:8669",
-        testnet_node_api_addr:"https://sync-testnet.vechain.org"
+        mainnet_node_api_addr:"https://sync-mainnet.vechain.org",
+        testnet_node_api_addr:"https://sync-testnet.vechain.org",
+        mainnet_node_version:"1.3.3",
+        testnet_node_version:"1.3.3"
     },
     rosettaConfig:{
-        version:""
+        version:"1.3.1"
     }
 }
