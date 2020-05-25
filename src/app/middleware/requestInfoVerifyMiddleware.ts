@@ -90,4 +90,17 @@ export class RequestInfoVerifyMiddleware{
             return;
         }
     }
+
+    public static async CheckSignedTransactionRequestInfo(ctx:Router.IRouterContext,next:()=>Promise<any>){
+        let requestVerifySchema = Joi.object({
+            signed_transaction:Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/).required()
+        });
+        let verify = requestVerifySchema.validate(ctx.request.body,{allowUnknown:true});
+        if(!verify.error){
+            await next();
+        }else{
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BADREQUEST);
+            return;
+        }
+    }
 }

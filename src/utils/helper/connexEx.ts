@@ -19,7 +19,7 @@ export default class ConnexEx extends Framework
     }
 
     public get blockRef() : string {
-        return this.thor.status.head.id.substring(0,17);
+        return this.thor.status.head.id.substring(0,18);
     }
 
     public get chainTag():number {

@@ -9,6 +9,10 @@ class ConstructionRouter extends Router
         
         this.post("/construction/metadata",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,
         this._controller.getConstructionMetadata);
+
+        this.post("/construction/submit",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,
+        RequestInfoVerifyMiddleware.CheckSignedTransactionRequestInfo,
+        this._controller.submitTransaction);
     }
 
     private _controller:ConstructionController = new ConstructionController();

@@ -33,7 +33,7 @@ export class BaseInfoService{
         result.Data = new Array<NetworkIdentifier>();
 
         if(this._environment.mainNetconnex != null){
-            result.Data.push((this._getVeChainTestNet()).Data!);
+            result.Data.push((this._getVeChainMainNet()).Data!);
             result.Result = true;
         }
 
@@ -53,7 +53,7 @@ export class BaseInfoService{
         let result = new ActionResultWithData<Construction>();
         let connex = this._environment.getConnex(type);
         if(connex){
-            result = this._getConstructionMetadata(this._environment.mainNetconnex!);
+            result = this._getConstructionMetadata(connex);
         }else{
             result.Result = false;
             result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
@@ -93,7 +93,7 @@ export class BaseInfoService{
 
         let networkIdentifier = new NetworkIdentifier();
         networkIdentifier.blockchain = "vechainThor";
-        networkIdentifier.network = "mainnet";
+        networkIdentifier.network = NetworkType.MainNet.toString();
 
         result.Result = true;
         result.Data = networkIdentifier;
@@ -105,7 +105,7 @@ export class BaseInfoService{
 
         let networkIdentifier = new NetworkIdentifier();
         networkIdentifier.blockchain = "vechainThor";
-        networkIdentifier.network = "testNet";
+        networkIdentifier.network = NetworkType.TestNet.toString();
 
         result.Result = true;
         result.Data = networkIdentifier;

@@ -12,6 +12,7 @@ import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import { Transaction as ThroTransaction} from "thor-devkit";
 import ConnexEx from "../../utils/helper/connexEx";
 import { OperationStatus } from "../datameta/rosetta";
+import { string } from "joi";
 
 
 export class BlockChainInfoService{
@@ -86,12 +87,6 @@ export class BlockChainInfoService{
             result.Result = false;
             result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
         }
-
-        return result;
-    }
-
-    public async getTransactionInMempool(type:NetworkType,txID:string):Promise<ActionResultWithData<Transaction>>{
-        let result = new ActionResultWithData<Transaction>();
 
         return result;
     }
@@ -370,7 +365,7 @@ export class BlockChainInfoService{
         let result = new ActionResultWithData<ThroTransaction>();
 
         try {
-            let transaction = ThroTransaction.decode(new Buffer(txRaw),true);
+            let transaction = ThroTransaction.decode(new Buffer(txRaw.toLowerCase().replace("0x",""),"hex"),false);
             result.Data = transaction;
             result.Result = true;
         } catch (error) {
