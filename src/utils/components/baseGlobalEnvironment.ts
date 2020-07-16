@@ -16,7 +16,7 @@ export abstract class BaseGlobalEnvironment {
 }
 
 export interface iBaseConfig{
-    env:EnvType;
+    env:string;
     serviceName:string;
 }
 
@@ -25,5 +25,5 @@ export enum EnvType{
     DEV = "dev",
     TEST = "test",
     STAGING = "staging",
-    RPOD = "prod"
+    PROD = "prod"
 }

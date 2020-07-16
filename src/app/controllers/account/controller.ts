@@ -3,7 +3,7 @@ import { environment } from "../..";
 import { NetworkType } from "../../../server/datameta/networkType";
 import { GlobalEnvironment } from "../../globalEnvironment";
 import { AccountService } from "../../../server/service/accountService";
-import { ActionResultWithData2 } from "../../../utils/components/actionResult";
+import { ActionResultWithData2, ActionResult } from "../../../utils/components/actionResult";
 import { BlockIdentifier } from "../../../server/datameta/block";
 import { Amount } from "../../../server/datameta/amount";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";
@@ -19,6 +19,8 @@ export default class AccountController{
         this.getAccountBalance = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
             let networkType = ctx.request.body.network_identifier.network == "mainnet" ? NetworkType.MainNet : NetworkType.TestNet;
             let address = ctx.request.body.account_identifier.address;
+            let subAccountAddress = ctx.request.body.account_identifier["sub_account"] && ctx.request.body.account_identifier["sub_account"]["address"] ?
+            ctx.request.body.account_identifier["sub_account"]["address"] : "";
             let revision = undefined;
             
             if(ctx.request.body.block_identifier != null){
@@ -31,7 +33,7 @@ export default class AccountController{
                 }
             }
 
-            let getAccountBalanceResult = await this._accountService.getAccountBalance(networkType,address,revision);
+            let getAccountBalanceResult = await this._accountService.getAccountBalance(networkType,address,revision,subAccountAddress);
             this._getAccountBalanceConvertToResponce(ctx,getAccountBalanceResult);
             await next();   
         }

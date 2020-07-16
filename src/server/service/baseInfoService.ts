@@ -67,7 +67,7 @@ export class BaseInfoService{
 
         if(connex){
             let versionInfo = new RosettaVersion();
-            versionInfo.rosetta_version = (this._environment.config as iConfig).rosettaConfig.version;
+            versionInfo.rosetta_version = (this._environment.config as iConfig).rosetta_version;
             versionInfo.node_version = connex.nodeVersion;
 
             let allow = new RosettaAllow();
@@ -92,7 +92,7 @@ export class BaseInfoService{
         let result = new ActionResultWithData<NetworkIdentifier>();
 
         let networkIdentifier = new NetworkIdentifier();
-        networkIdentifier.blockchain = "vechainThor";
+        networkIdentifier.blockchain = "vechainthor";
         networkIdentifier.network = NetworkType.MainNet.toString();
 
         result.Result = true;
@@ -104,7 +104,7 @@ export class BaseInfoService{
         let result = new ActionResultWithData<NetworkIdentifier>();
 
         let networkIdentifier = new NetworkIdentifier();
-        networkIdentifier.blockchain = "vechainThor";
+        networkIdentifier.blockchain = "vechainthor";
         networkIdentifier.network = NetworkType.TestNet.toString();
 
         result.Result = true;

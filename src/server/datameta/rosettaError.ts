@@ -13,5 +13,8 @@ export class RosettaErrorDefine{
     
     public static BLOCKNOTEXISTS:IRosettaError = {code:1100,message:"Block not exists",retriable:true};
     public static TRANSACTIONNOTEXISTS:IRosettaError = {code:1101,message:"Transaction not exists",retriable:true};
-    public static SIGNEDTRANSACTIONINVALID:IRosettaError = {code:1102,message:"Signed Transaction is invalid",retriable:false}
+    public static SIGNEDTRANSACTIONINVALID:IRosettaError = {code:1102,message:"Signed Transaction is invalid",retriable:false};
+    public static VIP180ADDRESSNOTINLIST:IRosettaError = {code:1103,message:"The VIP180 Address not in list",retriable:false};
+    public static VMRETURNERROR:IRosettaError = {code:1104,message:"VM Return Error",retriable:false};
+    public static ISNOTVIP180TOKEN:IRosettaError = {code:1105,message:"This address is not VIP180 Token",retriable:false};
 }

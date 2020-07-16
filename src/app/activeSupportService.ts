@@ -10,21 +10,33 @@ export default class ActiveSupportServices
     public static async activieSupportServices(environment:GlobalEnvironment):Promise<ActionResult> {
         let result = new ActionResult();
 
-        if(environment.config.vechainThorNodeConfig.mainnet_node_api_addr != null){
-            let mainnetConnexResult = await this._instantiationConnex(environment.config.vechainThorNodeConfig.mainnet_node_api_addr,NetworkType.MainNet);
+        if(environment.config.netconfig.mainnet.node_api != null){
+            let mainnetConnexResult = await this._instantiationConnex(environment.config.netconfig.mainnet.node_api,NetworkType.MainNet);
             if(mainnetConnexResult.Result && mainnetConnexResult.Data){
                 result.Result = true;
                 environment.mainNetconnex = mainnetConnexResult.Data;
-                environment.mainNetconnex.nodeVersion = (environment.config as iConfig).vechainThorNodeConfig.mainnet_node_version;
+                environment.mainNetconnex.nodeVersion = environment.config.netconfig.mainnet.node_version;
+            }
+            else
+            {
+                result.Result = false;
+                result.Message = "Can not connect mainnet VeChainThor network";
+                return result;
             }
         }
 
-        if(environment.config.vechainThorNodeConfig.testnet_node_api_addr != null){
-            let testnetConnexResult = await this._instantiationConnex(environment.config.vechainThorNodeConfig.testnet_node_api_addr,NetworkType.TestNet);
+        if(environment.config.netconfig.testnet.node_api != null){
+            let testnetConnexResult = await this._instantiationConnex(environment.config.netconfig.testnet.node_api,NetworkType.TestNet);
             if(testnetConnexResult.Result && testnetConnexResult.Data){
                 result.Result = true;
                 environment.testNetConnex = testnetConnexResult.Data;
-                environment.testNetConnex.nodeVersion = (environment.config as iConfig).vechainThorNodeConfig.testnet_node_version;
+                environment.testNetConnex.nodeVersion = environment.config.netconfig.testnet.node_version;
+            }
+            else
+            {
+                result.Result = false;
+                result.Message = "Can not connect testnet VeChainThor network";
+                return result;
             }
         }
 
@@ -39,7 +51,7 @@ export default class ActiveSupportServices
         let result = new ActionResultWithData<ConnexEx>();
 
         try{
-            let connex = await ConnexEx.Create(new SimpleNet(api_addr))
+            let connex = await ConnexEx.Create(network,new SimpleNet(api_addr))
             let genesisBlockID = connex.thor.genesis.id;
 
             if(network == "mainnet" && genesisBlockID == "0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a"){

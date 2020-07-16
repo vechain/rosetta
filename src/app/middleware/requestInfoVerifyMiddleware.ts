@@ -9,7 +9,7 @@ export class RequestInfoVerifyMiddleware{
     public static async CheckNetWorkRequestInfo(ctx:Router.IRouterContext,next:()=>Promise<any>){
         let requestVerifySchema = Joi.object({
             network_identifier:{
-                blockchain:Joi.string().valid("vechainThor").required(),
+                blockchain:Joi.string().valid("vechainthor").required(),
                 network:Joi.string().valid("mainnet","testnet").required()
             }
         });
@@ -33,7 +33,10 @@ export class RequestInfoVerifyMiddleware{
     public static async CheckAccountRequestInfo(ctx:Router.IRouterContext,next:()=>Promise<any>){
         let requestVerifySchema = Joi.object({
             account_identifier:{
-                address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required()
+                address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                sub_account:Joi.object({
+                    address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
+                })
             }
         });
         let verify = requestVerifySchema.validate(ctx.request.body,{allowUnknown:true});

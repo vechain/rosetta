@@ -12,7 +12,8 @@ export class TransactionIdentifier {
     public hash:string = "";
 }
 
-export class Operation{
+export class 
+Operation{
     public operation_identifier:OperationIdentifier = new OperationIdentifier();
     public related_operations:Array<OperationIdentifier> | undefined;
     public type:OperationType = OperationType.None;
@@ -29,7 +30,7 @@ export class OperationIdentifier {
 
 export class OperationType{
     public static None:string = "None";
-    public static Send:string = "Send";
-    public static Receive:string = "Receive";
+    public static Transfer:string = "Transfer";
+    public static Fee:string = "Fee";
 }
 
