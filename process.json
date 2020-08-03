@@ -1,10 +1,14 @@
 {
     "apps": [
       {
+        "name": "VeChainThor Node",
+        "cmd": "./thor --api-addr 0.0.0.0:8669 --network $MAINNET --disable-pruner"
+      },
+      {
         "name": "VeChain Rosetta Api Server",
         "script": "./dist/app/index.js",
         "exec_mode":"cluster",
-        "instances" : "max"
+        "instances" : "4"
       }
     ]
   }

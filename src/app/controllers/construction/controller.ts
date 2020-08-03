@@ -19,7 +19,7 @@ export default class ConstructionController{
         this._blockChainInfoService = new BlockChainInfoService(this._environment);
 
         this.getConstructionMetadata = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
-            let networkType = ctx.request.body.network_identifier.network == "mainnet" ? NetworkType.MainNet : NetworkType.TestNet;
+            let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
             let getConstructionResult = this._baseInfoService.getConstructionMetadata(networkType);
             this._getConstructionMetadataConvertToJSONResult(ctx,getConstructionResult);
             await next();
@@ -27,7 +27,7 @@ export default class ConstructionController{
         };
 
         this.submitTransaction = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
-            let networkType = ctx.request.body.network_identifier.network == "mainnet" ? NetworkType.MainNet : NetworkType.TestNet;
+            let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
             let signedTransaction = ctx.request.body.signed_transaction;
             let submitTransactionResult = await this._blockChainInfoService.sendSignedTransaction(networkType,signedTransaction);
             this._submitTransactionConvertToJSONResult(ctx,submitTransactionResult);

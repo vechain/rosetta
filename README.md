@@ -1,6 +1,6 @@
-# VeChain Rosetta Data API
+# VeChain Rosetta
 
-Implementing Rosetta Data API of VeChainThor BlockChain
+Implementing Rosetta API of VeChainThor BlockChain
 
 [![](https://badgen.net/badge/VeChainThorNode/=1.3.1)]()
 [![](https://badgen.net/badge/Network/main,test?list=|)]()

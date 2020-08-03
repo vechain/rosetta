@@ -1,4 +1,4 @@
 export enum NetworkType{
-    MainNet = "mainnet",
-    TestNet = "testnet"
+    MainNet = "main",
+    TestNet = "test"
 }

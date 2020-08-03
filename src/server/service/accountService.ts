@@ -93,7 +93,7 @@ export class AccountService{
     {
         let result = new ActionResultWithData<Array<Amount>>();
         
-        let vip180list = this._environment.getVIP180TokenList(connex.NetWorkType);
+        let vip180list = this._environment.getVIP180TokenList();
         let vip180Info = vip180list.find(token => {return token.address.toLowerCase() === scAddress.toLowerCase()});
         if(vip180Info)
         {

@@ -6,8 +6,7 @@ import { array } from 'joi';
 
 export class GlobalEnvironment extends BaseGlobalEnvironment{
     
-    public mainNetconnex:ConnexEx | undefined;
-    public testNetConnex: ConnexEx | undefined;
+    public netconnex:ConnexEx | undefined;
     public logHelper:LogHelper = new LogHelper();
     public mainNet180List:Array<VIP180Config> = new Array();
     public testNet180List:Array<VIP180Config> = new Array();
@@ -15,24 +14,25 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
     constructor(config:any){
         super(config);
         this._initLogHelper(config);
-        this._addVIP180Token(config);
-        config.rosetta_version = "1.3.1"
+        this._addVTHOToken();
     }
 
     public getConnex(type:NetworkType):ConnexEx | undefined{
-        switch(type){
-            case NetworkType.MainNet:
-                return this.mainNetconnex;
-            case NetworkType.TestNet:
-                return this.testNetConnex;
-            default:
-                return undefined;
+        if(this.netconnex!.NetWorkType == type){
+            return this.netconnex;
+        } else {
+            return undefined;
         }
     }
 
-    public getVIP180TokenList(type:NetworkType):Array<VIP180Config>
+    public loadIP180TokenConfig(config:any)
     {
-        switch(type){
+        this._addVIP180Token(config);
+    }
+
+    public getVIP180TokenList():Array<VIP180Config>
+    {
+        switch(this.netconnex!.NetWorkType){
             case NetworkType.MainNet:
                 return this.mainNet180List;
             case NetworkType.TestNet:
@@ -55,17 +55,17 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
     private _addVIP180Token(config:any)
     {
         this._addVTHOToken();
-        if(config.netconfig.mainnet.vip180_list != null && config.netconfig.mainnet.vip180_list as Array<any>)
+        if(config.mainnet.vip180_list != null && config.mainnet.vip180_list as Array<any>)
         {
-            for(var item of (config.netconfig.mainnet.vip180_list as Array<any>))
+            for(var item of (config.mainnet.vip180_list as Array<any>))
             {
                 this.mainNet180List.push(new VIP180Config(item.name,item.address,item.symbol,item.decimals));
             }
         }
 
-        if(config.netconfig.testnet.vip180_list != null && config.netconfig.testnet.vip180_list as Array<any>)
+        if(config.testnet.vip180_list != null && config.testnet.vip180_list as Array<any>)
         {
-            for(var item of (config.netconfig.testnet.vip180_list as Array<any>))
+            for(var item of (config.testnet.vip180_list as Array<any>))
             {
                 this.mainNet180List.push(new VIP180Config(item.name,item.address,item.symbol,item.decimals));
             }
@@ -78,8 +78,7 @@ export interface iConfig extends iBaseConfig,iLogHelperConfig
     port:number;
     confirm_num:number;
     netconfig:{
-        mainnet:NetConfig,
-        testnet:NetConfig
+        node_api:string
     }
     rosetta_version:string
 }

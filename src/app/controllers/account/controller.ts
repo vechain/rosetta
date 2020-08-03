@@ -17,7 +17,7 @@ export default class AccountController{
         this._accountService = new AccountService(this._environment);
         
         this.getAccountBalance = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
-            let networkType = ctx.request.body.network_identifier.network == "mainnet" ? NetworkType.MainNet : NetworkType.TestNet;
+            let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
             let address = ctx.request.body.account_identifier.address;
             let subAccountAddress = ctx.request.body.account_identifier["sub_account"] && ctx.request.body.account_identifier["sub_account"]["address"] ?
             ctx.request.body.account_identifier["sub_account"]["address"] : "";

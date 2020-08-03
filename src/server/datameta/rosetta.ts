@@ -12,6 +12,7 @@ export class RosettaAllow{
     public operation_statuses:Array<OperationStatus> = new Array<OperationStatus>();
     public operation_types:Array<String> = new Array<String>();
     public errors:Array<IRosettaError> = new Array<IRosettaError>();
+    public historical_balance_lookup:boolean = true;
 }
 
 export interface IOperationStatus{

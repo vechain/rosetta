@@ -31,3 +31,9 @@ export class Peer {
     public metadata: any | undefined;
 }
 
+export class SyncStatus {
+    public current_index:number = 0;
+    public target_index:number | undefined;
+    public stage:string | undefined;
+}
+

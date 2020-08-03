@@ -3,6 +3,7 @@ import { ConvertJSONResponeMiddleware } from './convertJSONResponeMiddleware';
 import { RosettaErrorDefine } from '../../server/datameta/rosettaError';
 import { environment } from '..';
 import * as Joi from 'joi';
+import { NetworkType } from '../../server/datameta/networkType';
 
 export class RequestInfoVerifyMiddleware{
 
@@ -10,14 +11,14 @@ export class RequestInfoVerifyMiddleware{
         let requestVerifySchema = Joi.object({
             network_identifier:{
                 blockchain:Joi.string().valid("vechainthor").required(),
-                network:Joi.string().valid("mainnet","testnet").required()
+                network:Joi.string().valid("main","test").required()
             }
         });
         let verify = requestVerifySchema.validate(ctx.request.body,{allowUnknown:true});
         if(!verify.error){
-            if(ctx.request.body.network_identifier.network == "mainnet" && environment.mainNetconnex != null){
+            if(ctx.request.body.network_identifier.network == "main" && environment.netconnex != null && environment.netconnex.NetWorkType == NetworkType.MainNet){
                 await next();
-            }else if(ctx.request.body.network_identifier.network == "testnet" && environment.testNetConnex != null){
+            }else if(ctx.request.body.network_identifier.network == "test" && environment.netconnex != null && environment.netconnex.NetWorkType == NetworkType.TestNet){
                 await next();
             }else{
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.NODECONNETCONNECTION);

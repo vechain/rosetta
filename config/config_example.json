@@ -1,0 +1,12 @@
+{
+    "env":"local",  // (local | dev | test | staging | prod)
+    "serviceName":"Rosetta VeChain Serve",
+    "logLevel":"trace", // (trace | debug | info | warn | error)
+    "logEnvLevel":"local",  // (trace | debug | info | warn | error)
+    "port":8030,    // rosetta api port (default 8030)
+    "confirm_num":12,   // vechainthor confirm number (default 12)
+    "netconfig":{
+        "node_api":"localhost:8669" // vechainthor node api port (default 8669 don't change that!)
+    },
+    "rosetta_version":"1.4.1"
+}

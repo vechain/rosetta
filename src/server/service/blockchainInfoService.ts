@@ -1,6 +1,6 @@
 import { GlobalEnvironment, iConfig } from "../../app/globalEnvironment";
 import { NetworkType } from "../datameta/networkType";
-import { ActionResultWithData, ActionResult } from "../../utils/components/actionResult";
+import { ActionResultWithData, ActionResult, ActionResultWithData2 } from "../../utils/components/actionResult";
 import ThorPeer from "../datameta/peer";
 import { HttpClientHelper } from "../../utils/helper/httpClientHelper";
 import { BlockDetail, BlockIdentifier } from "../datameta/block";
@@ -63,8 +63,8 @@ export class BlockChainInfoService {
         return result;
     }
 
-    public async getBlockDetail(type: NetworkType, revision: number | string): Promise<ActionResultWithData<BlockDetail>> {
-        let result = new ActionResultWithData<BlockDetail>();
+    public async getBlockDetail(type: NetworkType, revision: number | string): Promise<ActionResultWithData2<BlockDetail,Array<string>>> {
+        let result = new ActionResultWithData2<BlockDetail,Array<string>>();
         let connex = this._environment.getConnex(type);
 
         if (connex) {
@@ -168,8 +168,11 @@ export class BlockChainInfoService {
         return result;
     }
 
-    private async _getBlockDetail(connex: ConnexEx, revision?: number | string): Promise<ActionResultWithData<BlockDetail>> {
-        let result = new ActionResultWithData<BlockDetail>();
+    private async _getBlockDetail(connex: ConnexEx, revision?: number | string): Promise<ActionResultWithData2<BlockDetail,Array<string>>> {
+        let result = new ActionResultWithData2<BlockDetail,Array<string>>();
+
+        let other_transactions:Array<string>|undefined; 
+        other_transactions = new Array<string>();
 
         let apiUrl = connex.baseUrl + "/blocks/" + revision;
         let parames = [{ key: "expanded", value: "true" }];
@@ -196,10 +199,21 @@ export class BlockChainInfoService {
                     let rosettaTransaction = this._buildRosettaTransaction(transaction,connex,block.block_identifier);
                     if (rosettaTransaction.operations.length > 0) {
                         block.transactions.push(rosettaTransaction);
+                    }else{
+                        other_transactions.push(transaction.id);
                     }
                 }
 
+                if(block.transactions.length == 0){
+                    block.transactions = undefined;
+                }
+
+                if(other_transactions.length == 0) {
+                    other_transactions = undefined;
+                }
+
                 result.Data = block;
+                result.Data2 = other_transactions;
                 result.Result = true;
             } else {
                 result.Result = false;
@@ -267,7 +281,7 @@ export class BlockChainInfoService {
         let VETTransfers = output.transfers as Array<any>;
 
         let vip180TokenEvents = (output.events as Array<any>).filter(event => {
-            return this._environment.getVIP180TokenList(networkType).find(tokenInfo => {return tokenInfo.address.toLowerCase() === event.address.toLocaleLowerCase()}) != undefined
+            return this._environment.getVIP180TokenList().find(tokenInfo => {return tokenInfo.address.toLowerCase() === event.address.toLocaleLowerCase()}) != undefined
             && event.topics[0].toLocaleLowerCase() === "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
         });
 
@@ -299,7 +313,7 @@ export class BlockChainInfoService {
         }
 
         for(const event of vip180TokenEvents){
-            let vip180Config = this._environment.getVIP180TokenList(networkType).find(tokenInfo => tokenInfo.address.toLowerCase() == event.address);
+            let vip180Config = this._environment.getVIP180TokenList().find(tokenInfo => tokenInfo.address.toLowerCase() == event.address);
             let tokenCurrency = new Currency(vip180Config!.symbol,vip180Config!.decimals,undefined);
 
             let senderOperation = new Operation();

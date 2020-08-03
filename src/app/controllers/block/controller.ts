@@ -4,7 +4,7 @@ import { BlockChainInfoService } from "../../../server/service/blockchainInfoSer
 import { environment } from "../..";
 import { NetworkType } from "../../../server/datameta/networkType";
 import { BlockDetail } from "../../../server/datameta/block";
-import { ActionResultWithData } from "../../../utils/components/actionResult";
+import { ActionResultWithData, ActionResultWithData2 } from "../../../utils/components/actionResult";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";
 import { Transaction } from "../../../server/datameta/transaction";
 
@@ -17,7 +17,7 @@ export default class BlockController{
         this._blockChainService = new BlockChainInfoService(this._environment);
 
         this.getBlock = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
-            let networkType = ctx.request.body.network_identifier.network == "mainnet" ? NetworkType.MainNet : NetworkType.TestNet;
+            let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
             let revision = undefined;
 
             if(ctx.request.body.block_identifier != null){
@@ -36,7 +36,7 @@ export default class BlockController{
         }
 
         this.getTransactionByBlock = async (ctx:Router.IRouterContext,next: () => Promise<any>) =>{
-            let networkType = ctx.request.body.network_identifier.network == "mainnet" ? NetworkType.MainNet : NetworkType.TestNet;
+            let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
             let transactionID = ctx.request.body.transaction_identifier.hash;
             let revision = undefined;
 
@@ -57,11 +57,12 @@ export default class BlockController{
     private _environment:GlobalEnvironment;
     private _blockChainService:BlockChainInfoService;
 
-    private async _getBlockDetailConvertToResponce(ctx:Router.IRouterContext,actionResult:ActionResultWithData<BlockDetail>){
+    private async _getBlockDetailConvertToResponce(ctx:Router.IRouterContext,actionResult:ActionResultWithData2<BlockDetail,Array<string>>){
         let response:any | undefined;
         if(actionResult.Result){
             response = {
-                block:actionResult.Data!
+                block:actionResult.Data!,
+                other_transactions:actionResult.Data2
             }
         }
         ConvertJSONResponeMiddleware.ActionResultJSONResponse(ctx,actionResult,response);

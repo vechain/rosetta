@@ -8,12 +8,16 @@ import path = require('path');
 let configPath = path.join(__dirname, "../../config/config.json");
 let config = require(configPath);
 
+let tokenConfigPath = path.join(__dirname, "../../config/tokenconfig.json");
+let tokenConfig = require(tokenConfigPath);
+
 process.setMaxListeners(50);
 
 let globalEnvironment = new GlobalEnvironment(config as iConfig);
+globalEnvironment.loadIP180TokenConfig(tokenConfig);
 
-//set rosetta version
-globalEnvironment.config.rosetta_version = "1.3.1";
+globalEnvironment.config.netconfig.network = process.env["MAINNET"] as string;
+globalEnvironment.config.netconfig.node_version = process.env["THORNODE_VERSION"] as string;
 
 export let environment = globalEnvironment;
 export let logHelper = globalEnvironment.logHelper;

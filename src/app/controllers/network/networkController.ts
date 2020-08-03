@@ -2,7 +2,7 @@ import Router from "koa-router";
 import { environment } from "../..";
 import { GlobalEnvironment } from "../../globalEnvironment";
 import { ActionResultWithData } from "../../../utils/components/actionResult";
-import { NetworkIdentifier, NetworkOptionsResponse } from "../../../server/datameta/network";
+import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../../../server/datameta/network";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";
 import { BlockChainInfoService } from "../../../server/service/blockchainInfoService";
 import { NetworkType } from "../../../server/datameta/networkType";
@@ -27,22 +27,23 @@ export default class NetworkController{
         };
 
         this.getNetworkOptions = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
-            let networkType = ctx.request.body.network_identifier.network == "mainnet" ? NetworkType.MainNet : NetworkType.TestNet;
+            let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
             let networkOptions = this._baseInfoService.getNetworkOptions(networkType);
             this._getNetworkOptionsConvertToResponce(ctx,networkOptions);
             await next();
         };
         this.getNetworkStatus = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
-            let networkType = ctx.request.body.network_identifier.network == "mainnet" ? NetworkType.MainNet : NetworkType.TestNet;
+            let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
 
             let getGenesisBlock = this._blockChainInfoService.getGenesisBlock(networkType);
             let getBestBlockPromise = this._blockChainInfoService.getBestBlockStatus(networkType);
             let getPeersPromise = this._blockChainInfoService.getPeers(networkType);
+            let getSyncStatus = this._baseInfoService.getSyncStatus(networkType);
 
             try {
                 let promiseAllResult = await Promise.all([getBestBlockPromise,getPeersPromise]);
-                if(getGenesisBlock.Result && promiseAllResult[0].Result &&  promiseAllResult[1].Result){
-                    this._getNetworkStatusConvertToResponce(ctx,getGenesisBlock.Data!,promiseAllResult[0].Data!,promiseAllResult[1].Data!);
+                if(getGenesisBlock.Result && promiseAllResult[0].Result &&  promiseAllResult[1].Result && getSyncStatus.Result){
+                    this._getNetworkStatusConvertToResponce(ctx,getGenesisBlock.Data!,promiseAllResult[0].Data!,promiseAllResult[1].Data!,getSyncStatus.Data!);
                 }else{
                     let error = getGenesisBlock.ErrorData || promiseAllResult[0].ErrorData || promiseAllResult[1].ErrorData || RosettaErrorDefine.INTERNALSERVERERROR;
                     ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,error);
@@ -68,7 +69,8 @@ export default class NetworkController{
         ConvertJSONResponeMiddleware.ActionResultJSONResponse(ctx,actionResult,response);
     }
 
-    private async _getNetworkStatusConvertToResponce(ctx:Router.IRouterContext,genesisBlock:Connex.Thor.Block,blockStatus:Connex.Thor.Status,peers:Array<ThorPeer>){
+    private async _getNetworkStatusConvertToResponce(ctx:Router.IRouterContext,genesisBlock:Connex.Thor.Block,
+            blockStatus:Connex.Thor.Status,peers:Array<ThorPeer>,syncStatus:SyncStatus){
         let response:any | undefined;
         response = {
             current_block_identifier:{
@@ -80,6 +82,7 @@ export default class NetworkController{
                 index:genesisBlock.number,
                 hash:genesisBlock.id
             },
+            sync_status:syncStatus,
             peers:[]
         }
 
@@ -95,9 +98,7 @@ export default class NetworkController{
     private async _getNetworkOptionsConvertToResponce(ctx:Router.IRouterContext,actionResult:ActionResultWithData<NetworkOptionsResponse>){
         let response:any | undefined;
         if(actionResult.Result){
-            response = {
-                network_identifiers:actionResult.Data
-            }
+            response = actionResult.Data
         }
         ConvertJSONResponeMiddleware.ActionResultJSONResponse(ctx,actionResult,response);
     }

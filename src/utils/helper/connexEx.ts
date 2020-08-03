@@ -35,6 +35,10 @@ export default class ConnexEx extends Framework
         return this._driver;
     }
 
+    public get NodeVersion():string {
+        return process.env["SERVER_PORT"] || ""
+    }
+
     private constructor(driver:Driver,networkType:NetworkType){
         super(driver);
         this._driver = driver;
