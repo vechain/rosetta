@@ -21,7 +21,7 @@ export interface IOperationStatus{
 }
 
 export class OperationStatus{
-    public static None:IOperationStatus = {status:"None",successful:false};
+    public static None:IOperationStatus = {status:"None",successful:true};
     public static Succeeded:IOperationStatus = {status:"Succeeded",successful:true};
     public static Reverted:IOperationStatus = {status:"Reverted",successful:false};
     public static Pendding:IOperationStatus = {status:"Pendding",successful:true};

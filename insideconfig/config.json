@@ -1,14 +1,14 @@
 {
     "env":"local",
-    "serviceName":"Rosetta VeChain Serve",
+    "serviceName":"Rosetta VeChain Data API Serve",
     "logLevel":"trace",
     "logEnvLevel":"local",
     "port":8030,
     "confirm_num":12,
     "netconfig":{
-        "network":"main",
-        "node_api":"http://47.57.94.244:8669/",
-        "node_version":"v1.3.4"
+        "network":"",
+        "node_api":"http://localhost:8669",
+        "node_version":""
     },
     "rosetta_version":"1.4.1"
 }

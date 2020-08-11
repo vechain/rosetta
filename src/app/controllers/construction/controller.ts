@@ -4,7 +4,7 @@ import Router from "koa-router";
 import { NetworkType } from "../../../server/datameta/networkType";
 import { BaseInfoService } from "../../../server/service/baseInfoService";
 import { ActionResultWithData } from "../../../utils/components/actionResult";
-import { Construction } from "../../../server/datameta/construction";
+import { ConstructionMetaData } from "../../../server/datameta/constructionMetaData";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";
 import { BlockChainInfoService } from "../../../server/service/blockchainInfoService";
 
@@ -39,7 +39,7 @@ export default class ConstructionController{
     private _baseInfoService:BaseInfoService;
     private _blockChainInfoService:BlockChainInfoService;
 
-    private _getConstructionMetadataConvertToJSONResult(ctx:Router.IRouterContext,actionResult:ActionResultWithData<Construction>){
+    private _getConstructionMetadataConvertToJSONResult(ctx:Router.IRouterContext,actionResult:ActionResultWithData<ConstructionMetaData>){
         let response:any | undefined;
         if(actionResult.Result){
             response = {

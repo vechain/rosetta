@@ -10,14 +10,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mongelly/rosetta_vet.git"
+    "url": "git+https://github.com/vechain/rosetta-data-api-vechainthor.git"
   },
   "author": "mog.lu@vechain.com",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/mongelly/rosetta_vet/issues"
+    "url": "https://github.com/vechain/rosetta-data-api-vechainthor/issues"
   },
-  "homepage": "https://github.com/mongelly/rosetta_vet#readme",
+  "homepage": "https://github.com/vechain/rosetta-data-api-vechainthor#readme",
   "dependencies": {
     "@types/joi": "^14.3.4",
     "@types/koa": "^2.11.3",

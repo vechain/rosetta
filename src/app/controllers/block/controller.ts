@@ -57,7 +57,7 @@ export default class BlockController{
     private _environment:GlobalEnvironment;
     private _blockChainService:BlockChainInfoService;
 
-    private async _getBlockDetailConvertToResponce(ctx:Router.IRouterContext,actionResult:ActionResultWithData2<BlockDetail,Array<string>>){
+    private async _getBlockDetailConvertToResponce(ctx:Router.IRouterContext,actionResult:ActionResultWithData2<BlockDetail,Array<{hash:string}>>){
         let response:any | undefined;
         if(actionResult.Result){
             response = {

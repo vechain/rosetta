@@ -3,19 +3,44 @@
         "vip180_list":[
             {
                 "name":"OceanEx",
-                "address":"0x0CE6661b4ba86a0EA7cA2Bd86a0De87b0B860F14",
+                "address":"0x0ce6661b4ba86a0ea7ca2bd86a0de87b0b860f14",
                 "symbol":"OCE",
-                "decimals":18
+                "decimals":18,
+                "metadata":{
+                    "safetransfergas":900000
+                }
             },
             {
-                "name":"SneakerCoin",
-                "address":"0x540768b909782c430CC321192E6C2322F77494Ec",
-                "symbol":"SNK",
-                "decimals":18
+                "name":"SHA",
+                "address":"0x5db3c8a942333f6468176a870db36eef120a34dc",
+                "symbol":"SHA",
+                "decimals":18,
+                "metadata":{
+                    "safetransfergas":2000000
+                }
             }
         ]
     },
     "testnet":{
-        "vip180_list":[]
+        "vip180_list":[
+            {
+                "name":"OceanEx",
+                "address":"0x9652aead889e8df7b5717ed984f147c132f85a69",
+                "symbol":"OCE",
+                "decimals":18,
+                "metadata":{
+                    "safetransfergas":900000
+                }
+            },
+            {
+                "name":"SHA",
+                "address":"0x9c6e62b3334294d70c8e410941f52d482557955b",
+                "symbol":"SHA",
+                "decimals":18,
+                "metadata":{
+                    "safetransfergas":2000000
+                }
+            }
+        ]
     }
 }

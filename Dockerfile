@@ -11,7 +11,7 @@ RUN npm config set registry https://registry.npm.taobao.org
 RUN npm install -g typescript
 
 COPY ["./package.json","./package-lock.json","./tsconfig.json","./process.json","./"]
-COPY ["./config","./config"]
+COPY ["./insideconfig","./insideconfig"]
 COPY ["./src","./src"]
 
 RUN npm install && npm run build

@@ -3,6 +3,7 @@ import { iLogHelperConfig, LogHelper } from '../utils/helper/logHelper';
 import ConnexEx from '../utils/helper/connexEx';
 import { NetworkType } from '../server/datameta/networkType';
 import { array } from 'joi';
+import { Currency } from '../server/datameta/amount';
 
 export class GlobalEnvironment extends BaseGlobalEnvironment{
     
@@ -25,9 +26,15 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
         }
     }
 
-    public loadIP180TokenConfig(config:any)
+    public loadIP180TokenConfig(config:any|undefined)
     {
-        this._addVIP180Token(config);
+        if(config != null){
+            this._addVIP180Token(config);
+        }
+    }
+
+    public getVTHOConfig():VIP180Config {
+        return new VIP180Config("VeThor","0x0000000000000000000000000000456e65726779","VTHO",18,{safetransfergas:60000});
     }
 
     public getVIP180TokenList():Array<VIP180Config>
@@ -48,8 +55,8 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
 
     private _addVTHOToken()
     {
-        this.mainNet180List.push(new VIP180Config("VeThor","0x0000000000000000000000000000456e65726779","VTHO",18));
-        this.testNet180List.push(new VIP180Config("VeThor","0x0000000000000000000000000000456e65726779","VTHO",18));
+        this.mainNet180List.push(this.getVTHOConfig());
+        this.testNet180List.push(this.getVTHOConfig());
     }
 
     private _addVIP180Token(config:any)
@@ -59,7 +66,7 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
         {
             for(var item of (config.mainnet.vip180_list as Array<any>))
             {
-                this.mainNet180List.push(new VIP180Config(item.name,item.address,item.symbol,item.decimals));
+                this.mainNet180List.push(new VIP180Config(item.name,item.address,item.symbol,item.decimals,item.metadata));
             }
         }
 
@@ -67,7 +74,7 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
         {
             for(var item of (config.testnet.vip180_list as Array<any>))
             {
-                this.mainNet180List.push(new VIP180Config(item.name,item.address,item.symbol,item.decimals));
+                this.mainNet180List.push(new VIP180Config(item.name,item.address,item.symbol,item.decimals,item.metadata));
             }
         }
     }
@@ -83,15 +90,13 @@ export interface iConfig extends iBaseConfig,iLogHelperConfig
     rosetta_version:string
 }
 
-export class VIP180Config
+export class VIP180Config extends Currency
 {
     public name:string = "";
     public address:string = "";
-    public symbol:string = "";
-    public decimals:number = 0;
-    public metadata:any | undefined;
 
     constructor(name:string,address:string,symbol:string,decimals:number,metadata?:any){
+        super();
         this.name = name;
         this.address = address;
         this.symbol = symbol;

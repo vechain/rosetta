@@ -4,19 +4,24 @@ import { ActionResult } from "../utils/components/actionResult";
 import { LogHelperLevel } from "../utils/helper/logHelper";
 import { VeChainKoaServer } from "./rosettaServer";
 import path = require('path');
+import * as file from 'fs';
 
-let configPath = path.join(__dirname, "../../config/config.json");
-let config = require(configPath);
-
-let tokenConfigPath = path.join(__dirname, "../../config/tokenconfig.json");
-let tokenConfig = require(tokenConfigPath);
 
 process.setMaxListeners(50);
+
+let configPath = path.join(__dirname, "../../insideconfig/config.json");
+let config = require(configPath);
+
+let tokenConfig:any|undefined;
+let tokenConfigPath = path.join(__dirname, "../../config/tokenconfig.json");
+if(file.existsSync(tokenConfigPath)){
+    tokenConfig = require(tokenConfigPath);
+}
 
 let globalEnvironment = new GlobalEnvironment(config as iConfig);
 globalEnvironment.loadIP180TokenConfig(tokenConfig);
 
-globalEnvironment.config.netconfig.network = process.env["MAINNET"] as string;
+globalEnvironment.config.netconfig.network = process.env["MAINNET"] as string || "main";
 globalEnvironment.config.netconfig.node_version = process.env["THORNODE_VERSION"] as string;
 
 export let environment = globalEnvironment;

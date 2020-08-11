@@ -19,7 +19,7 @@ export default class ActiveSupportServices
                 if(mainnetConnexResult.Result && mainnetConnexResult.Data){
                     result.Result = true;
                     environment.netconnex = mainnetConnexResult.Data;
-                    environment.netconnex.nodeVersion = environment.config.netconfig.node_version;
+                    environment.netconnex.NodeVersion = environment.config.netconfig.node_version;
                 }
                 else
                 {
@@ -33,7 +33,7 @@ export default class ActiveSupportServices
                 if(testnetConnexResult.Result && testnetConnexResult.Data){
                     result.Result = true;
                     environment.netconnex = testnetConnexResult.Data;
-                    environment.netconnex.nodeVersion = environment.config.netconfig.node_version;
+                    environment.netconnex.NodeVersion = environment.config.netconfig.node_version;
                 }
                 else
                 {
@@ -63,7 +63,7 @@ export default class ActiveSupportServices
         let result = new ActionResultWithData<ConnexEx>();
 
         try{
-            let connex = await ConnexEx.Create(network,new SimpleNet(api_addr))
+            let connex = await ConnexEx.Create(network,new SimpleNet(api_addr));
             let genesisBlockID = connex.thor.genesis.id;
 
             if(network == "main" && genesisBlockID == "0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a"){

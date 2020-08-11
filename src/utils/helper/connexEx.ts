@@ -13,7 +13,7 @@ export default class ConnexEx extends Framework
         return connexEx;
     }
 
-    public nodeVersion:string = "";
+    public NodeVersion:string = "";
     
     public get baseUrl() : string {
         return this._baseUrl;
@@ -33,10 +33,6 @@ export default class ConnexEx extends Framework
 
     public get Driver() : Driver{
         return this._driver;
-    }
-
-    public get NodeVersion():string {
-        return process.env["SERVER_PORT"] || ""
     }
 
     private constructor(driver:Driver,networkType:NetworkType){

@@ -3,7 +3,7 @@ import { NetworkType } from "../datameta/networkType";
 import { ActionResultWithData, ActionResultWithData2 } from "../../utils/components/actionResult";
 import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../datameta/network";
 import { RosettaErrorDefine, IRosettaError } from "../datameta/rosettaError";
-import { Construction } from "../datameta/construction";
+import { ConstructionMetaData } from "../datameta/constructionMetaData";
 import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import ConnexEx from "../../utils/helper/connexEx";
 import { OperationStatus, IOperationStatus, RosettaAllow, RosettaVersion } from "../datameta/rosetta";
@@ -49,8 +49,8 @@ export class BaseInfoService {
         return result;
     }
 
-    public getConstructionMetadata(type: NetworkType): ActionResultWithData<Construction> {
-        let result = new ActionResultWithData<Construction>();
+    public getConstructionMetadata(type: NetworkType): ActionResultWithData<ConstructionMetaData> {
+        let result = new ActionResultWithData<ConstructionMetaData>();
         let connex = this._environment.getConnex(type);
         if (connex) {
             result = this._getConstructionMetadata(connex);
@@ -68,7 +68,7 @@ export class BaseInfoService {
         if (connex) {
             let versionInfo = new RosettaVersion();
             versionInfo.rosetta_version = (this._environment.config as iConfig).rosetta_version;
-            versionInfo.node_version = connex.nodeVersion;
+            versionInfo.node_version = connex.NodeVersion;
 
             let allow = new RosettaAllow();
             allow.operation_statuses = this._getOperationStatuses();
@@ -135,15 +135,13 @@ export class BaseInfoService {
         return result;
     }
 
-    private _getConstructionMetadata(connex: ConnexEx): ActionResultWithData<Construction> {
-        let result = new ActionResultWithData<Construction>();
+    private _getConstructionMetadata(connex: ConnexEx): ActionResultWithData<ConstructionMetaData> {
+        let result = new ActionResultWithData<ConstructionMetaData>();
 
         if (connex.thor.status.progress == 1) {
-            let construction = new Construction();
+            let construction = new ConstructionMetaData();
             construction.chainTag = connex.chainTag;
             construction.blockRef = connex.blockRef;
-            construction.expiration = 18;
-            construction.gasPriceCoef = 0;
 
             result.Data = construction;
             result.Result = true;

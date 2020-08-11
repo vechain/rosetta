@@ -13,7 +13,11 @@
             "sourceMaps": true,
             "outFiles": [
                 "${workspaceFolder}/dist/app/*.js"
-            ]
+            ],
+            "env": {
+                "MAINNET":"main",
+                "THORNODE_VERSION":"v1.3.4"
+            }
         }
     ]
 }

@@ -1,8 +1,8 @@
-import { GlobalEnvironment, iConfig } from "../../app/globalEnvironment";
+import { GlobalEnvironment } from "../../app/globalEnvironment";
 import { NetworkType } from "../datameta/networkType";
 import { ActionResultWithData, ActionResult, ActionResultWithData2 } from "../../utils/components/actionResult";
 import ThorPeer from "../datameta/peer";
-import { HttpClientHelper } from "../../utils/helper/httpClientHelper";
+import { HttpClientHelper } from "../../utils/helper/httpClientHelper";                                                                       
 import { BlockDetail, BlockIdentifier } from "../datameta/block";
 import { Transaction, TransactionIdentifier, Operation, OperationIdentifier, OperationType } from "../datameta/transaction";
 import { RosettaErrorDefine } from "../datameta/rosettaError";
@@ -63,8 +63,8 @@ export class BlockChainInfoService {
         return result;
     }
 
-    public async getBlockDetail(type: NetworkType, revision: number | string): Promise<ActionResultWithData2<BlockDetail,Array<string>>> {
-        let result = new ActionResultWithData2<BlockDetail,Array<string>>();
+    public async getBlockDetail(type: NetworkType, revision: number | string): Promise<ActionResultWithData2<BlockDetail,Array<{hash:string}>>> {
+        let result = new ActionResultWithData2<BlockDetail,Array<{hash:string}>>();
         let connex = this._environment.getConnex(type);
 
         if (connex) {
@@ -168,11 +168,11 @@ export class BlockChainInfoService {
         return result;
     }
 
-    private async _getBlockDetail(connex: ConnexEx, revision?: number | string): Promise<ActionResultWithData2<BlockDetail,Array<string>>> {
-        let result = new ActionResultWithData2<BlockDetail,Array<string>>();
+    private async _getBlockDetail(connex: ConnexEx, revision?: number | string): Promise<ActionResultWithData2<BlockDetail,Array<{hash:string}>>> {
+        let result = new ActionResultWithData2<BlockDetail,Array<{hash:string}>>();
 
-        let other_transactions:Array<string>|undefined; 
-        other_transactions = new Array<string>();
+        let other_transactions:Array<{hash:string}>|undefined; 
+        other_transactions = new Array<{hash:string}>();
 
         let apiUrl = connex.baseUrl + "/blocks/" + revision;
         let parames = [{ key: "expanded", value: "true" }];
@@ -191,7 +191,7 @@ export class BlockChainInfoService {
                 block.parent_block_identifier.index = httpResult.Data.number > 0 ? httpResult.Data.number - 1 : 0;
                 block.parent_block_identifier.hash = httpResult.Data.number > 0 ? httpResult.Data.parentID : httpResult.Data.id;
 
-                block.timestamp = httpResult.Data.timestamp;
+                block.timestamp = httpResult.Data.timestamp * 1000;
 
                 block.transactions = new Array<Transaction>();
 
@@ -200,16 +200,8 @@ export class BlockChainInfoService {
                     if (rosettaTransaction.operations.length > 0) {
                         block.transactions.push(rosettaTransaction);
                     }else{
-                        other_transactions.push(transaction.id);
+                        //other_transactions.push({hash:transaction.id});
                     }
-                }
-
-                if(block.transactions.length == 0){
-                    block.transactions = undefined;
-                }
-
-                if(other_transactions.length == 0) {
-                    other_transactions = undefined;
                 }
 
                 result.Data = block;
@@ -250,21 +242,39 @@ export class BlockChainInfoService {
 
         if(rosettaTransaction.operations.length > 0)
         {
-            let feeOperation = new Operation();
-            feeOperation.operation_identifier = new OperationIdentifier();
-            feeOperation.operation_identifier.network_index = undefined;
+            if(transaction.delegator != null){
+                let feeOperation = new Operation();
+                feeOperation.operation_identifier = new OperationIdentifier();
+                feeOperation.operation_identifier.network_index = undefined;
 
-            feeOperation.type = OperationType.Fee;
-            feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
-            
-            feeOperation.account = new AccountIdentifier();
-            feeOperation.account.address = transaction.gasPayer;
-            feeOperation.account.sub_account = new AccountIdentifier();
-            feeOperation.account.sub_account.address = "0x0000000000000000000000000000456e65726779";
-            
-            feeOperation.amount = Amount.CreateVTHO();
-            feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).times(Math.pow(10,15)).times(-1).toString();
-            rosettaTransaction.operations.push(feeOperation);
+                feeOperation.type = OperationType.FeeDelegation;
+                feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+
+                feeOperation.amount = Amount.CreateVTHO();
+                feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                rosettaTransaction.operations.push(feeOperation);
+                
+                feeOperation.account = new AccountIdentifier();
+                feeOperation.account.address = transaction.delegator;
+                feeOperation.account.sub_account = new AccountIdentifier();
+                feeOperation.account.sub_account.address = this._environment.getVTHOConfig().address;
+            } else {
+                let feeOperation = new Operation();
+                feeOperation.operation_identifier = new OperationIdentifier();
+                feeOperation.operation_identifier.network_index = undefined;
+
+                feeOperation.type = OperationType.Fee;
+                feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+
+                feeOperation.amount = Amount.CreateVTHO();
+                feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                rosettaTransaction.operations.push(feeOperation);
+                
+                feeOperation.account = new AccountIdentifier();
+                feeOperation.account.address = transaction.origin;
+                feeOperation.account.sub_account = new AccountIdentifier();
+                feeOperation.account.sub_account.address = this._environment.getVTHOConfig().address;
+            }
         }
 
         for(let index = 0; rosettaTransaction.operations.length > index; index++)
@@ -295,7 +305,7 @@ export class BlockChainInfoService {
             senderOperation.account.address = VETTransfer.sender;
 
             senderOperation.amount = Amount.CreateVET();
-            senderOperation.amount.value = (new BigNumberEx(VETTransfer.amount)).times(-1).toString();
+            senderOperation.amount.value = (new BigNumberEx(VETTransfer.amount)).multipliedBy(-1).toString();
 
             let receiveOperation = new Operation();
 
@@ -327,7 +337,7 @@ export class BlockChainInfoService {
 
             senderOperation.amount = new Amount();
             senderOperation.amount.currency = tokenCurrency;
-            senderOperation.amount.value = (new BigNumberEx(event.data)).times(-1).toString();
+            senderOperation.amount.value = (new BigNumberEx(event.data)).multipliedBy(-1).toString();
 
             let receiveOperation = new Operation();
 
@@ -397,7 +407,7 @@ export class BlockChainInfoService {
         return result;
     }
 
-    private _transactionStatus(connex: ConnexEx,blockIdentifier:BlockIdentifier,transaction:any):OperationStatus
+    private _transactionStatus(connex: ConnexEx,blockIdentifier:BlockIdentifier,transaction:any):string
     {
         if(connex.thor.status.head.number - blockIdentifier.index >= (this._environment.config.confirm_num as number))
         {
@@ -405,7 +415,7 @@ export class BlockChainInfoService {
         }
         else
         {
-            return OperationStatus.Pendding;
+            return OperationStatus.Pendding.status;
         }
     }
 }
