@@ -2,9 +2,9 @@
 
 Implementing Rosetta Data API of VeChainThor BlockChain
 
-[![](https://badgen.net/badge/VeChainThorNode/=1.3.4)]()
+[![](https://badgen.net/badge/VeChainThorNode/>=1.3.4)]()
 [![](https://badgen.net/badge/Network/main,test?list=|)]()
-[![](https://badgen.net/badge/Rosetta/=1.3.4)]()
+[![](https://badgen.net/badge/Rosetta/=1.4.1)]()
 
 [![](https://badgen.net/badge/node/>=12.16)]()
 [![](https://badgen.net/badge/typescript/>=3.8.3?icon=typescript&label)]()
@@ -18,8 +18,8 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 - Clone the Thor repo
 
 ``` sh
-    git clone https://github.com/vechain/rosetta-data-api-vechainthor.git
-    cd rosetta-data-api-vechainthor
+    git clone https://github.com/vechain/rosetta.git
+    cd rosetta
 ```
 ### Building
 
