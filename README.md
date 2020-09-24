@@ -15,9 +15,9 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 
 ### Getting the source
 
-- Clone the Thor repo
+- Clone the repo
 
-``` sh
+``` shell
     git clone https://github.com/vechain/rosetta.git
     cd rosetta
 ```
@@ -25,8 +25,8 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 
 - Building Docker
 
-``` sh
-    docker build ./ -t vechain/rosetta-api-server:latest
+``` shell
+    docker build ./ -t vechain/rosetta-server:latest
 ```
 
 ### Docker
@@ -36,7 +36,7 @@ Implementing Rosetta Data API of VeChainThor BlockChain
     -v {path-to-thornode-data-directory}:/root/.org.vechain.thor\
     -p {host_address_port}:8080 -p {host_address_port}:8669 -p 11235:11235 -p 11235:11235/udp\
     --env MAINNET={network_type} --env THORNODE_VERSION={thornode_version} --env MODE={run_mode}\
-    vechain/rosetta-api-server:latest
+    vechain/rosetta-server:latest
 ```
 
 - `path-to-thornode-data-directory` directory for block-chain databases
@@ -46,12 +46,12 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 - `run_mode` the api service run mode (online|offline),if the mode is offline, some apis can not be used.
 
 #### Example
-``` sh
+``` shell
     docker run -d\
     -v /Users/rosetta/data/:/root/.org.vechain.thor\
     -p 0.0.0.0:8080:8080 -p 0.0.0.0:8669:8669 -p 11235:11235 -p 11235:11235/udp\
     --env MAINNET=main --env THORNODE_VERSION=v1.3.4 --env MODE=online\
-    vechain/rosetta-api-server:latest
+    vechain/rosetta-server:latest
 ```
 
 ## Endpoints
@@ -86,8 +86,8 @@ POST | /construction/submit | Yes | Submit a Signed Transaction | online
 
 Method| Endpoint | Implemented | Description | Mode
 ---------|----------|---------|---------|---------
-POST | /construction/metadata | No | Node Api no support
-POST | /construction/submit | No | Node Api no support
+POST | /construction/metadata | No | Node API no support
+POST | /construction/submit | No | Node API no support
 
 ### Network
 
@@ -103,7 +103,7 @@ POST | /network/status | Yes | Get Network Status | online
 
 ### Why exchanges need VIP191
 
-- The exchange will transfer currencies from hot wallet to the safe cold wallet from to time to time. When there's not enough VTHO in the hot wallet or want to transfer all currencies includ VTHO, the exchange can use the exchange can use VIP191 function to pay the transaction fee.
+- The exchange will transfer currencies from hot wallet to the safe cold wallet from time to time. When there's not enough VTHO in the hot wallet or want to transfer all currencies includ VTHO, the exchange can use the exchange can use VIP191 function to pay the transaction fee.
 
 ### How to use it
 
@@ -225,7 +225,7 @@ Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` 
 }
 ```
 
-- Step2: Call /construction/payloads Api
+- Step2: Call /construction/payloads
 
 When calling /construction/payloads use VIP191 payloads, the api will return two payload infomations. The first payload is the transaction origin infomation, the second payload is fee delegator infomation. The api will auto calculate transaction fee add the unsigned_transaction raw.
 
