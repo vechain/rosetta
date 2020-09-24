@@ -1,6 +1,6 @@
 import Router from "koa-router";
+import { IRosettaError, RosettaErrorDefine } from "../../server/types/rosettaError";
 import { ActionResult } from "../../utils/components/actionResult";
-import { IRosettaError, RosettaErrorDefine } from "../../server/datameta/rosettaError";
 
 export class ConvertJSONResponeMiddleware{
     public static ActionResultJSONResponse(ctx:Router.IRouterContext,action:ActionResult,resultData?:any)

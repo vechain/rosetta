@@ -9,7 +9,7 @@ import * as file from 'fs';
 
 process.setMaxListeners(50);
 
-let configPath = path.join(__dirname, "../../insideconfig/config.json");
+let configPath = path.join(__dirname, "../../config/config.json");
 let config = require(configPath);
 
 let tokenConfig:any|undefined;
@@ -23,6 +23,7 @@ globalEnvironment.loadIP180TokenConfig(tokenConfig);
 
 globalEnvironment.config.netconfig.network = process.env["MAINNET"] as string || "main";
 globalEnvironment.config.netconfig.node_version = process.env["THORNODE_VERSION"] as string;
+globalEnvironment.config.mode = process.env["MODE"] as string || "online";
 
 export let environment = globalEnvironment;
 export let logHelper = globalEnvironment.logHelper;
@@ -31,7 +32,7 @@ ActiveSupportServices.activieSupportServices(globalEnvironment).then(actionResul
     if(actionResult.Result){
         let port = globalEnvironment.config.port || 8030;
         let app = new VeChainKoaServer(environment);
-        app.listen(globalEnvironment.config.port || 8030);
+        app.listen(port);
         logHelper.log(LogHelperLevel.INFO,"VeChain TokenSwap Server Active Successful Port:"+port);
     }
     else{

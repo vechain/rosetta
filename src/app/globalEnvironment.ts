@@ -1,9 +1,11 @@
 import { BaseGlobalEnvironment, iBaseConfig } from '../utils/components/baseGlobalEnvironment';
 import { iLogHelperConfig, LogHelper } from '../utils/helper/logHelper';
 import ConnexEx from '../utils/helper/connexEx';
-import { NetworkType } from '../server/datameta/networkType';
+import { NetworkType } from '../server/types/networkType';
 import { array } from 'joi';
-import { Currency } from '../server/datameta/amount';
+import { Currency } from '../server/types/amount';
+import Router from 'koa-router';
+import { BaseRouter } from '../utils/components/baseRouter';
 
 export class GlobalEnvironment extends BaseGlobalEnvironment{
     
@@ -11,6 +13,7 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
     public logHelper:LogHelper = new LogHelper();
     public mainNet180List:Array<VIP180Config> = new Array();
     public testNet180List:Array<VIP180Config> = new Array();
+    public routerArray:Array<BaseRouter> = new Array<BaseRouter>();
     
     constructor(config:any){
         super(config);
@@ -43,7 +46,7 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
             case NetworkType.MainNet:
                 return this.mainNet180List;
             case NetworkType.TestNet:
-                return this.mainNet180List;
+                return this.testNet180List;
             default:
                 return new Array<VIP180Config>();
         }
@@ -61,7 +64,6 @@ export class GlobalEnvironment extends BaseGlobalEnvironment{
 
     private _addVIP180Token(config:any)
     {
-        this._addVTHOToken();
         if(config.mainnet.vip180_list != null && config.mainnet.vip180_list as Array<any>)
         {
             for(var item of (config.mainnet.vip180_list as Array<any>))

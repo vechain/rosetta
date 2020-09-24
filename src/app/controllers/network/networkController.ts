@@ -1,24 +1,24 @@
 import Router from "koa-router";
-import { environment } from "../..";
 import { GlobalEnvironment } from "../../globalEnvironment";
 import { ActionResultWithData } from "../../../utils/components/actionResult";
-import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../../../server/datameta/network";
+import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../../../server/types/network";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";
 import { BlockChainInfoService } from "../../../server/service/blockchainInfoService";
-import { NetworkType } from "../../../server/datameta/networkType";
-import { RosettaErrorDefine } from "../../../server/datameta/rosettaError";
-import ThorPeer from "../../../server/datameta/peer";
+import { NetworkType } from "../../../server/types/networkType";
+import { RosettaErrorDefine } from "../../../server/types/rosettaError";
+import ThorPeer from "../../../server/types/peer";
 import { BaseInfoService } from "../../../server/service/baseInfoService";
+import { BaseController } from "../../../utils/components/baseController";
 
-export default class NetworkController{
+export default class NetworkController extends BaseController{
     public getNetworkList:Router.IMiddleware;
     public getNetworkOptions:Router.IMiddleware;
     public getNetworkStatus:Router.IMiddleware;
 
-    constructor(){
-        this._environment = environment;
-        this._blockChainInfoService = new BlockChainInfoService(this._environment);
-        this._baseInfoService = new BaseInfoService(this._environment);
+    constructor(env:any){
+        super(env);
+        this._blockChainInfoService = new BlockChainInfoService(this.environment);
+        this._baseInfoService = new BaseInfoService(this.environment);
         
         this.getNetworkList = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
             let networkList = this._baseInfoService.getNetworkList();
@@ -55,7 +55,6 @@ export default class NetworkController{
         };
     }
 
-    private _environment:GlobalEnvironment;
     private _blockChainInfoService:BlockChainInfoService;
     private _baseInfoService:BaseInfoService;
 

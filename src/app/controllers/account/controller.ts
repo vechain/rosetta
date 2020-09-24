@@ -1,20 +1,19 @@
 import Router from "koa-router";
-import { environment } from "../..";
-import { NetworkType } from "../../../server/datameta/networkType";
+import { NetworkType } from "../../../server/types/networkType";
 import { GlobalEnvironment } from "../../globalEnvironment";
 import { AccountService } from "../../../server/service/accountService";
 import { ActionResultWithData2, ActionResult } from "../../../utils/components/actionResult";
-import { BlockIdentifier } from "../../../server/datameta/block";
-import { Amount } from "../../../server/datameta/amount";
+import { BlockIdentifier } from "../../../server/types/block";
+import { Amount } from "../../../server/types/amount";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";
+import { BaseController } from "../../../utils/components/baseController";
 
-export default class AccountController{
+export default class AccountController extends BaseController{
     public getAccountBalance:Router.IMiddleware;
 
-    constructor(){
-        this._environment = environment;
-
-        this._accountService = new AccountService(this._environment);
+    constructor(env:any){
+        super(env);
+        this._accountService = new AccountService(this.environment);
         
         this.getAccountBalance = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
             let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
@@ -38,8 +37,6 @@ export default class AccountController{
             await next();   
         }
     }
-
-    private _environment:GlobalEnvironment;
     private _accountService:AccountService;
 
     private async _getAccountBalanceConvertToResponce(ctx:Router.IRouterContext,actionResult:ActionResultWithData2<BlockIdentifier,Array<Amount>>){

@@ -7,9 +7,6 @@ import { URLCodeMiddleware } from './middleware/uricodeMiddleware';
 
 export class VeChainKoaServer extends Koa
 {
-
-    private controllers:Array<string> = new Array<string>();
-
     constructor(globalEnvironment:GlobalEnvironment){
         super();
         this.rootRouter = new RootRouter();

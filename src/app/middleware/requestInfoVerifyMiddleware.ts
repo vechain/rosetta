@@ -1,9 +1,10 @@
 import * as Router from 'koa-router';
 import { ConvertJSONResponeMiddleware } from './convertJSONResponeMiddleware';
-import { RosettaErrorDefine } from '../../server/datameta/rosettaError';
-import { environment } from '..';
+import { environment, logHelper } from '..';
 import * as Joi from 'joi';
-import { NetworkType } from '../../server/datameta/networkType';
+import { RosettaErrorDefine } from '../../server/types/rosettaError';
+import { NetworkType } from '../../server/types/networkType';
+import { BigNumberEx } from '../../utils/helper/bigNumberEx';
 
 export class RequestInfoVerifyMiddleware{
 
@@ -16,6 +17,15 @@ export class RequestInfoVerifyMiddleware{
         });
         let verify = requestVerifySchema.validate(ctx.request.body,{allowUnknown:true});
         if(!verify.error){
+            await next();
+        }else{
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.NETWORKIDENTIFIERINVALID);
+            return;
+        }
+    }
+
+    public static async CheckNetWorkTypeRequestInfo(ctx:Router.IRouterContext,next:()=>Promise<any>){
+        if((environment.config.mode as string) == "online"){
             if(ctx.request.body.network_identifier.network == "main" && environment.netconnex != null && environment.netconnex.NetWorkType == NetworkType.MainNet){
                 await next();
             }else if(ctx.request.body.network_identifier.network == "test" && environment.netconnex != null && environment.netconnex.NetWorkType == NetworkType.TestNet){
@@ -24,10 +34,8 @@ export class RequestInfoVerifyMiddleware{
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.NODECONNETCONNECTION);
                 return;
             }
-            
-        }else{
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BADREQUEST);
-            return;
+        } else {
+            await next();
         }
     }
 
@@ -45,7 +53,7 @@ export class RequestInfoVerifyMiddleware{
             await next();
             
         }else{
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BADREQUEST);
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.ACCOUNTIDENTIFIERINVALID);
             return;
         }
     }
@@ -60,7 +68,7 @@ export class RequestInfoVerifyMiddleware{
                 });
                 let verify = requestVerifySchema.validate(ctx.request.body,{allowUnknown:true});
                 if(verify.error != null){
-                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BADREQUEST);
+                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BLOCKIDENTIFIERINVALID);
                     return;
                 }
             }else if(ctx.request.body.block_identifier.hash != null){
@@ -71,7 +79,15 @@ export class RequestInfoVerifyMiddleware{
                 });
                 let verify = requestVerifySchema.validate(ctx.request.body,{allowUnknown:true});
                 if(verify.error != null){
-                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BADREQUEST);
+                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BLOCKIDENTIFIERINVALID);
+                    return;
+                }
+            }
+
+            if(ctx.request.body.block_identifier.index != null && ctx.request.body.block_identifier.hash != null){
+                let blockHeight = (ctx.request.body.block_identifier.hash as string).substr(0,10);
+                if(!(new BigNumberEx(ctx.request.body.block_identifier.index as number).isEqualTo(new BigNumberEx(blockHeight)))){
+                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BLOCKIDENTIFIERINVALID);
                     return;
                 }
             }
@@ -103,7 +119,16 @@ export class RequestInfoVerifyMiddleware{
         if(!verify.error){
             await next();
         }else{
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.BADREQUEST);
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.TRANSACTIONIDENTIFIERINVALID);
+            return;
+        }
+    }
+
+    public static async CheckRunMode(ctx:Router.IRouterContext,next:()=>Promise<any>){
+        if((environment.config.mode as string) == "online"){
+            await next();
+        } else {
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.MODEISOFFLINE);
             return;
         }
     }

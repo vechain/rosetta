@@ -1,20 +1,21 @@
-import Router from "koa-router";
 import NetworkController from "./networkController";
 import { environment } from "../..";
 import { RequestInfoVerifyMiddleware } from "../../middleware/requestInfoVerifyMiddleware";
+import { BaseRouter } from "../../../utils/components/baseRouter";
 
-class NetworkRouter extends Router
+export class NetworkRouter extends BaseRouter
 {
-    constructor(){
-        super();
-        this.post("/network/list",this._controller.getNetworkList);
-        this.post("/network/options",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,this._controller.getNetworkOptions);
-        this.post("/network/status",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,this._controller.getNetworkStatus);
+    constructor(env:any){
+        super(env);
+        let controller = new NetworkController(env);
+        this.post("/network/list",controller.getNetworkList);
+
+        this.post("/network/options",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,
+        controller.getNetworkOptions);
+
+        this.post("/network/status",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,
+        RequestInfoVerifyMiddleware.CheckNetWorkTypeRequestInfo,
+        RequestInfoVerifyMiddleware.CheckRunMode,
+        controller.getNetworkStatus);
     }
-
-    private _controller:NetworkController = new NetworkController();
 }
-
-let router = new NetworkRouter();
-
-module.exports = router;

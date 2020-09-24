@@ -2,19 +2,20 @@ import Router from "koa-router";
 import { GlobalEnvironment } from "../../globalEnvironment";
 import { BlockChainInfoService } from "../../../server/service/blockchainInfoService";
 import { environment } from "../..";
-import { NetworkType } from "../../../server/datameta/networkType";
-import { BlockDetail } from "../../../server/datameta/block";
+import { NetworkType } from "../../../server/types/networkType";
+import { BlockDetail } from "../../../server/types/block";
 import { ActionResultWithData, ActionResultWithData2 } from "../../../utils/components/actionResult";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";
-import { Transaction } from "../../../server/datameta/transaction";
+import { Transaction } from "../../../server/types/transaction";
+import { BaseController } from "../../../utils/components/baseController";
 
-export default class BlockController{
+export default class BlockController extends BaseController{
     public getBlock:Router.IMiddleware;
     public getTransactionByBlock:Router.IMiddleware;
 
-    constructor(){
-        this._environment = environment;
-        this._blockChainService = new BlockChainInfoService(this._environment);
+    constructor(env:any){
+        super(env);
+        this._blockChainService = new BlockChainInfoService(this.environment);
 
         this.getBlock = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
             let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
@@ -54,12 +55,16 @@ export default class BlockController{
         }
     }
 
-    private _environment:GlobalEnvironment;
     private _blockChainService:BlockChainInfoService;
 
     private async _getBlockDetailConvertToResponce(ctx:Router.IRouterContext,actionResult:ActionResultWithData2<BlockDetail,Array<{hash:string}>>){
         let response:any | undefined;
         if(actionResult.Result){
+
+            if(actionResult.Data!.transactions!.length == 0){
+                actionResult.Data!.transactions = undefined;
+            }
+
             response = {
                 block:actionResult.Data!,
                 other_transactions:actionResult.Data2
