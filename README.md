@@ -101,15 +101,15 @@ POST | /network/status | Yes | Get Network Status | online
 
 - VeChain Rosetta implement support Fee Delegation (**[VIP-191](https://github.com/vechain/VIPs/blob/master/vips/VIP-191.md)**).
 
-### Why exchange need VIP191
+### Why exchanges need VIP191
 
-- The exchange will transfer currencies from hot wallet to the safe cold wallet from to time to time. When there's not enough VTHO in the hot wallet or want to transfer all currencies includ VTHO. the exchange can use the exchange can use VIP191 function to pay transaction fee.
+- The exchange will transfer currencies from hot wallet to the safe cold wallet from to time to time. When there's not enough VTHO in the hot wallet or want to transfer all currencies includ VTHO, the exchange can use the exchange can use VIP191 function to pay the transaction fee.
 
 ### How to use it
 
 - Step1: Create a VIP191 payloads
 
-create a VIP191 payloads,add `FeeDelegation` operation to operations, `account` is fee delegator address,`sub_account.address` is VTHO smart contract address. `amount.value` default 0 .
+Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` is fee delegator address,`sub_account.address` is VTHO smart contract address. `amount.value` default 0 .
 
 ``` json
     {
@@ -227,7 +227,7 @@ create a VIP191 payloads,add `FeeDelegation` operation to operations, `account` 
 
 - Step2: Call /construction/payloads Api
 
-when call /construction/payloads use VIP191 payloads, the api will return two payload infomations. first payload is transaction origin infomation, the second payload is fee delegator infomation. the api will auto calculate transaction fee add the unsigned_transaction raw.
+When calling /construction/payloads use VIP191 payloads, the api will return two payload infomations. The first payload is the transaction origin infomation, the second payload is fee delegator infomation. The api will auto calculate transaction fee add the unsigned_transaction raw.
 
 ``` json
     {
