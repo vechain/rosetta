@@ -14,6 +14,7 @@ import { Signature } from "../types/signature";
 import { HexStringHelper } from "../../utils/helper/hexStringHelper";
 import { secp256k1 } from "thor-devkit/dist/cry/secp256k1";
 import { publicKeyToAddress } from "thor-devkit/dist/cry/address";
+import { Logger } from "log4js";
 
 export class TransactionService {
     private _environment: GlobalEnvironment;
@@ -154,7 +155,7 @@ export class TransactionService {
         }
 
         let originOperations = operations.filter(operation =>{
-            return operation.type == OperationType.Transfer && !operation.amount!.value.startsWith('-');
+            return operation.type == OperationType.Transfer && operation.amount!.value.startsWith('-');
         });
         result.Data.push(originOperations[0].account!);
 
@@ -176,7 +177,7 @@ export class TransactionService {
         result.Result = true;
 
         let originOperations = operations.filter(operation =>{
-            return operation.type == OperationType.Transfer && !operation.amount!.value.startsWith('-');
+            return operation.type == OperationType.Transfer && operation.amount!.value.startsWith('-');
         });
 
         if(originOperations.length == 0){
@@ -184,16 +185,21 @@ export class TransactionService {
             result.Result = false;
         }
 
+        this._environment.logHelper.error(JSON.stringify(originOperations));
+
         let origin = originOperations[0].account!.address;
+
+        this._environment.logHelper.error(origin);
+
         if((originOperations.filter(operation =>{
-            return operation.account!.address == origin;
-        })).length != 1){
+            return operation.account!.address != origin;
+        })).length != 0){
             result.ErrorData = RosettaErrorDefine.MULTIORIGIN;
             result.Result = false;
         }
 
         let delegatorOperations = operations.filter(operation =>{
-            return operation.type = OperationType.FeeDelegation;
+            return operation.type == OperationType.FeeDelegation;
         });
 
         if(delegatorOperations.length > 1){
