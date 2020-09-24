@@ -26,7 +26,7 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 - Building Docker
 
 ``` sh
-    docker build ./ -t vechain/rosetta-api-server:laster
+    docker build ./ -t vechain/rosetta-api-server:latest
 ```
 
 ### Docker
@@ -36,7 +36,7 @@ Implementing Rosetta Data API of VeChainThor BlockChain
     -v {path-to-thornode-data-directory}:/root/.org.vechain.thor\
     -p {host_address_port}:8080 -p {host_address_port}:8669 -p 11235:11235 -p 11235:11235/udp\
     --env MAINNET={network_type} --env THORNODE_VERSION={thornode_version} --env MODE={run_mode}\
-    vechain/rosetta-api-server:laster
+    vechain/rosetta-api-server:latest
 ```
 
 - `path-to-thornode-data-directory` directory for block-chain databases
@@ -45,13 +45,13 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 - `thornode_version` thornode version
 - `run_mode` the api service run mode (online|offline),if the mode is offline, some apis can not be used.
 
-#### example
+#### Example
 ``` sh
     docker run -d\
     -v /Users/rosetta/data/:/root/.org.vechain.thor\
     -p 0.0.0.0:8080:8080 -p 0.0.0.0:8669:8669 -p 11235:11235 -p 11235:11235/udp\
     --env MAINNET=main --env THORNODE_VERSION=v1.3.4 --env MODE=online\
-    vechain/rosetta-api-server:laster
+    vechain/rosetta-api-server:latest
 ```
 
 ## Endpoints
