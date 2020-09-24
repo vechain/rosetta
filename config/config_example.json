@@ -3,7 +3,7 @@
     "serviceName":"Rosetta VeChain Serve",
     "logLevel":"trace", // (trace | debug | info | warn | error)
     "logEnvLevel":"local",  // (local | dev | test | staging | prod)
-    "port":8030,    // rosetta api port (default 8080)
+    "port":8080,    // rosetta api port (default 8080)
     "confirm_num":12,   // vechainthor confirm number (default 12)
     "netconfig":{
         "node_api":"localhost:8669" // vechainthor node api port (default 8669,if the service run in docker,node_api is localhost:8669)

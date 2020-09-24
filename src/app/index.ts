@@ -21,7 +21,7 @@ if(file.existsSync(tokenConfigPath)){
 let globalEnvironment = new GlobalEnvironment(config as iConfig);
 globalEnvironment.loadIP180TokenConfig(tokenConfig);
 
-globalEnvironment.config.netconfig.network = process.env["MAINNET"] as string || "main";
+globalEnvironment.config.netconfig.network = process.env["NETWORK"] as string || "main";
 globalEnvironment.config.netconfig.node_version = process.env["THORNODE_VERSION"] as string;
 globalEnvironment.config.mode = process.env["MODE"] as string || "online";
 
@@ -30,7 +30,7 @@ export let logHelper = globalEnvironment.logHelper;
 
 ActiveSupportServices.activieSupportServices(globalEnvironment).then(actionResult =>{
     if(actionResult.Result){
-        let port = globalEnvironment.config.port || 8030;
+        let port = globalEnvironment.config.port || 8080;
         let app = new VeChainKoaServer(environment);
         app.listen(port);
         logHelper.log(LogHelperLevel.INFO,"VeChain TokenSwap Server Active Successful Port:"+port);
