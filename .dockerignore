@@ -1,0 +1,6 @@
+.vscode/
+config/config_example.json
+config/tokenconfig_example.json
+dist/
+log/
+README.md

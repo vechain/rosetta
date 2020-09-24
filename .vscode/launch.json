@@ -12,7 +12,7 @@
                 "${workspaceFolder}/dist/app/*.js"
             ],
             "env": {
-                "MAINNET":"main",
+                "NETWORK":"main",
                 "THORNODE_VERSION":"v1.3.4",
                 "MODE":"online"
             }

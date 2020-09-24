@@ -2,7 +2,7 @@
     "apps": [
       {
         "name": "VeChainThor Node",
-        "cmd": "./thor --api-addr 0.0.0.0:8669 --network $MAINNET --disable-pruner"
+        "cmd": "./thor --api-addr 0.0.0.0:8669 --network $NETWORK --disable-pruner"
       },
       {
         "name": "VeChain Rosetta Api Server",
