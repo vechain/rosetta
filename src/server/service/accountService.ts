@@ -1,9 +1,9 @@
 import { GlobalEnvironment, iConfig } from "../../app/globalEnvironment";
 import { ActionResultWithData, ActionResultWithData2 } from "../../utils/components/actionResult";
-import { NetworkType } from "../datameta/networkType";
-import { BlockIdentifier } from "../datameta/block";
-import { RosettaErrorDefine } from "../datameta/rosettaError";
-import { Amount } from "../datameta/amount";
+import { NetworkType } from "../types/networkType";
+import { BlockIdentifier } from "../types/block";
+import { RosettaErrorDefine } from "../types/rosettaError";
+import { Amount } from "../types/amount";
 import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import { HttpClientHelper } from "../../utils/helper/httpClientHelper";
 import ConnexEx from "../../utils/helper/connexEx";
@@ -97,8 +97,7 @@ export class AccountService{
         let vip180Info = vip180list.find(token => {return token.address.toLowerCase() === scAddress.toLowerCase()});
         if(vip180Info)
         {
-            let helper = new VIP180Helper(connex,vip180Info);
-            let balanceResult = await helper.getTokenBalance(address,blockIdentifier.hash);
+            let balanceResult = await VIP180Helper.getTokenBalance(connex,vip180Info,address,blockIdentifier.hash);
             if(balanceResult.Result)
             {
                 result.Data = [balanceResult.Data!];

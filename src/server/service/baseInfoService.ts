@@ -1,13 +1,13 @@
 import { GlobalEnvironment, iConfig } from "../../app/globalEnvironment";
-import { NetworkType } from "../datameta/networkType";
+import { NetworkType } from "../types/networkType";
 import { ActionResultWithData, ActionResultWithData2 } from "../../utils/components/actionResult";
-import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../datameta/network";
-import { RosettaErrorDefine, IRosettaError } from "../datameta/rosettaError";
-import { ConstructionMetaData } from "../datameta/constructionMetaData";
+import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../types/network";
+import { RosettaErrorDefine, IRosettaError } from "../types/rosettaError";
+import { ConstructionMetaData } from "../types/constructionMetaData";
 import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import ConnexEx from "../../utils/helper/connexEx";
-import { OperationStatus, IOperationStatus, RosettaAllow, RosettaVersion } from "../datameta/rosetta";
-import { OperationType } from "../datameta/transaction";
+import { OperationStatus, IOperationStatus, RosettaAllow, RosettaVersion } from "../types/rosetta";
+import { OperationType } from "../types/transaction";
 
 export class BaseInfoService {
     private _environment: GlobalEnvironment;
@@ -32,18 +32,24 @@ export class BaseInfoService {
         let result = new ActionResultWithData<Array<NetworkIdentifier>>();
         result.Data = new Array<NetworkIdentifier>();
 
-        if (this._environment.netconnex != null && this._environment.netconnex.NetWorkType == NetworkType.MainNet) {
+        if((this._environment.config.mode as string) == "online"){
+            if (this._environment.netconnex != null && this._environment.netconnex.NetWorkType == NetworkType.MainNet) {
+                result.Data.push((this._getVeChainMainNet()).Data!);
+                result.Result = true;
+            }
+    
+            if (this._environment.netconnex != null && this._environment.netconnex.NetWorkType == NetworkType.TestNet) {
+                result.Data.push((this._getVeChainTestNet()).Data!);
+                result.Result = true;
+            }
+    
+            if (!result.Result) {
+                result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
+            }
+        } else {
             result.Data.push((this._getVeChainMainNet()).Data!);
-            result.Result = true;
-        }
-
-        if (this._environment.netconnex != null && this._environment.netconnex.NetWorkType == NetworkType.TestNet) {
             result.Data.push((this._getVeChainTestNet()).Data!);
             result.Result = true;
-        }
-
-        if (!result.Result) {
-            result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
         }
 
         return result;
@@ -68,7 +74,7 @@ export class BaseInfoService {
         if (connex) {
             let versionInfo = new RosettaVersion();
             versionInfo.rosetta_version = (this._environment.config as iConfig).rosetta_version;
-            versionInfo.node_version = connex.NodeVersion;
+            versionInfo.node_version = this._environment.config.netconfig.node_version as String;
 
             let allow = new RosettaAllow();
             allow.operation_statuses = this._getOperationStatuses();

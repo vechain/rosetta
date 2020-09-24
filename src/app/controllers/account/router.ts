@@ -1,20 +1,17 @@
-import Router from "koa-router";
 import AccountController from "./controller";
 import { RequestInfoVerifyMiddleware } from "../../middleware/requestInfoVerifyMiddleware";
+import { BaseRouter } from "../../../utils/components/baseRouter";
 
-class AccountRouter extends Router
+export class AccountRouter extends BaseRouter
 {
-    constructor(){
-        super();
+    constructor(env:any){
+        super(env);
+        let controller = new AccountController(env);
         this.post("/account/balance",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,
+        RequestInfoVerifyMiddleware.CheckNetWorkTypeRequestInfo,
         RequestInfoVerifyMiddleware.CheckAccountRequestInfo,
         RequestInfoVerifyMiddleware.CheckBlockRequestInfo,
-        this._controller.getAccountBalance);
+        RequestInfoVerifyMiddleware.CheckRunMode,
+        controller.getAccountBalance);
     }
-
-    private _controller:AccountController = new AccountController();
 }
-
-let router = new AccountRouter();
-
-module.exports = router;

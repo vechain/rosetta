@@ -1,26 +1,23 @@
-import Router from "koa-router";
+import { BaseRouter } from "../../../utils/components/baseRouter";
 import { RequestInfoVerifyMiddleware } from "../../middleware/requestInfoVerifyMiddleware";
 import BlockController from "./controller";
 
-class BlockRouter extends Router
+export class BlockRouter extends BaseRouter
 {
-    constructor(){
-        super();
-
+    constructor(env:any){
+        super(env);
+        let controller = new BlockController(env);
         this.post("/block",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,
+        RequestInfoVerifyMiddleware.CheckNetWorkTypeRequestInfo,
         RequestInfoVerifyMiddleware.CheckBlockRequestInfo,
-        this.controller.getBlock);
+        RequestInfoVerifyMiddleware.CheckRunMode,
+        controller.getBlock);
 
         this.post("/block/transaction",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,
+        RequestInfoVerifyMiddleware.CheckNetWorkTypeRequestInfo,
         RequestInfoVerifyMiddleware.CheckBlockRequestInfo,
         RequestInfoVerifyMiddleware.CheckTransactionRequestInfo,
-        this.controller.getTransactionByBlock);
+        RequestInfoVerifyMiddleware.CheckRunMode,
+        controller.getTransactionByBlock);
     }
-
-    private controller:BlockController = new BlockController();
-    
 }
-
-let router = new BlockRouter();
-
-module.exports = router;

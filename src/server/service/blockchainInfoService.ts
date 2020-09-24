@@ -1,17 +1,17 @@
 import { GlobalEnvironment } from "../../app/globalEnvironment";
-import { NetworkType } from "../datameta/networkType";
+import { NetworkType } from "../types/networkType";
 import { ActionResultWithData, ActionResult, ActionResultWithData2 } from "../../utils/components/actionResult";
-import ThorPeer from "../datameta/peer";
+import ThorPeer from "../types/peer";
 import { HttpClientHelper } from "../../utils/helper/httpClientHelper";                                                                       
-import { BlockDetail, BlockIdentifier } from "../datameta/block";
-import { Transaction, TransactionIdentifier, Operation, OperationIdentifier, OperationType } from "../datameta/transaction";
-import { RosettaErrorDefine } from "../datameta/rosettaError";
-import { AccountIdentifier } from "../datameta/account";
-import { Amount, Currency } from "../datameta/amount";
+import { BlockDetail, BlockIdentifier } from "../types/block";
+import { Transaction, TransactionIdentifier, Operation, OperationIdentifier, OperationType } from "../types/transaction";
+import { RosettaErrorDefine } from "../types/rosettaError";
+import { AccountIdentifier } from "../types/account";
+import { Amount, Currency } from "../types/amount";
 import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import { Transaction as ThroTransaction } from "thor-devkit";
 import ConnexEx from "../../utils/helper/connexEx";
-import { OperationStatus } from "../datameta/rosetta";
+import { OperationStatus } from "../types/rosetta";
 import { string } from "joi";
 
 
@@ -200,7 +200,7 @@ export class BlockChainInfoService {
                     if (rosettaTransaction.operations.length > 0) {
                         block.transactions.push(rosettaTransaction);
                     }else{
-                        //other_transactions.push({hash:transaction.id});
+                        other_transactions.push({hash:transaction.id});
                     }
                 }
 
