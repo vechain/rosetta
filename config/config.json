@@ -1,8 +1,8 @@
 {
-    "env":"local",
+    "env":"prod",
     "serviceName":"Rosetta VeChain API Serve",
-    "logLevel":"trace",
-    "logEnvLevel":"local",
+    "logLevel":"warn",
+    "logEnvLevel":"prod",
     "port":8080,
     "confirm_num":12,
     "netconfig":{
