@@ -14,7 +14,6 @@ import { Signature } from "../types/signature";
 import { HexStringHelper } from "../../utils/helper/hexStringHelper";
 import { secp256k1 } from "thor-devkit/dist/cry/secp256k1";
 import { publicKeyToAddress } from "thor-devkit/dist/cry/address";
-import { Logger } from "log4js";
 
 export class TransactionService {
     private _environment: GlobalEnvironment;

@@ -2,9 +2,7 @@ import { BaseGlobalEnvironment, iBaseConfig } from '../utils/components/baseGlob
 import { iLogHelperConfig, LogHelper } from '../utils/helper/logHelper';
 import ConnexEx from '../utils/helper/connexEx';
 import { NetworkType } from '../server/types/networkType';
-import { array } from 'joi';
 import { Currency } from '../server/types/amount';
-import Router from 'koa-router';
 import { BaseRouter } from '../utils/components/baseRouter';
 
 export class GlobalEnvironment extends BaseGlobalEnvironment{

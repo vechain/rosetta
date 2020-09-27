@@ -15,7 +15,6 @@ import { HexStringHelper } from "../../../utils/helper/hexStringHelper";
 import { Signature } from "../../../server/types/signature";
 import { cry } from "thor-devkit";
 import Secp256k1Ex from "../../../utils/helper/secp256k1Ex";
-import { AccountIdentifier } from "../../../server/types/account";
 
 export default class ConstructionController extends BaseController{
 
@@ -129,8 +128,8 @@ export default class ConstructionController extends BaseController{
                 if(parseResult.Result){
                     var transaction = new Transaction(parseResult.Data!);
                     var unsigned_transaction = '0x' + transaction.encode().toString('hex');
-                    var originPayload = undefined;
-                    var delegatorPayload = undefined;
+                    var originPayload:any = undefined;
+                    var delegatorPayload:any = undefined;
 
                     if(parseResult.Data3 != null && (parseResult.Data3 as string).length == 42){
                         originPayload = {

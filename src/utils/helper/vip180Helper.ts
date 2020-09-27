@@ -5,7 +5,6 @@ import { ActionResultWithData, ActionResultWithData2 } from "../components/actio
 import { abi } from "thor-devkit";
 import { DriverInterface } from "@vechain/connex-driver/dist/driver-interface";
 import { RosettaErrorDefine } from "../../server/types/rosettaError";
-import { fn } from "moment-timezone";
 import { BigNumberEx } from "./bigNumberEx";
 
 export default class VIP180Helper

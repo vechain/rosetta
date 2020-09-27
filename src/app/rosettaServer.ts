@@ -1,5 +1,4 @@
 import Koa from 'koa';
-import * as path from 'path'
 import RootRouter  from './rootRouter';
 import bodyParser from "koa-bodyparser"
 import { GlobalEnvironment } from './globalEnvironment';

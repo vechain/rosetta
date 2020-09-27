@@ -4,3 +4,6 @@ config/tokenconfig_example.json
 dist/
 log/
 README.md
+node_modules/
+rosetta/
+.gitignore

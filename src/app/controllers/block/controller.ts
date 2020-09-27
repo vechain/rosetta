@@ -1,7 +1,5 @@
 import Router from "koa-router";
-import { GlobalEnvironment } from "../../globalEnvironment";
 import { BlockChainInfoService } from "../../../server/service/blockchainInfoService";
-import { environment } from "../..";
 import { NetworkType } from "../../../server/types/networkType";
 import { BlockDetail } from "../../../server/types/block";
 import { ActionResultWithData, ActionResultWithData2 } from "../../../utils/components/actionResult";
@@ -19,7 +17,7 @@ export default class BlockController extends BaseController{
 
         this.getBlock = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
             let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
-            let revision = undefined;
+            let revision:any = undefined;
 
             if(ctx.request.body.block_identifier != null){
                 if(ctx.request.body.block_identifier.hash != null){
@@ -39,7 +37,7 @@ export default class BlockController extends BaseController{
         this.getTransactionByBlock = async (ctx:Router.IRouterContext,next: () => Promise<any>) =>{
             let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
             let transactionID = ctx.request.body.transaction_identifier.hash;
-            let revision = undefined;
+            let revision:any = undefined;
 
             if(ctx.request.body.block_identifier != null){
                 if(ctx.request.body.block_identifier.hash != null){

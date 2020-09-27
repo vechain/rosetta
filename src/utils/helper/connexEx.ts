@@ -1,6 +1,6 @@
 import { Framework } from "@vechain/connex-framework";
 import { BigNumberEx } from "./bigNumberEx";
-import { Net, Wallet, Driver, SimpleNet } from "@vechain/connex-driver";
+import { Net, Wallet, Driver } from "@vechain/connex-driver";
 import { NetworkType } from "../../server/types/networkType";
 
 export default class ConnexEx extends Framework

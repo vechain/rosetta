@@ -1,10 +1,9 @@
 import { GlobalEnvironment, iConfig } from "../../app/globalEnvironment";
 import { NetworkType } from "../types/networkType";
-import { ActionResultWithData, ActionResultWithData2 } from "../../utils/components/actionResult";
+import { ActionResultWithData } from "../../utils/components/actionResult";
 import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../types/network";
 import { RosettaErrorDefine, IRosettaError } from "../types/rosettaError";
 import { ConstructionMetaData } from "../types/constructionMetaData";
-import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import ConnexEx from "../../utils/helper/connexEx";
 import { OperationStatus, IOperationStatus, RosettaAllow, RosettaVersion } from "../types/rosetta";
 import { OperationType } from "../types/transaction";

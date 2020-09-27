@@ -1,6 +1,5 @@
 import { GlobalEnvironment, iConfig } from "./globalEnvironment";
 import ActiveSupportServices from "./activeSupportService";
-import { ActionResult } from "../utils/components/actionResult";
 import { LogHelperLevel } from "../utils/helper/logHelper";
 import { VeChainKoaServer } from "./rosettaServer";
 import path = require('path');

@@ -4,7 +4,6 @@ import { SimpleNet } from '@vechain/connex-driver'
 import ConnexEx from "../utils/helper/connexEx";
 import { NetworkType } from "../server/types/networkType";
 const format = require('string-format');
-import { LogHelper } from "../utils/helper/logHelper";
 import Sleep from "../utils/helper/sleep";
 
 export default class ActiveSupportServices
