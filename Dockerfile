@@ -7,7 +7,7 @@ WORKDIR /usr/src/app
 
 COPY ["./","./"]
 
-RUN npm install && npm run build
+RUN npm ci && npm run build
 
 COPY --from=thorimage /usr/local/bin/thor /usr/src/app/
 
