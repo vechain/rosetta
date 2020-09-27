@@ -1,6 +1,6 @@
 import * as Router from 'koa-router';
 import { ConvertJSONResponeMiddleware } from './convertJSONResponeMiddleware';
-import { environment, logHelper } from '..';
+import { environment } from '..';
 import * as Joi from 'joi';
 import { RosettaErrorDefine } from '../../server/types/rosettaError';
 import { NetworkType } from '../../server/types/networkType';

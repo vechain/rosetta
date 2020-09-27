@@ -1,4 +1,4 @@
-import { GlobalEnvironment, iConfig } from "../../app/globalEnvironment";
+import { GlobalEnvironment } from "../../app/globalEnvironment";
 import { ActionResultWithData, ActionResultWithData2 } from "../../utils/components/actionResult";
 import { NetworkType } from "../types/networkType";
 import { BlockIdentifier } from "../types/block";

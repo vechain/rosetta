@@ -1,6 +1,6 @@
 import { GlobalEnvironment } from "../../app/globalEnvironment";
 import { NetworkType } from "../types/networkType";
-import { ActionResultWithData, ActionResult, ActionResultWithData2 } from "../../utils/components/actionResult";
+import { ActionResultWithData, ActionResultWithData2 } from "../../utils/components/actionResult";
 import ThorPeer from "../types/peer";
 import { HttpClientHelper } from "../../utils/helper/httpClientHelper";                                                                       
 import { BlockDetail, BlockIdentifier } from "../types/block";
@@ -12,8 +12,6 @@ import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import { Transaction as ThroTransaction } from "thor-devkit";
 import ConnexEx from "../../utils/helper/connexEx";
 import { OperationStatus } from "../types/rosetta";
-import { string } from "joi";
-
 
 export class BlockChainInfoService {
 

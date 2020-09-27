@@ -5,7 +5,6 @@ import { ActionResult, ActionResultWithData, ActionResultWithData2 } from "../..
 import { ConstructionMetaData } from "../../../server/types/constructionMetaData";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";
 import { BlockChainInfoService } from "../../../server/service/blockchainInfoService";
-import { BaseController } from "../../../utils/components/baseController";
 import * as Joi from 'joi';
 import { RosettaErrorDefine } from "../../../server/types/rosettaError";
 import { Operation, OperationType } from "../../../server/types/operation";
@@ -15,7 +14,7 @@ import { HexStringHelper } from "../../../utils/helper/hexStringHelper";
 import { Signature } from "../../../server/types/signature";
 import { cry } from "thor-devkit";
 import Secp256k1Ex from "../../../utils/helper/secp256k1Ex";
-import { AccountIdentifier } from "../../../server/types/account";
+import { BaseController } from "../../../utils/components/baseController";
 
 export default class ConstructionController extends BaseController{
 
@@ -129,8 +128,8 @@ export default class ConstructionController extends BaseController{
                 if(parseResult.Result){
                     var transaction = new Transaction(parseResult.Data!);
                     var unsigned_transaction = '0x' + transaction.encode().toString('hex');
-                    var originPayload = undefined;
-                    var delegatorPayload = undefined;
+                    var originPayload:any = undefined;
+                    var delegatorPayload:any = undefined;
 
                     if(parseResult.Data3 != null && (parseResult.Data3 as string).length == 42){
                         originPayload = {

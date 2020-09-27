@@ -1,5 +1,4 @@
 import Router from "koa-router";
-import { GlobalEnvironment } from "../../globalEnvironment";
 import { ActionResultWithData } from "../../../utils/components/actionResult";
 import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../../../server/types/network";
 import { ConvertJSONResponeMiddleware } from "../../middleware/convertJSONResponeMiddleware";

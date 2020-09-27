@@ -1,5 +1,3 @@
-import { IRouterOptions } from "koa-router";
-
 export interface IRosettaError{
     code:number;
     message:string;

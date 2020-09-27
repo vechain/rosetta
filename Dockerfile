@@ -3,12 +3,11 @@ FROM vechain/thor:v1.3.4 as thorimage
 
 FROM keymetrics/pm2:12-alpine
 ENV THORNODE_VERSION v1.3.4
-ENV NODE_ENV production
 WORKDIR /usr/src/app
 
 COPY ["./","./"]
 
-RUN npm install && npm run build
+RUN npm ci && npm run build
 
 COPY --from=thorimage /usr/local/bin/thor /usr/src/app/
 

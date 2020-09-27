@@ -20,7 +20,7 @@ export default class AccountController extends BaseController{
             let address = ctx.request.body.account_identifier.address;
             let subAccountAddress = ctx.request.body.account_identifier["sub_account"] && ctx.request.body.account_identifier["sub_account"]["address"] ?
             ctx.request.body.account_identifier["sub_account"]["address"] : "";
-            let revision = undefined;
+            let revision:any = undefined;
             
             if(ctx.request.body.block_identifier != null){
                 if(ctx.request.body.block_identifier.hash != null){
