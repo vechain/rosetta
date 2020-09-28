@@ -34,19 +34,6 @@ export class BlockChainInfoService {
         return result;
     }
 
-    public async getPeers(type: NetworkType): Promise<ActionResultWithData<Array<ThorPeer>>> {
-        let result = new ActionResultWithData<Array<ThorPeer>>();
-        let connex = this._environment.getConnex(type);
-
-        if (connex) {
-            result = await this._getPeers(connex);
-        } else {
-            result.Result = false;
-            result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
-        }
-        return result;
-    }
-
     public async getBestBlockStatus(type: NetworkType): Promise<ActionResultWithData<Connex.Thor.Status>> {
         let result = new ActionResultWithData<Connex.Thor.Status>();
         let connex = this._environment.getConnex(type);
@@ -132,37 +119,8 @@ export class BlockChainInfoService {
 
     private async _getBestBlockStatus(connex: Connex): Promise<ActionResultWithData<Connex.Thor.Status>> {
         let result = new ActionResultWithData<Connex.Thor.Status>();
-
-        if (connex.thor.status.progress == 1) {
-            result.Data = connex.thor.status;
-            result.Result = true;
-        }
-        else {
-            result.Result = false;
-            result.ErrorData = RosettaErrorDefine.NODESYNCNOTCOMPLETE;
-        }
-
-        return result;
-    }
-
-    private async _getPeers(connex: ConnexEx): Promise<ActionResultWithData<Array<ThorPeer>>> {
-        let result = new ActionResultWithData<Array<ThorPeer>>();
-        result.Data = new Array<ThorPeer>();
-
-        let apiUrl = connex.baseUrl + "/node/network/peers";
-
-        let client = new HttpClientHelper(apiUrl);
-        let httpResult = await client.doRequest("GET", undefined, undefined, undefined);
-        if (httpResult.Result && httpResult.Data && httpResult.Data.constructor.name == "Array") {
-            for (let item of httpResult.Data) {
-                result.Data.push((item as ThorPeer));
-            }
-            result.Result = true;
-        }
-        else {
-            result.Result = false;
-            result.ErrorData = RosettaErrorDefine.NODEAPIERROR;
-        }
+        result.Data = connex.thor.status;
+        result.Result = true;
         return result;
     }
 

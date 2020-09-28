@@ -1,12 +1,16 @@
 import { GlobalEnvironment, iConfig } from "../../app/globalEnvironment";
 import { NetworkType } from "../types/networkType";
-import { ActionResultWithData } from "../../utils/components/actionResult";
-import { NetworkIdentifier, NetworkOptionsResponse, SyncStatus } from "../types/network";
+import { ActionResultWithData, ActionResultWithData2 } from "../../utils/components/actionResult";
+import { NetworkIdentifier, NetworkOptionsResponse, Peer, SyncStatus } from "../types/network";
 import { RosettaErrorDefine, IRosettaError } from "../types/rosettaError";
 import { ConstructionMetaData } from "../types/constructionMetaData";
 import ConnexEx from "../../utils/helper/connexEx";
 import { OperationStatus, IOperationStatus, RosettaAllow, RosettaVersion } from "../types/rosetta";
 import { OperationType } from "../types/transaction";
+import ThorPeer from "../types/peer";
+import { HttpClientHelper } from "../../utils/helper/httpClientHelper";
+import { BlockIdentifier } from "../types/block";
+import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 
 export class BaseInfoService {
     private _environment: GlobalEnvironment;
@@ -94,25 +98,44 @@ export class BaseInfoService {
         return result;
     }
 
-    public getSyncStatus(type: NetworkType): ActionResultWithData<SyncStatus> {
-        let result = new ActionResultWithData<SyncStatus>();
+    public async getSyncStatus(type: NetworkType): Promise<ActionResultWithData2<SyncStatus,Array<ThorPeer>>> {
+        let result = new ActionResultWithData2<SyncStatus,Array<ThorPeer>>();
         let connex = this._environment.getConnex(type);
 
         if (connex) {
-            if (connex.thor.status.progress == 1) {
-                result.Data = undefined;
-            } else {
-                result.Data = new SyncStatus();
-                result.Data.current_index = connex.thor.status.head.number;
-                result.Data.target_index = undefined;
-                result.Data.stage = "block sync";
+            let peersResult = await this._getPeers(connex);
+            if(peersResult.Result){
+                result.Data2 = peersResult.Data;
+                if(connex.thor.status.progress == 1){
+                    result.Data = undefined;
+                } else {
+                    result.Data = new SyncStatus();
+                    result.Data.current_index = connex.thor.status.head.number;
+                    result.Data.target_index = this._getTargetBlockIdentifier(peersResult.Data!).index;
+                    result.Data.stage = "block sync";
+                }
+                result.Result = true;
+            }else{
+                result.copyBase(peersResult);
             }
-            result.Result = true;
         } else {
             result.Result = false;
             result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
         }
 
+        return result;
+    }
+
+    public async getPeers(type: NetworkType): Promise<ActionResultWithData<Array<ThorPeer>>> {
+        let result = new ActionResultWithData<Array<ThorPeer>>();
+        let connex = this._environment.getConnex(type);
+
+        if (connex) {
+            result = await this._getPeers(connex);
+        } else {
+            result.Result = false;
+            result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
+        }
         return result;
     }
 
@@ -183,6 +206,40 @@ export class BaseInfoService {
         for (const property of Object.getOwnPropertyNames(RosettaErrorDefine)) {
             if (['length', 'prototype', 'name'].indexOf(property) < 0) {
                 result.push((RosettaErrorDefine as any)[property]);
+            }
+        }
+        return result;
+    }
+
+    private async _getPeers(connex: ConnexEx): Promise<ActionResultWithData<Array<ThorPeer>>> {
+        let result = new ActionResultWithData<Array<ThorPeer>>();
+        result.Data = new Array<ThorPeer>();
+
+        let apiUrl = connex.baseUrl + "/node/network/peers";
+
+        let client = new HttpClientHelper(apiUrl);
+        let httpResult = await client.doRequest("GET", undefined, undefined, undefined);
+        if (httpResult.Result && httpResult.Data && httpResult.Data.constructor.name == "Array") {
+            for (let item of httpResult.Data) {
+                result.Data.push((item as ThorPeer));
+            }
+            result.Result = true;
+        }
+        else {
+            result.Result = false;
+            result.ErrorData = RosettaErrorDefine.NODEAPIERROR;
+        }
+        return result;
+    }
+
+    private _getTargetBlockIdentifier(peers:Array<ThorPeer>):BlockIdentifier
+    {
+        let result = new BlockIdentifier();
+        for(const peer of peers){
+            let bestBlockNumber = new BigNumberEx(peer.bestBlockID.substr(0,10)).toNumber();
+            if(bestBlockNumber > result.index){
+                result.index = bestBlockNumber;
+                result.hash = peer.bestBlockID;
             }
         }
         return result;

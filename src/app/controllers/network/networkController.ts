@@ -8,6 +8,8 @@ import { RosettaErrorDefine } from "../../../server/types/rosettaError";
 import ThorPeer from "../../../server/types/peer";
 import { BaseInfoService } from "../../../server/service/baseInfoService";
 import { BaseController } from "../../../utils/components/baseController";
+import { BlockIdentifier } from "../../../server/types/block";
+import { BigNumberEx } from "../../../utils/helper/bigNumberEx";
 
 export default class NetworkController extends BaseController{
     public getNetworkList:Router.IMiddleware;
@@ -36,13 +38,12 @@ export default class NetworkController extends BaseController{
 
             let getGenesisBlock = this._blockChainInfoService.getGenesisBlock(networkType);
             let getBestBlockPromise = this._blockChainInfoService.getBestBlockStatus(networkType);
-            let getPeersPromise = this._blockChainInfoService.getPeers(networkType);
-            let getSyncStatus = this._baseInfoService.getSyncStatus(networkType);
+            let getSyncStatusPromise = this._baseInfoService.getSyncStatus(networkType);
 
             try {
-                let promiseAllResult = await Promise.all([getBestBlockPromise,getPeersPromise]);
-                if(getGenesisBlock.Result && promiseAllResult[0].Result &&  promiseAllResult[1].Result && getSyncStatus.Result){
-                    this._getNetworkStatusConvertToResponce(ctx,getGenesisBlock.Data!,promiseAllResult[0].Data!,promiseAllResult[1].Data!,getSyncStatus.Data!);
+                let promiseAllResult = await Promise.all([getBestBlockPromise,getSyncStatusPromise]);
+                if(getGenesisBlock.Result && promiseAllResult[0].Result &&  promiseAllResult[1].Result){
+                    this._getNetworkStatusConvertToResponce(ctx,getGenesisBlock.Data!,promiseAllResult[0].Data!,promiseAllResult[1].Data2!,promiseAllResult[1].Data!);
                 }else{
                     let error = getGenesisBlock.ErrorData || promiseAllResult[0].ErrorData || promiseAllResult[1].ErrorData || RosettaErrorDefine.INTERNALSERVERERROR;
                     ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,error);
