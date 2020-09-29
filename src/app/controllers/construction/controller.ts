@@ -160,7 +160,7 @@ export default class ConstructionController extends BaseController{
         }
 
         this.preprocess = async (ctx: Router.IRouterContext, next: () => Promise<any>) => {
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,null);
+            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{});
             await next();
         }
     }
