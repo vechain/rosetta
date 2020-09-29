@@ -70,11 +70,12 @@ export class BlockChainInfoService {
             const txVisitor = connex.thor.transaction(txID);
             try {
                 const txReceipt = await txVisitor.getReceipt();
+
                 if (txReceipt != null && (txReceipt.meta.blockID == revision || txReceipt.meta.blockNumber == revision || revision == undefined)) {
                         var blockIdentifier = new BlockIdentifier();
                         blockIdentifier.hash = txReceipt.meta.blockID;
                         blockIdentifier.index = txReceipt.meta.blockNumber;
-                        let rosettaTransaction = this._buildRosettaTransaction(txReceipt,connex,blockIdentifier);
+                        let rosettaTransaction = this._buildRosettaTransactionReceipt(txReceipt,connex,blockIdentifier);
                         result.Data = rosettaTransaction;
                         result.Result = true;
                         return result;
@@ -179,6 +180,9 @@ export class BlockChainInfoService {
 
         rosettaTransaction.transaction_identifier = new TransactionIdentifier();
         rosettaTransaction.transaction_identifier.hash = transaction.id;
+
+        this._environment.logHelper.error(JSON.stringify(transaction));
+        this._environment.logHelper.error(JSON.stringify(rosettaTransaction));
 
         rosettaTransaction.operations = new Array<Operation>();
 
@@ -373,5 +377,72 @@ export class BlockChainInfoService {
         {
             return OperationStatus.Pendding.status;
         }
+    }
+
+    private _buildRosettaTransactionReceipt(transaction: Connex.Thor.Receipt,connex: ConnexEx,blockIdentifier:BlockIdentifier): Transaction {
+        let rosettaTransaction = new Transaction();
+
+        rosettaTransaction.transaction_identifier = new TransactionIdentifier();
+        rosettaTransaction.transaction_identifier.hash = transaction.meta.blockID;
+
+        rosettaTransaction.operations = new Array<Operation>();
+
+        for (let network_index = 0; network_index < (transaction.outputs as Array<any>).length; network_index++) {
+            let operations = this._filterOperation(transaction.outputs[network_index],connex.NetWorkType);
+            for(var operation of operations)
+            {
+                operation.operation_identifier = new OperationIdentifier();
+                operation.operation_identifier.network_index = network_index;
+                operation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+            }
+
+            for (const operation of operations) {
+                rosettaTransaction.operations.push(operation);
+            }
+        }
+
+        if(rosettaTransaction.operations.length > 0)
+        {
+            if(transaction.gasPayer != transaction.meta.txOrigin){
+                let feeOperation = new Operation();
+                feeOperation.operation_identifier = new OperationIdentifier();
+                feeOperation.operation_identifier.network_index = undefined;
+
+                feeOperation.type = OperationType.FeeDelegation;
+                feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+
+                feeOperation.amount = Amount.CreateVTHO();
+                feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                rosettaTransaction.operations.push(feeOperation);
+                
+                feeOperation.account = new AccountIdentifier();
+                feeOperation.account.address = transaction.gasPayer;
+                feeOperation.account.sub_account = new AccountIdentifier();
+                feeOperation.account.sub_account.address = this._environment.getVTHOConfig().address;
+            } else {
+                let feeOperation = new Operation();
+                feeOperation.operation_identifier = new OperationIdentifier();
+                feeOperation.operation_identifier.network_index = undefined;
+
+                feeOperation.type = OperationType.Fee;
+                feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+
+                feeOperation.amount = Amount.CreateVTHO();
+                feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                rosettaTransaction.operations.push(feeOperation);
+                
+                feeOperation.account = new AccountIdentifier();
+                feeOperation.account.address = transaction.meta.txOrigin;
+                feeOperation.account.sub_account = new AccountIdentifier();
+                feeOperation.account.sub_account.address = this._environment.getVTHOConfig().address;
+            }
+        }
+
+        for(let index = 0; rosettaTransaction.operations.length > index; index++)
+        {
+            rosettaTransaction.operations[index].operation_identifier.index = index;
+        }
+
+        return rosettaTransaction;
     }
 }

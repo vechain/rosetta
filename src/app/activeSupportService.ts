@@ -12,47 +12,51 @@ export default class ActiveSupportServices
         let result = new ActionResult();
         let tryCount = 0;
 
-        while(tryCount < 10){
-            if(environment.config.netconfig.network == "main"){
-                let mainnetConnexResult = await this._instantiationConnex(environment.config.netconfig.node_api,NetworkType.MainNet);
-                if(mainnetConnexResult.Result && mainnetConnexResult.Data){
-                    result.Result = true;
-                    environment.netconnex = mainnetConnexResult.Data;
-                    environment.netconnex.NodeVersion = environment.config.netconfig.node_version;
+        if(environment.config.mode == "online"){
+            while(tryCount < 10){
+                if(environment.config.netconfig.network == "main"){
+                    let mainnetConnexResult = await this._instantiationConnex(environment.config.netconfig.node_api,NetworkType.MainNet);
+                    if(mainnetConnexResult.Result && mainnetConnexResult.Data){
+                        result.Result = true;
+                        environment.netconnex = mainnetConnexResult.Data;
+                        environment.netconnex.NodeVersion = environment.config.netconfig.node_version;
+                    }
+                    else
+                    {
+                        result.Result = false;
+                        result.Message = "Can not connect mainnet VeChainThor network";
+                        return result;
+                    }
                 }
-                else
-                {
-                    result.Result = false;
-                    result.Message = "Can not connect mainnet VeChainThor network";
-                    return result;
+                else if(environment.config.netconfig.network == "test"){
+                    let testnetConnexResult = await this._instantiationConnex(environment.config.netconfig.node_api,NetworkType.TestNet);
+                    if(testnetConnexResult.Result && testnetConnexResult.Data){
+                        result.Result = true;
+                        environment.netconnex = testnetConnexResult.Data;
+                        environment.netconnex.NodeVersion = environment.config.netconfig.node_version;
+                    }
+                    else
+                    {
+                        result.Result = false;
+                        result.Message = "Can not connect testnet VeChainThor network";
+                        return result;
+                    }
                 }
+    
+                if(result.Result) {
+                    break;
+                }
+                
+                environment.logHelper.info("Sleep 10s and try again");
+                Sleep.sleep(10);
+                tryCount++;
             }
-            else if(environment.config.netconfig.network == "test"){
-                let testnetConnexResult = await this._instantiationConnex(environment.config.netconfig.node_api,NetworkType.TestNet);
-                if(testnetConnexResult.Result && testnetConnexResult.Data){
-                    result.Result = true;
-                    environment.netconnex = testnetConnexResult.Data;
-                    environment.netconnex.NodeVersion = environment.config.netconfig.node_version;
-                }
-                else
-                {
-                    result.Result = false;
-                    result.Message = "Can not connect testnet VeChainThor network";
-                    return result;
-                }
+    
+            if(!result.Result){
+                result.Message = "Can not connect any VeChainThor network";
             }
-
-            if(result.Result) {
-                break;
-            }
-            
-            environment.logHelper.info("Sleep 10s and try again");
-            Sleep.sleep(10);
-            tryCount++;
-        }
-
-        if(!result.Result){
-            result.Message = "Can not connect any VeChainThor network";
+        } else {
+            result.Result = true;
         }
 
         return result;

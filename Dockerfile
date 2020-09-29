@@ -13,4 +13,4 @@ ENV THORNODE_VERSION v1.3.6
 RUN npm ci && npm run build
 COPY --from=thorimage /usr/local/bin/thor /usr/src/app/
 EXPOSE 8080 8669 11235 11235/udp
-ENTRYPOINT ["pm2-runtime","process.json"]
+ENTRYPOINT ["sh","./start.sh"]

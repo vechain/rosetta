@@ -13,7 +13,7 @@
             ],
             "env": {
                 "NETWORK":"main",
-                "THORNODE_VERSION":"v1.3.4",
+                "THORNODE_VERSION":"v1.3.6",
                 "MODE":"online"
             }
         }
