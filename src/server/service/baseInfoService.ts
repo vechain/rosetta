@@ -5,12 +5,13 @@ import { NetworkIdentifier, NetworkOptionsResponse, Peer, SyncStatus } from "../
 import { RosettaErrorDefine, IRosettaError } from "../types/rosettaError";
 import { ConstructionMetaData } from "../types/constructionMetaData";
 import ConnexEx from "../../utils/helper/connexEx";
-import { OperationStatus, IOperationStatus, RosettaAllow, RosettaVersion } from "../types/rosetta";
+import { OperationStatus, IOperationStatus, RosettaAllow, RosettaVersion, BalanceExemption, BalanceExemptionType } from "../types/rosetta";
 import { OperationType } from "../types/transaction";
 import ThorPeer from "../types/peer";
 import { HttpClientHelper } from "../../utils/helper/httpClientHelper";
 import { BlockIdentifier } from "../types/block";
 import { BigNumberEx } from "../../utils/helper/bigNumberEx";
+import { Currency } from "../types/amount";
 
 export class BaseInfoService {
     private _environment: GlobalEnvironment;
@@ -84,6 +85,7 @@ export class BaseInfoService {
             allow.operation_types = this._getOperationTypes();
             allow.errors = this._getOperationErrors();
             allow.historical_balance_lookup = true;
+            allow.balance_exemptions = this._getBalanceExemptions();
 
             result.Data = new NetworkOptionsResponse();
             result.Data.version = versionInfo;
@@ -242,6 +244,20 @@ export class BaseInfoService {
                 result.hash = peer.bestBlockID;
             }
         }
+        return result;
+    }
+
+    private _getBalanceExemptions():Array<BalanceExemption>
+    {
+        let result = new Array<BalanceExemption>();
+        let vthoBalanceExemption = new BalanceExemption();
+        vthoBalanceExemption.sub_account_address = "0x0000000000000000000000000000456e65726779";
+        vthoBalanceExemption.currency = new Currency();
+        vthoBalanceExemption.currency.symbol = "VTHO";
+        vthoBalanceExemption.currency.decimals = 18;
+        vthoBalanceExemption.currency.metadata = undefined;
+        vthoBalanceExemption.exemption_type = BalanceExemptionType.BalanceGreaterOrEqual;
+        result.push(vthoBalanceExemption);
         return result;
     }
 }
