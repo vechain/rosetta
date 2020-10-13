@@ -251,7 +251,7 @@ export class BaseInfoService {
     {
         let result = new Array<BalanceExemption>();
         let vthoBalanceExemption = new BalanceExemption();
-        vthoBalanceExemption.sub_account_address = "0x0000000000000000000000000000456e65726779";
+        //vthoBalanceExemption.sub_account_address = "0x0000000000000000000000000000456e65726779";
         vthoBalanceExemption.currency = new Currency();
         vthoBalanceExemption.currency.symbol = "VTHO";
         vthoBalanceExemption.currency.decimals = 18;

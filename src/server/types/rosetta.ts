@@ -31,7 +31,7 @@ export class OperationStatus{
 }
 
 export class BalanceExemption{
-    public sub_account_address:string = "";
+    //public sub_account_address:string = "";
     public currency:Currency = new Currency();
     public exemption_type:string = BalanceExemptionType.BalanceDynamic;
 }
