@@ -227,7 +227,7 @@ export class BlockChainInfoService {
                 feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
 
                 feeOperation.amount = Amount.CreateVTHO();
-                feeOperation.amount.value = (new BigNumberEx(transaction.paid)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                feeOperation.amount.value = (new BigNumberEx(transaction.paid)).dividedBy(-1).toString();
                 rosettaTransaction.operations.push(feeOperation);
                 
                 feeOperation.account = new AccountIdentifier();
@@ -243,7 +243,7 @@ export class BlockChainInfoService {
                 feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
 
                 feeOperation.amount = Amount.CreateVTHO();
-                feeOperation.amount.value = (new BigNumberEx(transaction.paid)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                feeOperation.amount.value = (new BigNumberEx(transaction.paid)).dividedBy(-1).toString();
                 rosettaTransaction.operations.push(feeOperation);
                 
                 feeOperation.account = new AccountIdentifier();
@@ -428,7 +428,7 @@ export class BlockChainInfoService {
                 feeOperation.status = this._transactionStatus(connex,blockIdentifier,receipt);
 
                 feeOperation.amount = Amount.CreateVTHO();
-                feeOperation.amount.value = (new BigNumberEx(receipt.paid)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                feeOperation.amount.value = (new BigNumberEx(receipt.paid)).dividedBy(-1).toString();
                 rosettaTransaction.operations.push(feeOperation);
                 
                 feeOperation.account = new AccountIdentifier();
@@ -444,7 +444,7 @@ export class BlockChainInfoService {
                 feeOperation.status = this._transactionStatus(connex,blockIdentifier,receipt);
 
                 feeOperation.amount = Amount.CreateVTHO();
-                feeOperation.amount.value = (new BigNumberEx(receipt.paid)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                feeOperation.amount.value = (new BigNumberEx(receipt.paid)).dividedBy(-1).toString();
                 rosettaTransaction.operations.push(feeOperation);
                 
                 feeOperation.account = new AccountIdentifier();

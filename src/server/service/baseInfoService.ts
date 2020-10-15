@@ -256,7 +256,7 @@ export class BaseInfoService {
         vthoBalanceExemption.currency.symbol = "VTHO";
         vthoBalanceExemption.currency.decimals = 18;
         vthoBalanceExemption.currency.metadata = undefined;
-        vthoBalanceExemption.exemption_type = BalanceExemptionType.BalanceGreaterOrEqual;
+        vthoBalanceExemption.exemption_type = BalanceExemptionType.BalanceDynamic;
         result.push(vthoBalanceExemption);
         return result;
     }
