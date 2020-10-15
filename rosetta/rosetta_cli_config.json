@@ -1,7 +1,7 @@
 {
     "network": {
         "blockchain": "vechainthor",
-        "network": "test"
+        "network": "main"
     },
     "online_url": "http://localhost:8080",
     "data_directory": "",

@@ -66,6 +66,16 @@ export class BlockChainInfoService {
         let result = new ActionResultWithData<Transaction>();
         let connex = this._environment.getConnex(type);
 
+        if(connex!.NetWorkType == NetworkType.MainNet && txID.toLocaleLowerCase() == "0x0000000000000000000000000000000000000000000000000000000000000000"){
+            result.Data = this._buildMainnetGenesisTransaction();
+            result.Result = true; 
+            return result;
+        } else if (connex!.NetWorkType == NetworkType.TestNet && txID.toLocaleLowerCase() == "0x0000000000000000000000000000000000000000000000000000000000000000"){
+            result.Data = this._buildTestnetGenesisTransaction();
+            result.Result = true; 
+            return result;
+        }
+
         if (connex) {
             const txVisitor = connex.thor.transaction(txID);
             try {
@@ -133,6 +143,12 @@ export class BlockChainInfoService {
 
         let apiUrl = connex.baseUrl + "/blocks/" + revision;
         let parames = [{ key: "expanded", value: "true" }];
+
+        if(connex.NetWorkType == NetworkType.MainNet && (revision!.toString() == "0" || revision!.toString().toLocaleLowerCase() == "0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a")){
+            return this._buildMainnetGenesisBlockDetail();
+        } else if (connex.NetWorkType == NetworkType.TestNet && (revision!.toString() == "0" || revision!.toString().toLocaleLowerCase() == "0x000000000b2bce3c70bc649a02749e8687721b09ed2e15997f466536b20bb127")){
+            return this._buildTestnetGenesisBlockDetail();
+        }
 
         let client = new HttpClientHelper(apiUrl);
         let httpResult = await client.doRequest("GET", parames, undefined, undefined);
@@ -211,7 +227,7 @@ export class BlockChainInfoService {
                 feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
 
                 feeOperation.amount = Amount.CreateVTHO();
-                feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                feeOperation.amount.value = (new BigNumberEx(transaction.paid)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
                 rosettaTransaction.operations.push(feeOperation);
                 
                 feeOperation.account = new AccountIdentifier();
@@ -227,7 +243,7 @@ export class BlockChainInfoService {
                 feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
 
                 feeOperation.amount = Amount.CreateVTHO();
-                feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                feeOperation.amount.value = (new BigNumberEx(transaction.paid)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
                 rosettaTransaction.operations.push(feeOperation);
                 
                 feeOperation.account = new AccountIdentifier();
@@ -379,21 +395,21 @@ export class BlockChainInfoService {
         }
     }
 
-    private _buildRosettaTransactionReceipt(transaction: Connex.Thor.Receipt,connex: ConnexEx,blockIdentifier:BlockIdentifier): Transaction {
+    private _buildRosettaTransactionReceipt(receipt: Connex.Thor.Receipt,connex: ConnexEx,blockIdentifier:BlockIdentifier): Transaction {
         let rosettaTransaction = new Transaction();
 
         rosettaTransaction.transaction_identifier = new TransactionIdentifier();
-        rosettaTransaction.transaction_identifier.hash = transaction.meta.blockID;
+        rosettaTransaction.transaction_identifier.hash = receipt.meta.blockID;
 
         rosettaTransaction.operations = new Array<Operation>();
 
-        for (let network_index = 0; network_index < (transaction.outputs as Array<any>).length; network_index++) {
-            let operations = this._filterOperation(transaction.outputs[network_index],connex.NetWorkType);
+        for (let network_index = 0; network_index < (receipt.outputs as Array<any>).length; network_index++) {
+            let operations = this._filterOperation(receipt.outputs[network_index],connex.NetWorkType);
             for(var operation of operations)
             {
                 operation.operation_identifier = new OperationIdentifier();
                 operation.operation_identifier.network_index = network_index;
-                operation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+                operation.status = this._transactionStatus(connex,blockIdentifier,receipt);
             }
 
             for (const operation of operations) {
@@ -403,20 +419,20 @@ export class BlockChainInfoService {
 
         if(rosettaTransaction.operations.length > 0)
         {
-            if(transaction.gasPayer != transaction.meta.txOrigin){
+            if(receipt.gasPayer != receipt.meta.txOrigin){
                 let feeOperation = new Operation();
                 feeOperation.operation_identifier = new OperationIdentifier();
                 feeOperation.operation_identifier.network_index = undefined;
 
                 feeOperation.type = OperationType.FeeDelegation;
-                feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+                feeOperation.status = this._transactionStatus(connex,blockIdentifier,receipt);
 
                 feeOperation.amount = Amount.CreateVTHO();
-                feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                feeOperation.amount.value = (new BigNumberEx(receipt.paid)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
                 rosettaTransaction.operations.push(feeOperation);
                 
                 feeOperation.account = new AccountIdentifier();
-                feeOperation.account.address = transaction.gasPayer;
+                feeOperation.account.address = receipt.gasPayer;
                 feeOperation.account.sub_account = new AccountIdentifier();
                 feeOperation.account.sub_account.address = this._environment.getVTHOConfig().address;
             } else {
@@ -425,14 +441,14 @@ export class BlockChainInfoService {
                 feeOperation.operation_identifier.network_index = undefined;
 
                 feeOperation.type = OperationType.Fee;
-                feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+                feeOperation.status = this._transactionStatus(connex,blockIdentifier,receipt);
 
                 feeOperation.amount = Amount.CreateVTHO();
-                feeOperation.amount.value = (new BigNumberEx(transaction.gasUsed)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
+                feeOperation.amount.value = (new BigNumberEx(receipt.paid)).dividedBy(Math.pow(10,3)).multipliedBy(Math.pow(10,feeOperation.amount.currency.decimals)).dividedBy(-1).toString();
                 rosettaTransaction.operations.push(feeOperation);
                 
                 feeOperation.account = new AccountIdentifier();
-                feeOperation.account.address = transaction.meta.txOrigin;
+                feeOperation.account.address = receipt.meta.txOrigin;
                 feeOperation.account.sub_account = new AccountIdentifier();
                 feeOperation.account.sub_account.address = this._environment.getVTHOConfig().address;
             }
@@ -444,5 +460,121 @@ export class BlockChainInfoService {
         }
 
         return rosettaTransaction;
+    }
+
+    private _buildMainnetGenesisBlockDetail():ActionResultWithData2<BlockDetail,Array<{hash:string}>>
+    {
+        let result = new ActionResultWithData2<BlockDetail,Array<{hash:string}>>();
+
+        let genesisBlockDetail = new BlockDetail();
+        genesisBlockDetail.block_identifier = new BlockIdentifier();
+        genesisBlockDetail.block_identifier.index = 0;
+        genesisBlockDetail.block_identifier.hash = "0x00000000851caf3cfdb6e899cf5958bfb1ac3413d346d43539627e6be7ec1b4a";
+        genesisBlockDetail.parent_block_identifier = genesisBlockDetail.block_identifier;
+        genesisBlockDetail.timestamp = 1530316800;
+        genesisBlockDetail.transactions = new Array<Transaction>();
+        genesisBlockDetail.transactions.push(this._buildMainnetGenesisTransaction());
+
+        result.Data = genesisBlockDetail;
+        result.Data2 = new Array<{hash:string}>();
+        result.Result = true;
+        return result;
+    }
+
+    private _buildMainnetGenesisTransaction():Transaction{
+        let genesisBlockTransaction = new Transaction();
+        genesisBlockTransaction.transaction_identifier.hash = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        
+        let operation1 = new Operation();
+        operation1.operation_identifier.index = 0;
+        operation1.operation_identifier.network_index = 0;
+        operation1.type = OperationType.Transfer;
+        operation1.status = OperationStatus.Succeeded.status;
+        operation1.account = new AccountIdentifier();
+        operation1.account.address = "0x137053dfbe6c0a43f915ad2efefefdcc2708e975";
+        operation1.amount = Amount.CreateVET();
+        operation1.amount.value = "21046908616500000000000000000";
+
+        let operation2 = new Operation();
+        operation2.operation_identifier.index = 1;
+        operation2.operation_identifier.network_index = 0;
+        operation2.type = OperationType.Transfer;
+        operation2.status = OperationStatus.Succeeded.status;
+        operation2.account = new AccountIdentifier();
+        operation2.account.address = "0xaf111431c1284a5e16d2eecd2daed133ce96820e";
+        operation2.amount = Amount.CreateVET();
+        operation2.amount.value = "21046908616500000000000000000";
+
+        let operation3 = new Operation();
+        operation3.operation_identifier.index = 2;
+        operation3.operation_identifier.network_index = 0;
+        operation3.type = OperationType.Transfer;
+        operation3.status = OperationStatus.Succeeded.status;
+        operation3.account = new AccountIdentifier();
+        operation3.account.address = "0x997522a4274336f4b86af4a6ed9e45aedcc6d360";
+        operation3.amount = Amount.CreateVET();
+        operation3.amount.value = "21046908616500000000000000000";
+
+        let operation4 = new Operation();
+        operation4.operation_identifier.index = 3;
+        operation4.operation_identifier.network_index = 0;
+        operation4.type = OperationType.Transfer;
+        operation4.status = OperationStatus.Succeeded.status;
+        operation4.account = new AccountIdentifier();
+        operation4.account.address = "0x0bd7b06debd1522e75e4b91ff598f107fd826c8a";
+        operation4.amount = Amount.CreateVET();
+        operation4.amount.value = "21046908616500000000000000000";
+
+        genesisBlockTransaction.operations.push(operation1,operation2,operation3,operation4);
+
+        return genesisBlockTransaction;
+    }
+
+    private _buildTestnetGenesisBlockDetail():ActionResultWithData2<BlockDetail,Array<{hash:string}>>
+    {
+        let result = new ActionResultWithData2<BlockDetail,Array<{hash:string}>>();
+
+        let genesisBlockDetail = new BlockDetail();
+        genesisBlockDetail.block_identifier = new BlockIdentifier();
+        genesisBlockDetail.block_identifier.index = 0;
+        genesisBlockDetail.block_identifier.hash = "0x000000000b2bce3c70bc649a02749e8687721b09ed2e15997f466536b20bb127";
+        genesisBlockDetail.parent_block_identifier = genesisBlockDetail.block_identifier;
+        genesisBlockDetail.timestamp = 1530014400;
+        genesisBlockDetail.transactions = new Array<Transaction>();
+        genesisBlockDetail.transactions.push(this._buildTestnetGenesisTransaction());
+
+        result.Data = genesisBlockDetail;
+        result.Data2 = new Array<{hash:string}>();
+        result.Result = true;
+        return result;
+    }
+
+    private _buildTestnetGenesisTransaction():Transaction{
+        let genesisBlockTransaction = new Transaction();
+        genesisBlockTransaction.transaction_identifier.hash = "0x0000000000000000000000000000000000000000000000000000000000000000";
+        
+        let operation1 = new Operation();
+        operation1.operation_identifier.index = 0;
+        operation1.operation_identifier.network_index = 0;
+        operation1.type = OperationType.Transfer;
+        operation1.status = OperationStatus.Succeeded.status;
+        operation1.account = new AccountIdentifier();
+        operation1.account.address = "0xe59D475Abe695c7f67a8a2321f33A856B0B4c71d";
+        operation1.amount = Amount.CreateVET();
+        operation1.amount.value = "50000000000000000000000000000";
+
+        let operation2 = new Operation();
+        operation1.operation_identifier.index = 1;
+        operation1.operation_identifier.network_index = 0;
+        operation1.type = OperationType.Transfer;
+        operation1.status = OperationStatus.Succeeded.status;
+        operation1.account = new AccountIdentifier();
+        operation1.account.address = "0xB5A34b62b63A6f1EE99DFD30b133B657859f8d79";
+        operation1.amount = Amount.CreateVET();
+        operation1.amount.value = "25000000000000000000000000000";
+
+        genesisBlockTransaction.operations.push(operation1,operation2);
+
+        return genesisBlockTransaction;
     }
 }
