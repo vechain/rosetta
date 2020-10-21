@@ -184,11 +184,7 @@ export class TransactionService {
             result.Result = false;
         }
 
-        this._environment.logHelper.error(JSON.stringify(originOperations));
-
         let origin = originOperations[0].account!.address;
-
-        this._environment.logHelper.error(origin);
 
         if((originOperations.filter(operation =>{
             return operation.account!.address != origin;

@@ -197,9 +197,6 @@ export class BlockChainInfoService {
         rosettaTransaction.transaction_identifier = new TransactionIdentifier();
         rosettaTransaction.transaction_identifier.hash = transaction.id;
 
-        this._environment.logHelper.error(JSON.stringify(transaction));
-        this._environment.logHelper.error(JSON.stringify(rosettaTransaction));
-
         rosettaTransaction.operations = new Array<Operation>();
 
         for (let network_index = 0; network_index < (transaction.outputs as Array<any>).length; network_index++) {

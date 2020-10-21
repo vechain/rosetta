@@ -94,7 +94,7 @@ Object.defineProperty(ActionResult.prototype,"ErrorData",{
         if(!(err == undefined || err == null && (this as any)._ErrorData == undefined || (this as any)._ErrorData == null || JSON.stringify(err) == undefined ||
         JSON.stringify(err) == null || JSON.stringify(err) == "{}" || (this as any)._ErrorData == err))
         {
-            console.error(JSON.stringify(err));
+            //console.error(JSON.stringify(err));
         }
         (this as any)._ErrorData = err;
     }
