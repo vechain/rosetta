@@ -564,14 +564,14 @@ export class BlockChainInfoService {
         operation1.amount.value = "50000000000000000000000000000";
 
         let operation2 = new Operation();
-        operation1.operation_identifier.index = 1;
-        operation1.operation_identifier.network_index = 0;
-        operation1.type = OperationType.Transfer;
-        operation1.status = OperationStatus.Succeeded.status;
-        operation1.account = new AccountIdentifier();
-        operation1.account.address = "0xB5A34b62b63A6f1EE99DFD30b133B657859f8d79";
-        operation1.amount = Amount.CreateVET();
-        operation1.amount.value = "25000000000000000000000000000";
+        operation2.operation_identifier.index = 1;
+        operation2.operation_identifier.network_index = 0;
+        operation2.type = OperationType.Transfer;
+        operation2.status = OperationStatus.Succeeded.status;
+        operation2.account = new AccountIdentifier();
+        operation2.account.address = "0xb4094c25f86d628fdD571Afc4077f0d0196afB48";
+        operation2.amount = Amount.CreateVET();
+        operation2.amount.value = "25000000000000000000000000";
 
         genesisBlockTransaction.operations.push(operation1,operation2);
 
