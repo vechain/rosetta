@@ -6,10 +6,7 @@ FROM keymetrics/pm2@sha256:c0a3f3017cff09e1c8570216a716f41969f96ddc47a828653835d
 RUN apk add --no-cache git
 WORKDIR /usr/src/app
 
-ENV COMMIT_ID b13c4e880b99c48cd542dfb7f855a5ae7b271a3a
-
-RUN git clone https://github.com/vechain/rosetta.git /usr/src/app && \
-    git checkout $COMMIT_ID
+RUN git clone https://github.com/vechain/rosetta.git /usr/src/app
 
 ENV THORNODE_VERSION v1.3.6
 
