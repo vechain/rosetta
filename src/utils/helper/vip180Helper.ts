@@ -32,13 +32,15 @@ export default class VIP180Helper
                 amount.value = decode.balance;
                 amount.currency = new Currency(token.symbol,token.decimals,undefined);
                 result.Data = amount;
-                result.Result = true;
             }
             else
             {
-                result.Result = false;
-                result.ErrorData = RosettaErrorDefine.ISNOTVIP180TOKEN;
+                let amount = new Amount();
+                amount.value = "0";
+                amount.currency = new Currency(token.symbol,token.decimals,undefined);
+                result.Data = amount;
             }
+            result.Result = true;
         } catch (error) {
             result.Result = false;
             result.ErrorData = RosettaErrorDefine.VMRETURNERROR;

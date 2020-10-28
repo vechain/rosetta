@@ -221,7 +221,7 @@ export class BlockChainInfoService {
                 feeOperation.operation_identifier.network_index = undefined;
 
                 feeOperation.type = OperationType.FeeDelegation;
-                feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+                feeOperation.status = "Succeeded";
 
                 feeOperation.amount = Amount.CreateVTHO();
                 feeOperation.amount.value = (new BigNumberEx(transaction.paid)).dividedBy(-1).toString();
@@ -237,7 +237,7 @@ export class BlockChainInfoService {
                 feeOperation.operation_identifier.network_index = undefined;
 
                 feeOperation.type = OperationType.Fee;
-                feeOperation.status = this._transactionStatus(connex,blockIdentifier,transaction);
+                feeOperation.status = "Succeeded";
 
                 feeOperation.amount = Amount.CreateVTHO();
                 feeOperation.amount.value = (new BigNumberEx(transaction.paid)).dividedBy(-1).toString();
@@ -396,7 +396,7 @@ export class BlockChainInfoService {
         let rosettaTransaction = new Transaction();
 
         rosettaTransaction.transaction_identifier = new TransactionIdentifier();
-        rosettaTransaction.transaction_identifier.hash = receipt.meta.blockID;
+        rosettaTransaction.transaction_identifier.hash = receipt.meta.txID;
 
         rosettaTransaction.operations = new Array<Operation>();
 
