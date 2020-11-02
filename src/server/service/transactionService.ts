@@ -306,8 +306,10 @@ export class TransactionService {
                     operation.amount = new Amount();
                     operation.amount.currency = tokenConfig;
                     operation.amount.value = decodeResult.Data2!.times(-1).toString();
+
                     result.Data.push(operation);
                 }
+
                 result.Result = true;
             }
             else {

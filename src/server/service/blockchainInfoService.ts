@@ -325,7 +325,10 @@ export class BlockChainInfoService {
             receiveOperation.amount.currency = tokenCurrency;
             receiveOperation.amount.value = (new BigNumberEx(event.data)).toString();
 
-            result.push(senderOperation);
+            if(senderOperation.account.address != "0x0000000000000000000000000000000000000000"){
+                result.push(senderOperation);
+            }
+            
             result.push(receiveOperation);
         }
 
