@@ -5,7 +5,7 @@ export class Operation{
     public operation_identifier:OperationIdentifier = new OperationIdentifier();
     public related_operations:Array<OperationIdentifier> | undefined;
     public type:OperationType = OperationType.None;
-    public status:OperationStatus = OperationStatus.None;
+    public status:OperationStatus | undefined = OperationStatus.None;
     public account:AccountIdentifier | undefined;
     public amount:Amount | undefined;
     public metadata:any | undefined;

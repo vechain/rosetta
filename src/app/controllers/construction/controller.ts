@@ -15,6 +15,7 @@ import { Signature } from "../../../server/types/signature";
 import { cry } from "thor-devkit";
 import Secp256k1Ex from "../../../utils/helper/secp256k1Ex";
 import { BaseController } from "../../../utils/components/baseController";
+import { AccountIdentifier } from "../../../server/types/account";
 
 export default class ConstructionController extends BaseController{
 
@@ -101,12 +102,12 @@ export default class ConstructionController extends BaseController{
             let verifyResult = this._parseTransactionVerify(ctx);
             if(verifyResult.Result){
                 try {
-                    var signed = ctx.request.body.signed as boolean;
-                    var transactionBuff = HexStringHelper.ConvertToBuffer(ctx.request.body.transaction);
-                    var transaction = Transaction.decode(transactionBuff,!signed);
+                    let signed = ctx.request.body.signed as boolean;
+                    let transactionBuff = HexStringHelper.ConvertToBuffer(ctx.request.body.transaction);
+                    let transaction = Transaction.decode(transactionBuff,!signed);
                     let checkChainTag = this._checkChainTag(ctx,transaction);
                     if(checkChainTag.Result){
-                        var parseResult = this._transactionService.parseTransaction(transaction);
+                        let parseResult = this._transactionService.parseTransaction(transaction);
                         this._parseTransactionConvertToJsonResult(ctx,parseResult);
                     }else{
                         ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.TRANSACTIONCHAINTAGINVALID);
@@ -127,26 +128,26 @@ export default class ConstructionController extends BaseController{
                 var parseResult = this._transactionService.parseOperations(operations,metadata);
                 if(parseResult.Result){
                     var transaction = new Transaction(parseResult.Data!);
-                    var unsigned_transaction = '0x' + transaction.encode().toString('hex');
+                    var unsigned_transaction = transaction.encode().toString('hex');
                     var originPayload:any = undefined;
                     var delegatorPayload:any = undefined;
 
                     if(parseResult.Data3 != null && (parseResult.Data3 as string).length == 42){
                         originPayload = {
                             address:parseResult.Data2,
-                            hex_bytes:'0x' + transaction.signingHash().toString('hex'),
+                            hex_bytes:transaction.signingHash().toString('hex'),
                             signature_type:"ecdsa_recovery"
                         };
 
                         delegatorPayload = {
                             address:parseResult.Data3,
-                            hex_bytes:'0x' + transaction.signingHash(parseResult.Data2).toString('hex'),
+                            hex_bytes:transaction.signingHash(parseResult.Data2).toString('hex'),
                             signature_type:"ecdsa_recovery"
                         }
                     }else{
                         originPayload = {
                             address:parseResult.Data2,
-                            hex_bytes:'0x' + transaction.signingHash().toString('hex'),
+                            hex_bytes:transaction.signingHash().toString('hex'),
                             signature_type:"ecdsa_recovery"
                         }
                     }
@@ -306,6 +307,14 @@ export default class ConstructionController extends BaseController{
     private _parseTransactionConvertToJsonResult(ctx: Router.IRouterContext,result:ActionResultWithData2<Array<Operation>,Array<string>>){
         if(result.Result){
             let response:any | undefined;
+
+            if(result.Data){
+                for(const operation of result.Data){
+                    operation.operation_identifier.network_index = undefined;
+                    operation.status = undefined;
+                }
+            }
+
             response = {
                 operations:result.Data,
                 signers:result.Data2
@@ -321,7 +330,7 @@ export default class ConstructionController extends BaseController{
         let requestVerifySchema = Joi.array().items(Joi.object({
             operation_identifier:Joi.object({
                 index:Joi.number().min(0).required(),
-                network_index:Joi.number().min(0).required()
+                network_index:Joi.number().min(0)
             }),
             type:Joi.string().valid(OperationType.None,OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation).required(),
             account:Joi.object({
@@ -353,21 +362,20 @@ export default class ConstructionController extends BaseController{
     private _metadataVerify(ctx:Router.IRouterContext):ActionResult{
         let result = new ActionResult();
         let requestVerifySchema = Joi.object({
-            chainTag:Joi.string().lowercase().valid("0x4a","0x27").required(),
+            chainTag:Joi.number().valid(74,39).required(),
             blockRef:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
         }).required();
         let verify = requestVerifySchema.validate(ctx.request.body.metadata,{allowUnknown:true});
         if(!verify.error){
-            if((ctx.request.body.metadata.chainTag as string).toLowerCase() == "0x4a" && ctx.request.body.network_identifier.network == "main") {
+            if((ctx.request.body.metadata.chainTag as number) == 0x4a && ctx.request.body.network_identifier.network == "main") {
                 result.Result = true;
-            } else if ((ctx.request.body.metadata.chainTag as string).toLowerCase() == "0x27" && ctx.request.body.network_identifier.network == "test"){
+            } else if ((ctx.request.body.metadata.chainTag as number) == 0x27 && ctx.request.body.network_identifier.network == "test"){
                 result.Result = true;
             } else {
                 result.Result = false;
                 result.ErrorData = RosettaErrorDefine.NETWORKINVALID;
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.NETWORKINVALID);
             }
-            
         }else{
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.METADATAINVALID);
             result.ErrorData = RosettaErrorDefine.METADATAINVALID;
