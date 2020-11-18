@@ -6,7 +6,7 @@
     "port":8080,
     "confirm_num":12,
     "netconfig":{
-        "node_api":"http://localhost:8670"
+        "node_api":"http://localhost:8669"
     },
     "rosetta_version":"1.4.1",
     "expiration":180,
