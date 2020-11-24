@@ -20,8 +20,6 @@ export class HttpClientHelper
             body:body,
             timeout:40000
         };
-        let debuginfo = `url${url} options ${JSON.stringify(options)}`;
-        console.log(debuginfo);
         return new Promise((resolve:(result:ActionResultWithData<any>)=>void)=>{
             httpRequest(url,options,(error: any, response: httpRequest.RequestResponse, body: any) =>{
                 let httpResult = new ActionResultWithData<any>();
@@ -42,7 +40,7 @@ export class HttpClientHelper
                 }
                 else{
                     httpResult.Result = false;
-                    httpResult.Code = "-500";
+                    httpResult.Code = "-500"; 
                     httpResult.Message =`Http request error ${debuginfo}`;
                     httpResult.ErrorData = error;
                 }
