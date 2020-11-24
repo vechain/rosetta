@@ -559,7 +559,7 @@ export class BlockChainInfoService {
         operation1.type = OperationType.Transfer;
         operation1.status = OperationStatus.Succeeded.status;
         operation1.account = new AccountIdentifier();
-        operation1.account.address = "0xe59D475Abe695c7f67a8a2321f33A856B0B4c71d";
+        operation1.account.address = "0xe59d475abe695c7f67a8a2321f33a856b0b4c71d";
         operation1.amount = Amount.CreateVET();
         operation1.amount.value = "50000000000000000000000000000";
 
@@ -569,7 +569,7 @@ export class BlockChainInfoService {
         operation2.type = OperationType.Transfer;
         operation2.status = OperationStatus.Succeeded.status;
         operation2.account = new AccountIdentifier();
-        operation2.account.address = "0xb4094c25f86d628fdD571Afc4077f0d0196afB48";
+        operation2.account.address = "0xb4094c25f86d628fdd571afc4077f0d0196afb48";
         operation2.amount = Amount.CreateVET();
         operation2.amount.value = "25000000000000000000000000";
 
