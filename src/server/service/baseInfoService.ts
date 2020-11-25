@@ -51,8 +51,11 @@ export class BaseInfoService {
                 result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
             }
         } else {
-            result.Data.push((this._getVeChainMainNet()).Data!);
-            result.Data.push((this._getVeChainTestNet()).Data!);
+            if((this._environment.config.netconfig.network as string) == "main"){
+                result.Data.push((this._getVeChainMainNet()).Data!);
+            } else if((this._environment.config.netconfig.network as string) == "test"){
+                result.Data.push((this._getVeChainTestNet()).Data!);
+            }
             result.Result = true;
         }
 
