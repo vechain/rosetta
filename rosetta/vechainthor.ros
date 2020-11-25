@@ -44,7 +44,7 @@ create_account(1){
 transfer(10){
   transfer{
     transfer.network = {"network":"test", "blockchain":"vechainthor"};
-    currency = {"symbol":"ETH", "decimals":18};
+    currency = {"symbol":"VET", "decimals":18};
     sender = find_balance({
       "minimum_balance":{
         "value": "10000000000000000",
@@ -73,7 +73,7 @@ transfer(10){
     transfer.operations = [
       {
         "operation_identifier":{"index":0},
-        "type":"CALL",
+        "type":"Transfer",
         "account":{{sender.account_identifier}},
         "amount":{
           "value":{{sender_amount}},
@@ -82,7 +82,7 @@ transfer(10){
       },
       {
         "operation_identifier":{"index":1},
-        "type":"CALL",
+        "type":"Transfer",
         "account":{{recipient.account_identifier}},
         "amount":{
           "value":{{recipient_amount}},
@@ -96,8 +96,8 @@ transfer(10){
 return_funds(10){
   // TODO: add suggested fee dry run to ensure account fully cleared
   transfer{
-    transfer.network = {"network":"Ropsten", "blockchain":"Ethereum"};
-    currency = {"symbol":"ETH", "decimals":18};
+    transfer.network = {"network":"test", "blockchain":"vechainthor"};
+    currency = {"symbol":"VET", "decimals":18};
     max_fee = "84000000000000";
     sender = find_balance({
       "minimum_balance":{
@@ -117,7 +117,7 @@ return_funds(10){
     transfer.operations = [
       {
         "operation_identifier":{"index":0},
-        "type":"CALL",
+        "type":"Transfer",
         "account":{{sender.account_identifier}},
         "amount":{
           "value":{{sender_amount}},
@@ -126,7 +126,7 @@ return_funds(10){
       },
       {
         "operation_identifier":{"index":1},
-        "type":"CALL",
+        "type":"Transfer",
         "account":{{faucet}},
         "amount":{
           "value":{{available_amount}},
