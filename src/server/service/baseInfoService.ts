@@ -62,11 +62,11 @@ export class BaseInfoService {
         return result;
     }
 
-    public getConstructionMetadata(type: NetworkType): ActionResultWithData<ConstructionMetaData> {
+    public async getConstructionMetadata(type: NetworkType): Promise<ActionResultWithData<ConstructionMetaData>> {
         let result = new ActionResultWithData<ConstructionMetaData>();
         let connex = this._environment.getConnex(type);
         if (connex) {
-            result = this._getConstructionMetadata(connex);
+            result = await this._getConstructionMetadata(connex);
         } else {
             result.Result = false;
             result.ErrorData = RosettaErrorDefine.NODECONNETCONNECTION;
@@ -168,16 +168,22 @@ export class BaseInfoService {
         return result;
     }
 
-    private _getConstructionMetadata(connex: ConnexEx): ActionResultWithData<ConstructionMetaData> {
+    private async _getConstructionMetadata(connex: ConnexEx): Promise<ActionResultWithData<ConstructionMetaData>> {
         let result = new ActionResultWithData<ConstructionMetaData>();
 
         if (connex.thor.status.progress == 1) {
-            let construction = new ConstructionMetaData();
-            construction.chainTag = connex.chainTag;
-            construction.blockRef = connex.blockRef;
-
+            try {
+                let construction = new ConstructionMetaData();
+                construction.chainTag = connex.chainTag;
+                construction.blockRef = connex.blockRef;
+                const block = await connex.thor.block().get();
+                construction.gasLimit = block!.gasLimit;
             result.Data = construction;
             result.Result = true;
+            } catch (error) {
+                result.Result = false;
+                result.ErrorData = RosettaErrorDefine.NODEAPIERROR;
+            }
         } else {
             result.Result = false;
             result.ErrorData = RosettaErrorDefine.NODESYNCNOTCOMPLETE;
@@ -254,7 +260,6 @@ export class BaseInfoService {
     {
         let result = new Array<BalanceExemption>();
         let vthoBalanceExemption = new BalanceExemption();
-        //vthoBalanceExemption.sub_account_address = "0x0000000000000000000000000000456e65726779";
         vthoBalanceExemption.currency = new Currency();
         vthoBalanceExemption.currency.symbol = "VTHO";
         vthoBalanceExemption.currency.decimals = 18;

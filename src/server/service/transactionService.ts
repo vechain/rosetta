@@ -113,6 +113,13 @@ export class TransactionService {
             body.gas = (body.gas as number) - ((body.clauses.length -1) * 15000); 
         }
 
+        // Check tx total gas.
+        if(body.gas > metadata.gasLimit){
+            result.Result = false;
+            result.ErrorData = RosettaErrorDefine.OPERATIONSTOOMUCH;
+            return result;
+        }
+
         var originOperation = operations.filter(operation => { return operation.amount!.value.startsWith("-"); })[0];
         result.Data2 = originOperation.account!.address;
 

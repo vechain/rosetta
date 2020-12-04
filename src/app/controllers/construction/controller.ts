@@ -36,7 +36,7 @@ export default class ConstructionController extends BaseController{
 
         this.getConstructionMetadata = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
             let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
-            let getConstructionResult = this._baseInfoService.getConstructionMetadata(networkType);
+            let getConstructionResult = await this._baseInfoService.getConstructionMetadata(networkType);
             this._getConstructionMetadataConvertToJSONResult(ctx,getConstructionResult);
             await next();
             
@@ -258,7 +258,10 @@ export default class ConstructionController extends BaseController{
     private _derivePublickeyConvertToJsonResult(ctx: Router.IRouterContext,address:string) {
         let response:any | undefined;
         response = {
-            address:address
+            address:address,
+            account_identifier:{
+                address:address
+            }
         }
         ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
     }
@@ -364,6 +367,7 @@ export default class ConstructionController extends BaseController{
         let requestVerifySchema = Joi.object({
             chainTag:Joi.number().valid(74,39).required(),
             blockRef:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+            gasLimit:Joi.number().required()
         }).required();
         let verify = requestVerifySchema.validate(ctx.request.body.metadata,{allowUnknown:true});
         if(!verify.error){
