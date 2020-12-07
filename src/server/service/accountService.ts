@@ -3,7 +3,7 @@ import { ActionResultWithData, ActionResultWithData2 } from "../../utils/compone
 import { NetworkType } from "../types/networkType";
 import { BlockIdentifier } from "../types/block";
 import { RosettaErrorDefine } from "../types/rosettaError";
-import { Amount } from "../types/amount";
+import { Amount, Currency } from "../types/amount";
 import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import { HttpClientHelper } from "../../utils/helper/httpClientHelper";
 import ConnexEx from "../../utils/helper/connexEx";
@@ -20,7 +20,7 @@ export class AccountService{
         this._environment = environment;
     }
 
-    public async getAccountBalance(type:NetworkType,address:string,revision:number | string,scAddress?:string):Promise<ActionResultWithData2<BlockIdentifier,Array<Amount>>>{
+    public async getAccountBalance(type:NetworkType,address:string,revision:number | string,currencies:Array<Currency>):Promise<ActionResultWithData2<BlockIdentifier,Array<Amount>>>{
         let result = new ActionResultWithData2<BlockIdentifier,Array<Amount>>();
         let connex = this._environment.getConnex(type);
         if(connex){
@@ -35,9 +35,9 @@ export class AccountService{
                 return result;
             }
 
-            if(scAddress)
+            if(currencies && currencies.length > 0)
             {
-                let balanceResult = await this._getVIP180TokenBalance(connex,address,result.Data!,scAddress);
+                let balanceResult = await this._getVIP180TokenBalance(connex,address,result.Data!,currencies);
                 if(balanceResult.Result)
                 {
                     result.Data2 = balanceResult.Data;
@@ -89,29 +89,33 @@ export class AccountService{
         return result;
     }
 
-    private async _getVIP180TokenBalance(connex:ConnexEx,address:string,blockIdentifier:BlockIdentifier,scAddress:string):Promise<ActionResultWithData<Array<Amount>>>
+    private async _getVIP180TokenBalance(connex:ConnexEx,address:string,blockIdentifier:BlockIdentifier,currencies:Array<Currency>):Promise<ActionResultWithData<Array<Amount>>>
     {
         let result = new ActionResultWithData<Array<Amount>>();
-        
+        result.Data = new Array<Amount>();
         let vip180list = this._environment.getVIP180TokenList();
-        let vip180Info = vip180list.find(token => {return token.address.toLowerCase() === scAddress.toLowerCase()});
-        if(vip180Info)
-        {
-            let balanceResult = await VIP180Helper.getTokenBalance(connex,vip180Info,address,blockIdentifier.hash);
-            if(balanceResult.Result)
+
+        for(const currency of currencies){
+            let vip180Info = vip180list.find(token => {return token.symbol.toLowerCase() === currency.symbol.toLowerCase() && token.decimals == currency.decimals});
+            if(vip180Info)
             {
-                result.Data = [balanceResult.Data!];
+                let balanceResult = await VIP180Helper.getTokenBalance(connex,vip180Info,address,blockIdentifier.hash);
+                if(balanceResult.Result && balanceResult.Data)
+                {
+                    result.Data.push(balanceResult.Data);
+                }
+                else
+                {
+                    result.copyBase(balanceResult);
+                    return result;
+                }
                 result.Result = true;
             }
             else
             {
-                result.copyBase(balanceResult);
+                result.Result = false;
+                result.ErrorData = RosettaErrorDefine.VIP180ADDRESSNOTINLIST;
             }
-        }
-        else
-        {
-            result.Result = false;
-            result.ErrorData = RosettaErrorDefine.VIP180ADDRESSNOTINLIST;
         }
         return result;
     }

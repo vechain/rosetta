@@ -39,4 +39,5 @@ export class RosettaErrorDefine{
     public static MULTIORIGIN:IRosettaError = {code:1123,message:"No support multi orgin",retriable:false};
     public static MULTIDELEGATOR:IRosettaError = {code:1124,message:"No support multi delegator",retriable:false};
     public static OPERATIONSTOOMUCH:IRosettaError = {code:1125,message:"The operations too much",retriable:false};
+    public static CURRENCYINVALID:IRosettaError = {code:1126,message:"The currency invalid",retriable:false};
 }

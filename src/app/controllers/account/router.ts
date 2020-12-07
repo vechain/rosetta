@@ -10,7 +10,6 @@ export class AccountRouter extends BaseRouter
         this.post("/account/balance",RequestInfoVerifyMiddleware.CheckNetWorkRequestInfo,
         RequestInfoVerifyMiddleware.CheckNetWorkTypeRequestInfo,
         RequestInfoVerifyMiddleware.CheckAccountRequestInfo,
-        RequestInfoVerifyMiddleware.CheckBlockRequestInfo,
         RequestInfoVerifyMiddleware.CheckRunMode,
         controller.getAccountBalance);
     }
