@@ -15,8 +15,7 @@
                 "NETWORK":"test",
                 "THORNODE_VERSION":"v1.3.6",
                 "MODE":"online"
-            },
-            "preLaunchTask": "npm: build"
+            }
         }
     ]
 }

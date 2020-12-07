@@ -14,6 +14,7 @@ import { Signature } from "../types/signature";
 import { HexStringHelper } from "../../utils/helper/hexStringHelper";
 import { secp256k1 } from "thor-devkit/dist/cry/secp256k1";
 import { publicKeyToAddress } from "thor-devkit/dist/cry/address";
+import Secp256k1Ex from "../../utils/helper/secp256k1Ex";
 
 export class TransactionService {
     private _environment: GlobalEnvironment;
@@ -22,14 +23,14 @@ export class TransactionService {
         this._environment = environment;
     }
 
-    public parseTransaction(transaction: Transaction): ActionResultWithData2<Array<Operation>, Array<string>> {
+    public parseTransaction(transaction: Transaction,origin:string,delegator?:string): ActionResultWithData2<Array<Operation>, Array<string>> {
         let result = new ActionResultWithData2<Array<Operation>, Array<string>>();
         result.Data = new Array<Operation>();
         result.Data2 = new Array<string>();
         var type = transaction.body.chainTag == 0x4a ? NetworkType.MainNet : NetworkType.TestNet;
 
         for (var index = 0; index < transaction.body.clauses.length; index++) {
-            let parseTransfer = this._parseClause(transaction.body.clauses[index], transaction, type);
+            let parseTransfer = this._parseClause(transaction.body.clauses[index], transaction,type,origin,delegator);
             if (!parseTransfer.Result) {
                 result.copyBase(parseTransfer);
                 return result;
@@ -47,19 +48,14 @@ export class TransactionService {
             index++;
         }
 
-        // parse fee or feedelegation operation
-        var parseFee = this._parseFeeOperation(transaction);
-        if (!parseFee.Result) {
-            result.copyBase(parseFee);
-            return result;
-        }
-
-        // the fee or feedelegation operation is last operation in list
-        if (parseFee.Data != null) {
-            parseFee.Data.operation_identifier.index = index;
-            parseFee.Data.operation_identifier.network_index = undefined;
-            result.Data.push(parseFee.Data);
-        }
+        // // parse fee or feedelegation operation
+        // var parseFeeOp = this._parseFeeOperation(transaction,origin,delegator);
+        // // the fee or feedelegation operation is last operation in list
+        // if (parseFeeOp) {
+        //     parseFeeOp.operation_identifier.index = index;
+        //     parseFeeOp.operation_identifier.network_index = undefined;
+        //     result.Data.push(parseFeeOp);
+        // }
 
         if (transaction.origin != null) {
             result.Data2.push(transaction.origin);
@@ -212,12 +208,12 @@ export class TransactionService {
         return result;
     }
 
-    private _parseClause(clause: Transaction.Clause, transaction: Transaction, type: NetworkType): ActionResultWithData<Array<Operation>> {
+    private _parseClause(clause: Transaction.Clause, transaction: Transaction,type: NetworkType,origin:string,delegator?:string): ActionResultWithData<Array<Operation>> {
         let result = new ActionResultWithData<Array<Operation>>();
         result.Data = new Array<Operation>();
         if (clause.to != null) {
             // parse VET transfer clause to VET operation
-            var parseVET = this._parseVETOperation(clause, transaction);
+            var parseVET = this._parseVETOperation(clause, transaction,origin);
             if (!parseVET.Result) {
                 result.copyBase(parseVET);
                 return result;
@@ -230,7 +226,7 @@ export class TransactionService {
             }
 
             // parse VIP180 transfer clause to VIP180 operation (no support VIP180 transferfrom function)
-            var parseVIP180 = this._parseVIP180TokenOperation(clause, transaction, type);
+            var parseVIP180 = this._parseVIP180TokenOperation(clause, transaction, type,origin);
             if (!parseVIP180.Result) {
                 result.copyBase(parseVIP180);
                 return result;
@@ -241,6 +237,12 @@ export class TransactionService {
                     result.Data.push(oper);
                 }
             }
+
+            // let feeOperation = this._parseFeeOperation(transaction,origin,delegator);
+            // if(feeOperation){
+            //     result.Data.push(feeOperation);
+            // }
+
             result.Result = true;
         } else {
             result.Result = false;
@@ -250,36 +252,34 @@ export class TransactionService {
         return result;
     }
 
-    private _parseVETOperation(clause: Transaction.Clause, transaction: Transaction): ActionResultWithData<Array<Operation>> {
+    private _parseVETOperation(clause: Transaction.Clause, transaction: Transaction,origin:string): ActionResultWithData<Array<Operation>> {
         let result = new ActionResultWithData<Array<Operation>>();
         result.Data = new Array<Operation>();
 
         if (clause.value != null && clause.value != 0) {
-            let operation = new Operation();
-            operation.type = OperationType.Transfer;
-            operation.status = OperationStatus.None;
-            operation.account = new AccountIdentifier();
-            operation.account.address = clause.to!;
-            operation.amount = Amount.CreateVET();
-            operation.amount.value = (new BigNumberEx(clause.value)).toString();
-            result.Data.push(operation);
+            let receiptOp = new Operation();
+            receiptOp.type = OperationType.Transfer;
+            receiptOp.status = OperationStatus.None;
+            receiptOp.account = new AccountIdentifier();
+            receiptOp.account.address = clause.to!;
+            receiptOp.amount = Amount.CreateVET();
+            receiptOp.amount.value = (new BigNumberEx(clause.value)).toString();
+            result.Data.push(receiptOp);
 
-            if (transaction.origin != null) {
-                let operation = new Operation();
-                operation.type = OperationType.Transfer;
-                operation.status = OperationStatus.None;
-                operation.account = new AccountIdentifier();
-                operation.account.address = transaction.origin;
-                operation.amount = Amount.CreateVET();
-                operation.amount.value = (new BigNumberEx(clause.value)).multipliedBy(-1).toString();
-                result.Data.push(operation);
-            }
+            let originOp = new Operation();
+            originOp.type = OperationType.Transfer;
+            originOp.status = OperationStatus.None;
+            originOp.account = new AccountIdentifier();
+            originOp.account.address = origin;
+            originOp.amount = Amount.CreateVET();
+            originOp.amount.value = (new BigNumberEx(clause.value)).multipliedBy(-1).toString();
+            result.Data.push(originOp);
         }
         result.Result = true;
         return result;
     }
 
-    private _parseVIP180TokenOperation(clause: Transaction.Clause, transaction: Transaction, type: NetworkType): ActionResultWithData<Array<Operation>> {
+    private _parseVIP180TokenOperation(clause: Transaction.Clause, transaction: Transaction, type: NetworkType,origin:string): ActionResultWithData<Array<Operation>> {
         let result = new ActionResultWithData<Array<Operation>>();
         result.Data = new Array<Operation>();
 
@@ -290,33 +290,30 @@ export class TransactionService {
             // decode VIP180 transfer input parames
             var decodeResult = VIP180Helper.decodeTransferCall(clause.data);
             if (decodeResult.Result) {
-                let operation = new Operation();
-                operation.type = OperationType.Transfer;
-                operation.status = OperationStatus.None;
-                operation.account = new AccountIdentifier();
-                operation.account.address = decodeResult.Data!;
-                operation.account.sub_account = new SubAccountIdentifier();
-                operation.account.sub_account.address = clause.to!;
-                operation.amount = new Amount();
-                operation.amount.currency = tokenConfig;
-                operation.amount.value = decodeResult.Data2!.toString();
-                result.Data.push(operation);
+                let receiptOp = new Operation();
+                receiptOp.type = OperationType.Transfer;
+                receiptOp.status = OperationStatus.None;
+                receiptOp.account = new AccountIdentifier();
+                receiptOp.account.address = decodeResult.Data!;
+                receiptOp.account.sub_account = new SubAccountIdentifier();
+                receiptOp.account.sub_account.address = clause.to!;
+                receiptOp.amount = new Amount();
+                receiptOp.amount.currency = tokenConfig;
+                receiptOp.amount.value = decodeResult.Data2!.toString();
+                result.Data.push(receiptOp);
 
-                if (transaction.origin != null) {
-                    let operation = new Operation();
-                    operation.type = OperationType.Transfer;
-                    operation.status = OperationStatus.None;
-                    operation.account = new AccountIdentifier();
-                    operation.account.address = transaction.origin;
-                    operation.account.sub_account = new SubAccountIdentifier();
-                    operation.account.sub_account.address = clause.to!;
-                    operation.amount = new Amount();
-                    operation.amount.currency = tokenConfig;
-                    operation.amount.value = decodeResult.Data2!.times(-1).toString();
+                let originOp = new Operation();
+                originOp.type = OperationType.Transfer;
+                originOp.status = OperationStatus.None;
+                originOp.account = new AccountIdentifier();
+                originOp.account.address = origin;
+                originOp.account.sub_account = new SubAccountIdentifier();
+                originOp.account.sub_account.address = clause.to!;
+                originOp.amount = new Amount();
+                originOp.amount.currency = tokenConfig;
+                originOp.amount.value = decodeResult.Data2!.times(-1).toString();
 
-                    result.Data.push(operation);
-                }
-
+                result.Data.push(originOp);
                 result.Result = true;
             }
             else {
@@ -329,22 +326,21 @@ export class TransactionService {
         return result;
     }
 
-    private _parseFeeOperation(transaction: Transaction): ActionResultWithData<Operation> {
-        let result = new ActionResultWithData<Operation>();
+    private _parseFeeOperation(transaction: Transaction,origin:string,delegator?:string): Operation {
+        let result = new Operation();
         if (transaction.origin != null || transaction.delegator != null || transaction.delegated) {
-            result.Data = new Operation();
             if (transaction.delegated) {
-                if (transaction.delegator != null) {
+                if (delegator != null) {
                     let operation = new Operation();
                     operation.type = OperationType.FeeDelegation;
                     operation.status = OperationStatus.None;
                     operation.account = new AccountIdentifier();
-                    operation.account.address = transaction.delegator;
+                    operation.account.address = delegator;
                     operation.account.sub_account = new SubAccountIdentifier();
                     operation.account.sub_account.address = this._environment.getVTHOConfig().address;
                     operation.amount = Amount.CreateVTHO();
                     operation.amount.value = (new BigNumberEx(transaction.body.gas)).dividedBy(1000).multipliedBy(Math.pow(10, operation.amount.currency.decimals)).multipliedBy(-1).toString();
-                    result.Data = operation;
+                    result = operation;
                 } else {
                     let operation = new Operation();
                     operation.type = OperationType.FeeDelegation;
@@ -355,22 +351,21 @@ export class TransactionService {
                     operation.account.sub_account.address = this._environment.getVTHOConfig().address;
                     operation.amount = Amount.CreateVTHO();
                     operation.amount.value = (new BigNumberEx(transaction.body.gas)).dividedBy(1000).multipliedBy(Math.pow(10, operation.amount.currency.decimals)).multipliedBy(-1).toString();
-                    result.Data = operation;
+                    result = operation;
                 }
-            } else if (transaction.origin != null) {
+            } else if (origin != null) {
                 let operation = new Operation();
                 operation.type = OperationType.Fee;
                 operation.status = OperationStatus.None;
                 operation.account = new AccountIdentifier();
-                operation.account.address = transaction.origin;
+                operation.account.address = origin;
                 operation.account.sub_account = new SubAccountIdentifier();
                 operation.account.sub_account.address = this._environment.getVTHOConfig().address;
                 operation.amount = Amount.CreateVTHO();
                 operation.amount.value = (new BigNumberEx(transaction.body.gas)).dividedBy(1000).multipliedBy(Math.pow(10, operation.amount.currency.decimals)).multipliedBy(-1).toString();
-                result.Data = operation;
+                result = operation;
             }
         }
-        result.Result = true;
         return result;
     }
 
@@ -429,7 +424,7 @@ export class TransactionService {
         var verfiySignPayloadResult = this._verfiySignPayload(signHash, signature);
         if (verfiySignPayloadResult.Result) {
             transaction.signature = HexStringHelper.ConvertToBuffer(signature.hex_bytes);
-            result.Data = "0x" + transaction.encode().toString('hex');;
+            result.Data = transaction.encode().toString('hex');;
             result.Result = true;
         } else {
             result.Result = false;
@@ -462,7 +457,7 @@ export class TransactionService {
         }
 
         transaction.signature = Buffer.concat([HexStringHelper.ConvertToBuffer(originSignature.hex_bytes), HexStringHelper.ConvertToBuffer(delegatorSignature.hex_bytes)]);
-        result.Data = "0x" + transaction.encode().toString('hex');;
+        result.Data = transaction.encode().toString('hex');;
         result.Result = true;
 
         return result;
@@ -479,7 +474,12 @@ export class TransactionService {
 
         try {
             var publickey = secp256k1.recover(signHash, HexStringHelper.ConvertToBuffer(signatures.hex_bytes));
-            if (!publickey.equals(HexStringHelper.ConvertToBuffer(signatures.public_key.hex_bytes))) {
+            let puk = Buffer.from(signatures.public_key.hex_bytes,"hex");
+            if(puk.length == 33){
+                puk = Secp256k1Ex.toUncompress(puk);
+            }
+
+            if (!publickey.equals(puk)) {
                 result.Result = false;
                 return result;
             }

@@ -16,6 +16,7 @@ import { cry } from "thor-devkit";
 import Secp256k1Ex from "../../../utils/helper/secp256k1Ex";
 import { BaseController } from "../../../utils/components/baseController";
 import { AccountIdentifier } from "../../../server/types/account";
+import { RosettaTransaction, RosettaTransactionStruct } from "../../../server/types/rosettaTransaction";
 
 export default class ConstructionController extends BaseController{
 
@@ -44,8 +45,9 @@ export default class ConstructionController extends BaseController{
 
         this.submitTransaction = async (ctx:Router.IRouterContext,next: () => Promise<any>)=>{
             let networkType = ctx.request.body.network_identifier.network == "main" ? NetworkType.MainNet : NetworkType.TestNet;
-            let signedTransaction = ctx.request.body.signed_transaction;
-            let submitTransactionResult = await this._blockChainInfoService.sendSignedTransaction(networkType,signedTransaction);
+            let rosettaRaw = HexStringHelper.ConvertToBuffer(ctx.request.body.signed_transaction);
+            let txStruct = RosettaTransaction.decode(rosettaRaw);
+            let submitTransactionResult = await this._blockChainInfoService.sendSignedTransaction(networkType,txStruct.raw);
             this._submitTransactionConvertToJSONResult(ctx,submitTransactionResult);
             await next();
         }
@@ -54,11 +56,19 @@ export default class ConstructionController extends BaseController{
             let verifyResult = this._checkCreateCombineVerify(ctx);
             if(verifyResult.Result){
                 try {
-                    var unsigned_transaction = HexStringHelper.ConvertToBuffer(ctx.request.body.unsigned_transaction);
-                    var transaction = Transaction.decode(unsigned_transaction,true);
-                    var signatures = ctx.request.body.signatures as Array<Signature>;
-                    var signedResult = this._transactionService.signTransaction(transaction,signatures);
-                    this._createCombineConvertToJsonResult(ctx,signedResult);
+                    let rosettaRaw = HexStringHelper.ConvertToBuffer(ctx.request.body.unsigned_transaction);
+                    let txStruct = RosettaTransaction.decode(rosettaRaw);
+                    let transaction = Transaction.decode(HexStringHelper.ConvertToBuffer(txStruct.raw),true);
+                    let signatures = ctx.request.body.signatures as Array<Signature>;
+                    let signedResult = this._transactionService.signTransaction(transaction,signatures);
+                    if(signedResult.Result && signedResult.Data){
+                        let encodeRaw = transaction.encode();
+                        let newTxStruct = new RosettaTransactionStruct("0x" + encodeRaw.toString('hex'),1,txStruct.origin,txStruct.delegator);
+                        let raw = RosettaTransaction.encode(newTxStruct).toString('hex');
+                        this._createCombineConvertToJsonResult(ctx,raw);
+                    } else {
+                        ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,signedResult.ErrorData);
+                    }
                 } catch (error) {
                     ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.TRANSACTIONINVALID);
                 }
@@ -70,7 +80,7 @@ export default class ConstructionController extends BaseController{
             let verifyResult = this._checkPublickKeyPayloadVerify(ctx,ctx.request.body.public_key);
             if(verifyResult.Result){
                 let publicKey = HexStringHelper.ConvertToBuffer(ctx.request.body.public_key.hex_bytes);
-                if(publicKey.length == 32){
+                if(publicKey.length == 33){
                     publicKey = Secp256k1Ex.toUncompress(publicKey);
                 }
                 let address = "0x" + cry.publicKeyToAddress(publicKey).toString('hex');
@@ -82,9 +92,10 @@ export default class ConstructionController extends BaseController{
         this.getHash = async (ctx: Router.IRouterContext, next: () => Promise<any>) => {
             let verifyResult = this._checkHexStringVerify(ctx,ctx.request.body.signed_transaction);
             if(verifyResult.Result){
-                let signedTransaction = HexStringHelper.ConvertToBuffer(ctx.request.body.signed_transaction);
                 try {
-                    var transaction = Transaction.decode(signedTransaction,false);
+                    let rosettaRaw = HexStringHelper.ConvertToBuffer(ctx.request.body.signed_transaction);
+                    let txStruct = RosettaTransaction.decode(rosettaRaw);
+                    let transaction = Transaction.decode(HexStringHelper.ConvertToBuffer(txStruct.raw),txStruct.isSign == 1 ? false:true);
                     let checkChainTag = this._checkChainTag(ctx,transaction);
                     if(checkChainTag.Result){
                         this._getHexConvertToJsonResult(ctx,transaction.id!);
@@ -103,11 +114,12 @@ export default class ConstructionController extends BaseController{
             if(verifyResult.Result){
                 try {
                     let signed = ctx.request.body.signed as boolean;
-                    let transactionBuff = HexStringHelper.ConvertToBuffer(ctx.request.body.transaction);
-                    let transaction = Transaction.decode(transactionBuff,!signed);
+                    let rosettaRaw = HexStringHelper.ConvertToBuffer(ctx.request.body.transaction);
+                    let txStruct = RosettaTransaction.decode(rosettaRaw);
+                    let transaction = Transaction.decode(HexStringHelper.ConvertToBuffer(txStruct.raw),!signed);
                     let checkChainTag = this._checkChainTag(ctx,transaction);
                     if(checkChainTag.Result){
-                        let parseResult = this._transactionService.parseTransaction(transaction);
+                        let parseResult = this._transactionService.parseTransaction(transaction,txStruct.origin,txStruct.delegator);
                         this._parseTransactionConvertToJsonResult(ctx,parseResult);
                     }else{
                         ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,RosettaErrorDefine.TRANSACTIONCHAINTAGINVALID);
@@ -123,14 +135,16 @@ export default class ConstructionController extends BaseController{
             let operationsVerifyResult = this._operationVerify(ctx);
             let metadataVerifyResult = this._metadataVerify(ctx);
             if(operationsVerifyResult.Result && metadataVerifyResult.Result){
-                var operations = ctx.request.body.operations as Array<Operation>;
-                var metadata = ctx.request.body.metadata as ConstructionMetaData;
-                var parseResult = this._transactionService.parseOperations(operations,metadata);
+                let operations = ctx.request.body.operations as Array<Operation>;
+                let metadata = ctx.request.body.metadata as ConstructionMetaData;
+                let parseResult = this._transactionService.parseOperations(operations,metadata);
                 if(parseResult.Result){
-                    var transaction = new Transaction(parseResult.Data!);
-                    var unsigned_transaction = transaction.encode().toString('hex');
-                    var originPayload:any = undefined;
-                    var delegatorPayload:any = undefined;
+                    let transaction = new Transaction(parseResult.Data!);
+                    let raw = "0x" + transaction.encode().toString('hex');
+                    let txStruct = new RosettaTransactionStruct(raw,0,parseResult.Data2!,parseResult.Data3);
+                    let unsigned_transaction = RosettaTransaction.encode(txStruct).toString("hex");
+                    let originPayload:any = undefined;
+                    let delegatorPayload:any = undefined;
 
                     if(parseResult.Data3 != null && (parseResult.Data3 as string).length == 42){
                         originPayload = {
@@ -199,15 +213,15 @@ export default class ConstructionController extends BaseController{
             signatures:Joi.array().items(Joi.object({
                 signing_payload:Joi.object({
                     address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
-                    hex_bytes:Joi.string().lowercase().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                    hex_bytes:Joi.string().lowercase().length(64).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                     signature_type:Joi.string().valid("ecdsa_recovery")
                 }),
                 public_key:Joi.object({
-                    hex_bytes:Joi.string().lowercase().length(132).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                    hex_bytes:Joi.string().lowercase().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                     curve_type:Joi.string().valid("secp256k1")
                 }),
                 signature_type:Joi.string().valid("ecdsa_recovery"),
-                hex_bytes:Joi.string().lowercase().length(132).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                hex_bytes:Joi.string().lowercase().length(130).regex(/^(-0x|0x)?[0-9a-f]*$/).required()
             })).min(1).required(),
         });
         let verify = requestVerifySchema.validate(ctx.request.body,{allowUnknown:true});
@@ -221,16 +235,12 @@ export default class ConstructionController extends BaseController{
         return result;
     }
 
-    private _createCombineConvertToJsonResult(ctx: Router.IRouterContext,signResult:ActionResultWithData<string>){
-        if(signResult.Result){
-            let response:any | undefined;
-            response = {
-                signed_transaction:signResult.Data
-            }
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
-        } else {
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,signResult.ErrorData);
+    private _createCombineConvertToJsonResult(ctx: Router.IRouterContext,sign:string){
+        let response:any | undefined;
+        response = {
+            signed_transaction:sign
         }
+        ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
     }
 
     private _checkPublickKeyPayloadVerify(ctx: Router.IRouterContext, publickeyPayload: any):ActionResult {

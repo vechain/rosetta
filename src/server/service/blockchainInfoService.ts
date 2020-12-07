@@ -12,6 +12,7 @@ import { BigNumberEx } from "../../utils/helper/bigNumberEx";
 import { Transaction as ThroTransaction } from "thor-devkit";
 import ConnexEx from "../../utils/helper/connexEx";
 import { OperationStatus } from "../types/rosetta";
+import { HexStringHelper } from "../../utils/helper/hexStringHelper";
 
 export class BlockChainInfoService {
 
@@ -372,7 +373,7 @@ export class BlockChainInfoService {
         let result = new ActionResultWithData<ThroTransaction>();
 
         try {
-            let transaction = ThroTransaction.decode(new Buffer(txRaw.toLowerCase().replace("0x", ""), "hex"), false);
+            let transaction = ThroTransaction.decode(HexStringHelper.ConvertToBuffer(txRaw.toLowerCase()), false);
             result.Data = transaction;
             result.Result = true;
         } catch (error) {
