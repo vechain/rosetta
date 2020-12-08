@@ -1,5 +1,5 @@
-aimport Router from "koa-router";
-ddrequiredimport { NetworkType } from "../../../server/types/networkType";
+import Router from "koa-router";
+import { NetworkType } from "../../../server/types/networkType";
 import { AccountService } from "../../../server/service/accountService";
 import { ActionResultWithData2 } from "../../../utils/components/actionResult";
 import { BlockIdentifier } from "../../../server/types/block";
