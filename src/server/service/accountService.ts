@@ -96,6 +96,17 @@ export class AccountService{
         let vip180list = this._environment.getVIP180TokenList();
 
         for(const currency of currencies){
+            if(currency.symbol.toLowerCase() == "VET".toLowerCase()){
+                let balanceResult = await this._getAccoutBalance(connex,address,blockIdentifier);
+                if(balanceResult.Result && balanceResult.Data){
+                    result.Data.push(balanceResult.Data[0]);
+                } else {
+                    result.copyBase(balanceResult);
+                    return result;
+                }
+                continue;
+            }
+
             let vip180Info = vip180list.find(token => {return token.symbol.toLowerCase() === currency.symbol.toLowerCase() && token.decimals == currency.decimals});
             if(vip180Info)
             {
@@ -109,14 +120,15 @@ export class AccountService{
                     result.copyBase(balanceResult);
                     return result;
                 }
-                result.Result = true;
             }
             else
             {
                 result.Result = false;
                 result.ErrorData = RosettaErrorDefine.VIP180ADDRESSNOTINLIST;
+                return result;
             }
         }
+        result.Result = true;
         return result;
     }
 }
