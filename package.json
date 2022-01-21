@@ -25,7 +25,7 @@
     "koa-bodyparser": "^4.3.0",
     "koa-router": "^8.0.8",
     "koa-swagger-decorator": "^1.6.4",
-    "log4js": "^6.2.1",
+    "log4js": "^6.4.0",
     "path": "^0.12.7",
     "request": "^2.88.2",
     "string-format": "^2.0.0",
