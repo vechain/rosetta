@@ -72,6 +72,12 @@ Method| Endpoint | Implemented | Description | Mode
 POST | /block | Yes | Get a Block | online
 POST | /block/transaction | Yes | Get a Block Transaction | online
 
+### Call
+
+Method| Endpoint | Implemented | Description | Mode
+---------|----------|---------|---------|---------
+POST | /call | No | |
+
 ### Construction
 
 Method| Endpoint | Implemented | Description | Mode
@@ -84,6 +90,12 @@ POST | /construction/parse | Yes | Parse a Transaction | online & offline
 POST | /construction/payloads | Yes | Generate an Unsigned Transaction and Signing Payloads | online & offline
 POST | /construction/preprocess | Yes | Create a Request to Fetch Metadata | online & offline
 POST | /construction/submit | Yes | Submit a Signed Transaction | online
+
+### Events
+
+Method| Endpoint | Implemented | Description | Mode
+---------|----------|---------|---------|---------
+POST | /events/blocks | Yes | [INDEXER] Get a range of BlockEvents
 
 ### Mempool
 
@@ -99,6 +111,12 @@ Method| Endpoint | Implemented | Description | Mode
 POST | /network/list | Yes | Get List of Available Networks | online & offline
 POST | /network/options | Yes | Get Network Options | online & offline
 POST | /network/status | Yes | Get Network Status | online
+
+### Search
+
+Method| Endpoint | Implemented | Description | Mode
+---------|----------|---------|---------|---------
+POST | /search/transactions | Yes | [INDEXER] Search for Transactions | online
 
 ## About Fee Delegation (VIP191)
 
