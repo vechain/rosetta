@@ -4,17 +4,22 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Rosetta",
+            "name": "Launch Rosetta API Server",
             "cwd": "${workspaceRoot}",
-            "program": "${workspaceFolder}/src/app/index.ts",
             "sourceMaps": true,
-            "outFiles": [
-                "${workspaceFolder}/dist/app/*.js"
+            "args": [
+                "${workspaceFolder}/src/index.ts"
             ],
+            "runtimeArgs": [
+                "-r",
+                "${workspaceFolder}/node_modules/ts-node/register"
+            ],
+            "internalConsoleOptions": "neverOpen",
+			"console":"integratedTerminal",
             "env": {
-                "NETWORK":"main",
-                "THORNODE_VERSION":"v1.3.4",
-                "MODE":"online"
+                "MODE":"online",
+                "NETWORK":"custom",
+                "NODEURL":"http://localhost:8680"
             }
         }
     ]

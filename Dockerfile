@@ -1,8 +1,7 @@
 # Build thor in a stock Go builder container
-FROM vechain/thor:v1.3.4 as thorimage
+FROM vechain/thor:v2.0.0 as thorimage
 
 FROM keymetrics/pm2:12-alpine
-ENV THORNODE_VERSION v1.3.4
 WORKDIR /usr/src/app
 
 COPY ["./","./"]

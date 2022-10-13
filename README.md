@@ -2,13 +2,13 @@
 
 Implementing Rosetta Data API of VeChainThor BlockChain
 
-[![](https://badgen.net/badge/VeChainThorNode/>=1.3.4)]()
+[![](https://badgen.net/badge/VeChainThorNode/>=2.0.0)]()
 [![](https://badgen.net/badge/Network/main,test?list=|)]()
-[![](https://badgen.net/badge/Rosetta/=1.4.1)]()
+[![](https://badgen.net/badge/Rosetta/=1.4.12)]()
 
-[![](https://badgen.net/badge/node/>=12.16)]()
-[![](https://badgen.net/badge/typescript/>=3.8.3?icon=typescript&label)]()
-[![](https://badgen.net/badge/docker/>=19.03.8?icon=docker&label)]()
+[![](https://badgen.net/badge/node/>=16.6)]()
+[![](https://badgen.net/badge/typescript/>=4.7.4?icon=typescript&label)]()
+[![](https://badgen.net/badge/docker/>=20.10.17?icon=docker&label)]()
 [![](https://badgen.net/badge/Status/testing/orange)]()
 
 ## Installation
@@ -35,7 +35,7 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 ``` sh
     docker run -d\
     -v {path-to-thornode-data-directory}:/root/.org.vechain.thor\
-    -v {path-to-rosetta-server-log-directory}:/usr/src/app/log\
+    -v {path-to-rosetta-server-log-directory}:/usr/src/log\
     -p {host_address_port}:8080 -p {host_address_port}:8669 -p 11235:11235 -p 11235:11235/udp\
     --env NETWORK={network_type} --env MODE={run_mode}\
     vechain/rosetta-server:latest
