@@ -18,7 +18,7 @@
 			"console":"integratedTerminal",
             "env": {
                 "MODE":"online",
-                "NETWORK":"custom",
+                "NETWORK":"test",
                 "NODEURL":"http://localhost:8680"
             }
         }

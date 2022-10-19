@@ -1,0 +1,42 @@
+[
+    {
+        "account_identifier": {
+            "address": "0x137053dfbe6c0a43f915ad2efefefdcc2708e975"
+        },
+        "currency": {
+            "symbol": "VET",
+            "decimals": 18
+        },
+        "value": "21046908616500000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0xaf111431c1284a5e16d2eecd2daed133ce96820e"
+        },
+        "currency": {
+            "symbol": "VET",
+            "decimals": 18
+        },
+        "value": "21046908616500000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0x997522a4274336f4b86af4a6ed9e45aedcc6d360"
+        },
+        "currency": {
+            "symbol": "VET",
+            "decimals": 18
+        },
+        "value": "21046908616500000000000000000"
+    },
+    {
+        "account_identifier": {
+            "address": "0x0bd7b06debd1522e75e4b91ff598f107fd826c8a"
+        },
+        "currency": {
+            "symbol": "VET",
+            "decimals": 18
+        },
+        "value": "21046908616500000000000000000"
+    }
+]

@@ -1,7 +1,7 @@
 export type RosettaError = {
-    code:number,
-    message:string,
-    description?:string,
-    retriable:boolean,
-    details?:any
+    Code:number,
+    Message:string,
+    Description?:string,
+    Retriable:boolean,
+    Details?:any
 }

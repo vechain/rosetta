@@ -1,0 +1,12 @@
+[
+    {
+     "account_identifier": {
+      "address": "0xe59D475Abe695c7f67a8a2321f33A856B0B4c71d"
+     },
+     "currency": {
+      "symbol": "VET",
+      "decimals": 18
+     },
+     "value": "50000000000000000000000000000"
+    }
+   ]
