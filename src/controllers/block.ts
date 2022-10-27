@@ -33,7 +33,12 @@ export class Block extends Router {
     }
 
     private async block(ctx:Router.IRouterContext,next: () => Promise<any>){
-        const revision = ctx.request.body.block_identifier.index || ctx.request.body.block_identifier.hash;
+        let revision = undefined;
+        if(ctx.request.body.block_identifier.index != undefined){
+            revision = ctx.request.body.block_identifier.index;
+        } else if (ctx.request.body.block_identifier.hash != undefined){
+            revision = ctx.request.body.block_identifier.hash;
+        }
         try {
             const block = await this.connex.thor.block(revision).get();
             if(block != null){
@@ -75,7 +80,12 @@ export class Block extends Router {
     }
 
     private async blockTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
-        const revision = ctx.request.body.block_identifier.index || ctx.request.body.block_identifier.hash;
+        let revision = undefined;
+        if(ctx.request.body.block_identifier.index != undefined){
+            revision = ctx.request.body.block_identifier.index;
+        } else if (ctx.request.body.block_identifier.hash != undefined){
+            revision = ctx.request.body.block_identifier.hash;
+        }
         const txid = ctx.request.body.transaction_identifier.hash;
         try {
             const block = await this.connex.thor.block(revision).get();
@@ -94,7 +104,7 @@ export class Block extends Router {
                 }
             } else {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
-                    block_identifier_hash:revision
+                    block_identifier_hash:revision || ''
                 }));
             }
         } catch (error) {
