@@ -45,7 +45,7 @@ export class Account extends Router {
                                 hash:block.id
                             },
                             balances:[{
-                                value:balance.toString(16),
+                                value:balance.toString(10),
                                 currency:{
                                     symbol:tokenConf.symbol,
                                     decimals:tokenConf.decimals,
@@ -86,11 +86,11 @@ export class Account extends Router {
         const url = this.connex.baseUrl + `/accounts/${account}`;
         const response = await Axios({url:url,method:'Get',responseType:'json',params:{revision:blockid}});
         result.push({
-            value:response.data.balance,
+            value:BigInt(response.data.balance).toString(10),
             currency:VETCurrency
         });
         result.push({
-            value:response.data.energy,
+            value:BigInt(response.data.energy).toString(10),
             currency:VTHOCurrency
         });
         return result;

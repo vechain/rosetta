@@ -1,8 +1,0 @@
-{
-    "apps": [
-        {
-            "name": "Rosetta-Cli",
-            "script": "/Users/moglu/Developer/VeChainDevelop/rosetta/rosetta-cli-conf/bin/rosetta-cli check:data --configuration-file /Users/moglu/Developer/VeChainDevelop/rosetta/rosetta-cli-conf/testnet/rosetta_cli_config.json",
-            "exec_mode": "fork"
-        }
-]}

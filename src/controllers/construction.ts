@@ -545,7 +545,7 @@ export class Construction extends Router {
         for(const oper of operations){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.account.sub_account?.address != undefined){
                 const tokenAddr = oper.account.sub_account.address as string;
-                const value = oper.amount.value;
+                const value = BigInt(oper.amount.value).toString(10);
                 const to = oper.account.address;
                 const tokenConf = this.tokenList.find(token => {return token.address == tokenAddr;});
                 if(tokenConf != undefined){
@@ -634,7 +634,7 @@ export class Construction extends Router {
         const sorted = operations.sort((l,r) => {return l.operation_identifier.index - r.operation_identifier.index;});
         for(const oper of sorted){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer){
-                result.push({value:oper.amount.value,to:oper.account.address,data:'0x00'});
+                result.push({value:BigInt(oper.amount.value).toString(10),to:oper.account.address,data:'0x00'});
             }
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.account.sub_account?.address != undefined){
                 const tokenConf = this.tokenList.find(token => {return token.address == oper.account.sub_account.address;});
