@@ -29,7 +29,12 @@ export class Account extends Router {
     private async balance(ctx:any,next: () => Promise<any>){
         const account = ctx.request.body.account_identifier.address;
         const subaccount = ctx.request.body.account_identifier.sub_account?.address || "";
-        const revision = ctx.request.body.block_identifier?.index || ctx.request.body.block_identifier?.hash;
+        let revision = undefined;
+        if(ctx.request.body.block_identifier?.index != undefined){
+            revision = ctx.request.body.block_identifier.index;
+        } else if (ctx.request.body.block_identifier?.hash != undefined){
+            revision = ctx.request.body.block_identifier.hash;
+        }
 
         try {
             const block = await this.connex.thor.block(revision).get();

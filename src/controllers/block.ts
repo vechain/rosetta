@@ -81,13 +81,15 @@ export class Block extends Router {
 
     private async blockTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
         let revision = undefined;
-        if(ctx.request.body.block_identifier.index != undefined){
+        if(ctx.request.body.block_identifier?.index != undefined){
             revision = ctx.request.body.block_identifier.index;
-        } else if (ctx.request.body.block_identifier.hash != undefined){
+        } else if (ctx.request.body.block_identifier?.hash != undefined){
             revision = ctx.request.body.block_identifier.hash;
         }
         const txid = ctx.request.body.transaction_identifier.hash;
         try {
+            
+
             const block = await this.connex.thor.block(revision).get();
             if(block != null){
                 const txRece = (await this.connex.thor.transaction(txid).getReceipt());
