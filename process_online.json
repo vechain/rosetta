@@ -2,12 +2,12 @@
     "apps": [
       {
         "name": "VeChainThor Node",
-        "cmd": "./thor --api-addr 0.0.0.0:8669 --network $NETWORK --disable-pruner",
+        "cmd": "/usr/src/app/thor --api-addr 0.0.0.0:8669 --network $NETWORK --disable-pruner",
         "autorestart":true
       },
       {
         "name": "VeChain Rosetta Api Server",
-        "script": "./dist/index.js",
+        "script": "/usr/src/app/rosetta/dist/index.js",
         "exec_mode":"cluster",
         "instances" : "4",
         "autorestart":true,

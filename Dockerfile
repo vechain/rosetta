@@ -21,6 +21,8 @@ WORKDIR /usr/src/app/rosetta
 RUN git checkout dev
 RUN npm ci && npm run build
 
+RUN npm install -g pm2
+
 COPY --from=builder /go/thor/bin/thor /usr/src/app/
 EXPOSE 8080 8669 11235 11235/udp
 

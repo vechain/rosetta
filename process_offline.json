@@ -1,6 +1,6 @@
 {
     "name": "VeChain Rosetta Api Server",
-    "script": "./dist/index.js",
+    "script": "/usr/src/app/rosetta/dist/index.js",
     "exec_mode":"cluster",
     "instances" : "4",
     "autorestart":true
