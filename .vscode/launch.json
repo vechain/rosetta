@@ -19,7 +19,7 @@
             "env": {
                 "MODE":"online",
                 "NETWORK":"test",
-                "NODEURL":"http://localhost:8680"
+                "NODEURL":"http://localhost:8670"
             }
         }
     ]

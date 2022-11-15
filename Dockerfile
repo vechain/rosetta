@@ -1,15 +1,27 @@
 # Build thor in a stock Go builder container
-FROM vechain/thor:v2.0.0 as thorimage
+FROM golang:alpine as builder
+RUN apk add --no-cache make gcc musl-dev linux-headers git
+WORKDIR  /go/thor
+RUN git clone https://github.com/vechain/thor.git /go/thor
+RUN git checkout v2.0.0
+RUN make all
 
-FROM keymetrics/pm2:12-alpine
+FROM ubuntu:20.04
+
 WORKDIR /usr/src/app
+RUN apt-get update
+RUN apt-get install -y git
+RUN apt-get install -y curl
 
-COPY ["./","./"]
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
+RUN apt-get install -y nodejs
 
+RUN git clone https://github.com/vechain/rosetta.git
+WORKDIR /usr/src/app/rosetta
+RUN git checkout dev
 RUN npm ci && npm run build
 
-COPY --from=thorimage /usr/local/bin/thor /usr/src/app/
-
+COPY --from=builder /go/thor/bin/thor /usr/src/app/
 EXPOSE 8080 8669 11235 11235/udp
 
-ENTRYPOINT ["pm2-runtime","process.json"]
+ENTRYPOINT ["sh","./start.sh"]
