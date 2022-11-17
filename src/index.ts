@@ -70,7 +70,7 @@ class ApiServer {
         if(FileIO.existsSync(tokenListConfig)){
             const tokenlist = require(tokenListConfig);
             if(tokenlist[`${this.env.config.network}`]?.vip180_list != undefined){
-                (this.env.config.tokenlist as Array<Token>).concat(tokenlist[`${this.env.config.network}`].vip180_list);
+                this.env.config.tokenlist = (this.env.config.tokenlist as Array<Token>).concat(tokenlist[`${this.env.config.network}`].vip180_list);
             }
         }
     }

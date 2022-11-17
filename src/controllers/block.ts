@@ -39,6 +39,12 @@ export class Block extends Router {
         } else if (ctx.request.body.block_identifier.hash != undefined){
             revision = ctx.request.body.block_identifier.hash;
         }
+
+        if(revision == undefined){
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(24,undefined));
+            return;
+        }
+
         try {
             const block = await this.connex.thor.block(revision).get();
             if(block != null){
@@ -87,13 +93,17 @@ export class Block extends Router {
             revision = ctx.request.body.block_identifier.hash;
         }
         const txid = ctx.request.body.transaction_identifier.hash;
-        try {
-            
 
+        if(revision == undefined){
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(24,undefined));
+            return;
+        }
+
+        try {
             const block = await this.connex.thor.block(revision).get();
             if(block != null){
                 const txRece = (await this.connex.thor.transaction(txid).getReceipt());
-                if(txRece != null && txRece.meta.blockID.toLowerCase() == block.id.toLowerCase()){
+                    if(txRece != null && txRece.meta.blockID.toLowerCase() == block.id.toLowerCase()){
                     const rosettaTx = await this.transConverter.parseRosettaTransacion(txid);
                     const response:{transaction:Transaction} = {
                         transaction:rosettaTx

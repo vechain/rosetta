@@ -33,6 +33,7 @@ export const Errors = new Map<number,RosettaError>([
     [23,{Code:23,Message:'The request parame account_identifier invalid.',Retriable:false}],
     [24,{Code:24,Message:'The request parame block_identifier invalid.',Retriable:false}],
     [25,{Code:25,Message:'The request parame transaction_identifier invalid.',Retriable:false}],
-    [26,{Code:26,Message:'The api not support offline.',Retriable:false}]
+    [26,{Code:26,Message:'The api not support offline.',Retriable:false}],
+    [27,{Code:27,Message:'The contract not create at the block_identifier.',Retriable:false}]
 ]);
 

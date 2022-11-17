@@ -1,3 +1,4 @@
+import Axios from "axios";
 import { Contract } from "myvetools";
 import { abi } from "thor-devkit";
 import ConnexPro from "./connexPro";
@@ -31,8 +32,8 @@ export class VIP180Token {
     }
 
     public async balanceOf(owner:string,revision?:string):Promise<BigInt>{
-        const abi = (VIP180Token.contractAbi as Array<any>).find( i => {return i.name == 'balanceOf';})
-        const fun = new abi.Function(abi);
+        const balanceOfAbi = (VIP180Token.contractAbi as Array<any>).find( i => {return i.name == 'balanceOf';})
+        const fun = new abi.Function(balanceOfAbi);
         const data = fun.encode(owner);
         const explainArg = {
             clauses:[{
@@ -44,7 +45,7 @@ export class VIP180Token {
         const vmResult = await this.connex.driver.explain(explainArg,revision || 'best');
         if(vmResult[0].data != '0x'){
             const decode = fun.decode(vmResult[0].data);
-            return BigInt(decode.balance);
+            return BigInt(decode[0]);
         }
         return BigInt(0);
     }
@@ -59,6 +60,12 @@ export class VIP180Token {
         const symbol = await this.symbol();
         const decimals = await this.decimals();
         return {name:name,symbol:symbol,decimals:decimals};
+    }
+
+    public async created(revision?:string):Promise<boolean>{
+        const url = this.connex.baseUrl + '/accounts/' + this.contract.address;
+        const acc = await Axios({url:url,method:'Get',responseType:'json',params:{revision:revision}});
+        return acc.data.hasCode;
     }
 
     public static readonly contractAbi = JSON.parse(`[
@@ -366,6 +373,7 @@ export class VIP180Token {
         const funAbi = new abi.Function((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == fName;}));
         return funAbi.encode(args);
     }
+    
     
     private connex:ConnexPro;
 }

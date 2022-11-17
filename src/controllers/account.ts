@@ -43,22 +43,29 @@ export class Account extends Router {
                     const tokenConf = this.tokenList.find( t => {return t.address.toLowerCase() == subaccount.toLowerCase()});
                     if(tokenConf != undefined){
                         const token = new VIP180Token(tokenConf.address,this.connex);
-                        const balance = await token.balanceOf(account,block.id);
-                        const response:{block_identifier:BlockIdentifier,balances:Array<Amount>} = {
-                            block_identifier:{
-                                index:block.number,
-                                hash:block.id
-                            },
-                            balances:[{
-                                value:balance.toString(10),
-                                currency:{
-                                    symbol:tokenConf.symbol,
-                                    decimals:tokenConf.decimals,
-                                    metadata:{...tokenConf.metadata,contractAddress:tokenConf.address}
-                                }
-                            }]
+                        const created = await token.created(revision);
+                        if(created == true){
+                            const balance = await token.balanceOf(account,block.id);
+                            const response:{block_identifier:BlockIdentifier,balances:Array<Amount>} = {
+                                block_identifier:{
+                                    index:block.number,
+                                    hash:block.id
+                                },
+                                balances:[{
+                                    value:balance.toString(10),
+                                    currency:{
+                                        symbol:tokenConf.symbol,
+                                        decimals:tokenConf.decimals,
+                                        metadata:{...tokenConf.metadata,contractAddress:tokenConf.address}
+                                    }
+                                }]
+                            }
+                            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+                        } else {
+                            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(27,undefined,{
+                                revision:revision
+                            }));
                         }
-                        ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
                     } else {
                         ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(1,undefined,{
                             subaccount:subaccount
