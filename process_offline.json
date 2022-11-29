@@ -3,5 +3,7 @@
     "script": "/usr/src/app/rosetta/dist/index.js",
     "exec_mode":"cluster",
     "instances" : "4",
-    "autorestart":true
+    "autorestart":true,
+    "out_file":"/data/logs/rosetta.log",
+    "error_file":"/data/logs/rosetta_error.log"
 }

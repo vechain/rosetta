@@ -8,6 +8,7 @@ RUN make all
 
 FROM ubuntu:20.04
 
+WORKDIR /data
 WORKDIR /usr/src/app
 RUN apt-get update
 RUN apt-get install -y git
