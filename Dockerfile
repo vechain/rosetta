@@ -3,7 +3,7 @@ FROM golang:1.19 as builder
 
 WORKDIR  /go/thor
 RUN git clone https://github.com/vechain/thor.git /go/thor
-RUN git checkout v2.0.0
+RUN git checkout v2.0.1
 RUN make all
 
 FROM ubuntu:20.04
