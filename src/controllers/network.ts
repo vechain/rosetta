@@ -52,7 +52,7 @@ export class Network extends Router {
             ],
             operation_types:[OperationType.None,OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation],
             errors:new Array(),
-            historical_balance_lookup:false,
+            historical_balance_lookup:true,
             call_methods:new Array(),
             balance_exemptions:new Array(),
             mempool_coins:false

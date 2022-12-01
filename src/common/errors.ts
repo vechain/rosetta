@@ -2,38 +2,38 @@ import { RosettaError } from "./types/error";
 
 export function getError(code:number,description?:string,details?:any):RosettaError {
     let error = Errors.get(code) || Errors.get(500)!;
-    error.Description = error.Description || description,
-    error.Details = error.Details || details;
+    error.description = error.description || description,
+    error.details = error.details || details;
     return error;
 }
 
 export const Errors = new Map<number,RosettaError>([
-    [500,{Code:500,Message:'Internal server error.',Retriable:true}],
-    [1,{Code:1,Message:'Account subaccount address not in tokenlist.',Retriable:false}],
-    [3,{Code:3,Message:'Not found the block identifier.',Retriable:true}],
-    [4,{Code:4,Message:'Not found the transaction identifier.',Retriable:true}],
-    [5,{Code:5,Message:'The request parame public_key object invalid.',Retriable:false}],
-    [6,{Code:6,Message:'The transaction have mutil origins.',Retriable:false}],
-    [7,{Code:7,Message:'The transaction origin not exists.',Retriable:false}],
-    [8,{Code:8,Message:'The transaction have mutil delegators.',Retriable:false}],
-    [9,{Code:9,Message:'There is no any transfer operation involved.',Retriable:false}],
-    [10,{Code:10,Message:'Have unregistered token operations.',Retriable:false}],
-    [11,{Code:11,Message:'Get metadata on blockchain error.',Retriable:true}],
-    [12,{Code:12,Message:'The request parame signed_transaction invalid.',Retriable:false}],
-    [13,{Code:13,Message:'Submit transaction raw error.',Retriable:false}],
-    [14,{Code:14,Message:'Preprocess request invalid.',Retriable:false}],
-    [15,{Code:15,Message:'The request parame options array invalid.',Retriable:false}],
-    [16,{Code:16,Message:'The request parame metadata object invalid.',Retriable:false}],
-    [17,{Code:17,Message:'The request parame transaction can not decode.',Retriable:false}],
-    [18,{Code:18,Message:'The parse request parames invalid.',Retriable:false}],
-    [19,{Code:19,Message:'The request parame signed_transaction invalid.',Retriable:false}],
-    [20,{Code:20,Message:'The combine request parames invalid.',Retriable:false}],
-    [21,{Code:21,Message:'The blocks request parames invalid.',Retriable:false}],
-    [22,{Code:22,Message:'The request parame network_identifier invalid.',Retriable:false}],
-    [23,{Code:23,Message:'The request parame account_identifier invalid.',Retriable:false}],
-    [24,{Code:24,Message:'The request parame block_identifier invalid.',Retriable:false}],
-    [25,{Code:25,Message:'The request parame transaction_identifier invalid.',Retriable:false}],
-    [26,{Code:26,Message:'The api not support offline.',Retriable:false}],
-    [27,{Code:27,Message:'The contract not create at the block_identifier.',Retriable:false}]
+    [500,{code:500,message:'Internal server error.',retriable:true}],
+    [1,{code:1,message:'Account subaccount address not in tokenlist.',retriable:false}],
+    [3,{code:3,message:'Not found the block identifier.',retriable:true}],
+    [4,{code:4,message:'Not found the transaction identifier.',retriable:true}],
+    [5,{code:5,message:'The request parame public_key object invalid.',retriable:false}],
+    [6,{code:6,message:'The transaction have mutil origins.',retriable:false}],
+    [7,{code:7,message:'The transaction origin not exists.',retriable:false}],
+    [8,{code:8,message:'The transaction have mutil delegators.',retriable:false}],
+    [9,{code:9,message:'There is no any transfer operation involved.',retriable:false}],
+    [10,{code:10,message:'Have unregistered token operations.',retriable:false}],
+    [11,{code:11,message:'Get metadata on blockchain error.',retriable:true}],
+    [12,{code:12,message:'The request parame signed_transaction invalid.',retriable:false}],
+    [13,{code:13,message:'Submit transaction raw error.',retriable:false}],
+    [14,{code:14,message:'Preprocess request invalid.',retriable:false}],
+    [15,{code:15,message:'The request parame options array invalid.',retriable:false}],
+    [16,{code:16,message:'The request parame metadata object invalid.',retriable:false}],
+    [17,{code:17,message:'The request parame transaction can not decode.',retriable:false}],
+    [18,{code:18,message:'The parse request parames invalid.',retriable:false}],
+    [19,{code:19,message:'The request parame signed_transaction invalid.',retriable:false}],
+    [20,{code:20,message:'The combine request parames invalid.',retriable:false}],
+    [21,{code:21,message:'The blocks request parames invalid.',retriable:false}],
+    [22,{code:22,message:'The request parame network_identifier invalid.',retriable:false}],
+    [23,{code:23,message:'The request parame account_identifier invalid.',retriable:false}],
+    [24,{code:24,message:'The request parame block_identifier invalid.',retriable:false}],
+    [25,{code:25,message:'The request parame transaction_identifier invalid.',retriable:false}],
+    [26,{code:26,message:'The api not support offline.',retriable:false}],
+    [27,{code:27,message:'The contract not create at the block_identifier.',retriable:false}]
 ]);
 

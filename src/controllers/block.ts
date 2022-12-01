@@ -57,21 +57,25 @@ export class Block extends Router {
                     trans.push(await this.transConverter.parseRosettaTransacion(txid));
                 }
                 const response:{
-                    block_identifier:BlockIdentifier,
-                    parent_block_identifier:BlockIdentifier,
-                    timestamp:number,
-                    transactions:Transaction[]
+                    block:{
+                        block_identifier:BlockIdentifier,
+                        parent_block_identifier:BlockIdentifier,
+                        timestamp:number,
+                        transactions:Transaction[]
+                    }
                 } = {
-                    block_identifier:{
-                        index:block.number,
-                        hash:block.id
-                    },
-                    parent_block_identifier:{
-                        index:parent.number,
-                        hash:parent.id
-                    },
-                    timestamp:block.timestamp * 1000,
-                    transactions:trans
+                    block:{
+                        block_identifier:{
+                            index:block.number,
+                            hash:block.id
+                        },
+                        parent_block_identifier:{
+                            index:parent.number,
+                            hash:parent.id
+                        },
+                        timestamp:block.timestamp * 1000,
+                        transactions:trans
+                    }
                 }
                 ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
             } else {
