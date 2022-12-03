@@ -1,22 +1,22 @@
 [
     {
         "account_identifier": {
-        "address": "0xe59D475Abe695c7f67a8a2321f33A856B0B4c71d"
+            "address": "0xe59d475abe695c7f67a8a2321f33a856b0b4c71d"
         },
         "currency": {
-        "symbol": "VET",
-        "decimals": 18
+            "symbol": "VET",
+            "decimals": 18
         },
         "value": "50000000000000000000000000000"
     },
     {
         "account_identifier": {
-            "address": "0xb4094c25f86d628fdD571Afc4077f0d0196afB48"
-            },
-            "currency": {
+            "address": "0xb4094c25f86d628fdd571afc4077f0d0196afb48"
+        },
+        "currency": {
             "symbol": "VET",
             "decimals": 18
-            },
-            "value": "25000000000000000000000000"
+        },
+        "value": "25000000000000000000000000"
     }
-   ]
+]
