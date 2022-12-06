@@ -53,8 +53,14 @@ export class Block extends Router {
                     parent = (await this.connex.thor.block(0).get())!;
                 }
                 let trans = new Array<Transaction>();
+                let other_trans = new Array<{hash:string}>();
                 for(const txid of block.transactions){
-                    trans.push(await this.transConverter.parseRosettaTransacion(txid));
+                    const rosettaTx = await this.transConverter.parseRosettaTransacion(txid);
+                    if(rosettaTx.operations.length > 0){
+                        trans.push(await this.transConverter.parseRosettaTransacion(txid));
+                    } else {
+                        other_trans.push({hash:rosettaTx.transaction_identifier.hash});
+                    }
                 }
                 const response:{
                     block:{
@@ -62,7 +68,8 @@ export class Block extends Router {
                         parent_block_identifier:BlockIdentifier,
                         timestamp:number,
                         transactions:Transaction[]
-                    }
+                    },
+                    other_transactions:Array<{hash:string}> | undefined
                 } = {
                     block:{
                         block_identifier:{
@@ -75,7 +82,8 @@ export class Block extends Router {
                         },
                         timestamp:block.timestamp * 1000,
                         transactions:trans
-                    }
+                    },
+                    other_transactions:other_trans.length > 0 ? other_trans : undefined
                 }
                 ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
             } else {

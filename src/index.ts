@@ -1,6 +1,5 @@
 import path from "path";
 import Axios from "axios";
-import * as FileIO from 'fs';
 import { Logger } from "./utils/logger";
 import Koa from 'koa';
 import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
@@ -66,13 +65,13 @@ class ApiServer {
     private initTokenList() {
         this.env.config.tokenlist = new Array<Token>();
         //this.env.config.tokenlist.push(VTHO);
-        const tokenListConfig = (process.env['TOKENLIST'] ||  path.join(__dirname,'../config/tokelist.json')) as string;
-        if(FileIO.existsSync(tokenListConfig)){
-            const tokenlist = require(tokenListConfig);
-            if(tokenlist[`${this.env.config.network}`]?.vip180_list != undefined){
-                // this.env.config.tokenlist = (this.env.config.tokenlist as Array<Token>).concat(tokenlist[`${this.env.config.network}`].vip180_list);
-            }
-        }
+        // const tokenListConfig = (process.env['TOKENLIST'] ||  path.join(__dirname,'../config/tokelist.json')) as string;
+        // if(FileIO.existsSync(tokenListConfig)){
+        //     const tokenlist = require(tokenListConfig);
+        //     if(tokenlist[`${this.env.config.network}`]?.vip180_list != undefined){
+        //         this.env.config.tokenlist = (this.env.config.tokenlist as Array<Token>).concat(tokenlist[`${this.env.config.network}`].vip180_list);
+        //     }
+        // }
     }
 
     private async initConnex() {
@@ -80,6 +79,7 @@ class ApiServer {
             const connex = await ConnexPro.instance(this.env.config.nodeApi);
             const apiVersion = await this.getApiVersion();
             this.env.config.apiVersion = apiVersion;
+            this.env.config.nodeVersion = process.env['NODE_VERSION'] || apiVersion;
             connex.apiVersion = apiVersion;
             connex.nodeVersion = apiVersion;
             this.env.connex = connex;
@@ -107,7 +107,7 @@ class ApiServer {
             |   Api               |   localhost:${port}
             |   Rosetta Version   |   ${this.env.config.rosetta_version}
             |   Node URL          |   ${this.env.config.nodeApi}
-            |   Node Version      |   ${this.env.config.apiVersion}
+            |   Node Version      |   ${this.env.config.nodeVersion}
             |   Network           |   ${this.env.config.network}
             *******************************************************************
             `);
