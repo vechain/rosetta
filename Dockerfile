@@ -19,7 +19,7 @@ RUN apt-get install -y nodejs
 
 RUN git clone https://github.com/vechain/rosetta.git
 WORKDIR /usr/src/app/rosetta
-RUN git checkout dev
+RUN git checkout remove_vtho
 RUN npm ci && npm run build
 
 RUN npm install -g pm2
