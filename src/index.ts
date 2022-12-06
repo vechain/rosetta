@@ -46,7 +46,7 @@ export const VTHOCurrency:Currency = {
 class ApiServer {
     public async run(){
         this.initConfig();
-        this.initTokenList();
+        // this.initTokenList();
         if(this.env.config.mode == 'online'){
             await this.initConnex();
             this.env.config.node_version = this.env.connex.nodeVersion;
