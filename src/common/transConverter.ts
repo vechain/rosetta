@@ -23,9 +23,9 @@ export class TransactionConverter {
                 result.operations = result.operations.concat(opers);
             }
             if(txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
-                result.operations.push(this.feeDelegationOperation(txRece));
+                //result.operations.push(this.feeDelegationOperation(txRece));
             } else {
-                result.operations.push(this.feeOperation(txRece));
+                //result.operations.push(this.feeOperation(txRece));
             }
             for(var index = 0; index < result.operations.length; index++ ){
                 result.operations[index].operation_identifier.index = index;

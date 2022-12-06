@@ -101,10 +101,10 @@ export class Account extends Router {
             value:BigInt(response.data.balance).toString(10),
             currency:VETCurrency
         });
-        result.push({
-            value:BigInt(response.data.energy).toString(10),
-            currency:VTHOCurrency
-        });
+        // result.push({
+        //     value:BigInt(response.data.energy).toString(10),
+        //     currency:VTHOCurrency
+        // });
         return result;
     }
 

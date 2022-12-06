@@ -181,7 +181,7 @@ export class Search extends Router {
                     currency:VTHOCurrency
                 }
             }
-            operations.push(payOp);
+            // operations.push(payOp);
         }else {
             const payOp:Operation = {
                 operation_identifier:{
@@ -200,7 +200,7 @@ export class Search extends Router {
                     currency:VTHOCurrency
                 }
             }
-            operations.push(payOp);
+            // operations.push(payOp);
         }
 
         if(txrecp != undefined && txrecp != null){

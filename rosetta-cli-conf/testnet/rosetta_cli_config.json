@@ -20,7 +20,6 @@
         }
     },
     "data": {
-    "start_index":13700000,
     "results_output_file":"/Users/moglu/Developer/VeChainDevelop/rosetta/cli-data/checkdatalogs",
     "pruning_block_disabled":true,
 	"initial_balance_fetch_disabled":true,

@@ -371,7 +371,7 @@ export class Construction extends Router {
                         currency:VTHOCurrency
                     }
                 }
-                operations.push(payOp);
+                // operations.push(payOp);
             } else {
                 const payOp:Operation = {
                     operation_identifier:{
@@ -390,7 +390,7 @@ export class Construction extends Router {
                         currency:VTHOCurrency
                     }
                 }
-                operations.push(payOp);
+                // operations.push(payOp);
             }
 
             for(let index = 0; index < operations.length; index++){
