@@ -46,7 +46,7 @@ export const VTHOCurrency:Currency = {
 class ApiServer {
     public async run(){
         this.initConfig();
-        // this.initTokenList();
+        this.initTokenList();
         if(this.env.config.mode == 'online'){
             await this.initConnex();
             this.env.config.node_version = this.env.connex.nodeVersion;
@@ -70,7 +70,7 @@ class ApiServer {
         if(FileIO.existsSync(tokenListConfig)){
             const tokenlist = require(tokenListConfig);
             if(tokenlist[`${this.env.config.network}`]?.vip180_list != undefined){
-                this.env.config.tokenlist = (this.env.config.tokenlist as Array<Token>).concat(tokenlist[`${this.env.config.network}`].vip180_list);
+                // this.env.config.tokenlist = (this.env.config.tokenlist as Array<Token>).concat(tokenlist[`${this.env.config.network}`].vip180_list);
             }
         }
     }
