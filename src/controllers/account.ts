@@ -22,7 +22,7 @@ export class Account extends Router {
                 async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
                 async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
                 async (ctx,next) => { await this.verifyMiddleware.checkAccount(ctx,next);},
-                async (ctx,next) => { await this.balance(ctx,next);}
+                async (ctx,next) => { await this.balance(ctx,next);} 
             );
     }
 
@@ -30,10 +30,11 @@ export class Account extends Router {
         const account = ctx.request.body.account_identifier.address;
         const subaccount = ctx.request.body.account_identifier.sub_account?.address || "";
         let revision = undefined;
-        if(ctx.request.body.block_identifier?.index != undefined){
-            revision = ctx.request.body.block_identifier.index;
-        } else if (ctx.request.body.block_identifier?.hash != undefined){
+
+        if(ctx.request.body.block_identifier?.hash != undefined){
             revision = ctx.request.body.block_identifier.hash;
+        } else if(ctx.request.body.block_identifier?.index != undefined){
+            revision = ctx.request.body.block_identifier.index;
         }
 
         try {

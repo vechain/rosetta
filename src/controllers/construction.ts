@@ -11,6 +11,7 @@ import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
 import axios from "axios";
 import { getError } from "../common/errors";
+import { ethers } from "ethers";
 
 export class Construction extends Router {
     constructor(env:any){
@@ -67,14 +68,13 @@ export class Construction extends Router {
     private async derive(ctx:Router.IRouterContext,next: () => Promise<any>){
         const schema = Joi.object({
             public_key:Joi.object({
-                hex_bytes:Joi.string().lowercase().length(132).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                hex_bytes:Joi.string().lowercase().length(66).regex(/^[0-9a-f]*$/).required(),
                 curve_type:Joi.string().valid(CurveType.secp256k1).required()
             }).required()
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
         if(verify.error == undefined){
-            const pubkey = Buffer.from((ctx.request.body.public_key.hex_bytes as string).substring(2),'hex');
-            const account = address.fromPublicKey(pubkey);
+            const account = this.computeAddress(ctx.request.body.public_key.hex_bytes as string);
             ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{address:account});
         } else {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(5,undefined,{
@@ -112,7 +112,7 @@ export class Construction extends Router {
 
             const clauses = new Array<VeTransaction.Clause>();
             for(const op of vetOpers){
-                clauses.push({to:op.to,value:op.value,data:''});
+                clauses.push({to:op.to,value:op.value,data:'0x00'});
             }
             for(const op of tokensOpers.registered){
                 clauses.push({to:op.token,value:0,data:VIP180Token.encode('transfer',op.to,op.value)});
@@ -134,10 +134,10 @@ export class Construction extends Router {
 
     private async metadata(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkPublickeys(ctx) && this.checkOptions(ctx)){
-            const origin = address.fromPublicKey(Buffer.from(ctx.request.body.public_keys[0].hex_bytes.substring(2),'hex'));
+            const origin = this.computeAddress(ctx.request.body.public_keys[0].hex_bytes as string);
             let delegator;
             if(ctx.request.body.public_keys.length == 2){
-                delegator = address.fromPublicKey(Buffer.from(ctx.request.body.public_keys[1].hex_bytes.substring(2),'hex'));
+                delegator = this.computeAddress(ctx.request.body.public_keys[1].hex_bytes as string);
             }
             try {
                 let gas = await this.estimateGas((ctx.request.body.options.clauses as VeTransaction.Clause[]),origin,delegator);
@@ -166,10 +166,10 @@ export class Construction extends Router {
 
     private async payloads(ctx:Router.IRouterContext,next:() => Promise<any>){
         if(this.checkOptions(ctx) && this.checkPublickeys(ctx) && this.checkMetadata(ctx)){
-            const origin = address.fromPublicKey(Buffer.from((ctx.request.body.public_keys[0].hex_bytes as string).substring(2),'hex'));
+            const origin = this.computeAddress(ctx.request.body.public_keys[0].hex_bytes as string);
             let delegator;
             if(ctx.request.body.public_keys.length == 2){
-                delegator = address.fromPublicKey(Buffer.from((ctx.request.body.public_keys[1].hex_bytes as string).substring(2),'hex'));
+                delegator = this.computeAddress(ctx.request.body.public_keys[1].hex_bytes as string);
             }
             const clauses = this.convertOperationsToClauses(ctx.request.body.operations);
 
@@ -188,8 +188,11 @@ export class Construction extends Router {
                     features:1
                 }
             }
+
+            console.debug(JSON.stringify(vechainTxBody));
+
             const vechainTx = new VeTransaction(vechainTxBody);
-            const signingHash = '0x' + vechainTx.signingHash((delegator != null && delegator.length == 42) ? origin : undefined).toString('hex');
+            const signingHash = vechainTx.signingHash((delegator != null && delegator.length == 42) ? origin : undefined).toString('hex');
             const rosettaTx = {
                 chainTag:vechainTxBody.chainTag,
                 blockRef:vechainTxBody.blockRef,
@@ -352,60 +355,25 @@ export class Construction extends Router {
                 }
             }
 
-            // if(delegator != null && delegator.length == 42){
-            //     const payOp:Operation = {
-            //         operation_identifier:{
-            //             index:0,
-            //             network_index:0
-            //         },
-            //         type:OperationType.FeeDelegation,
-            //         account:{
-            //             address:delegator,
-            //             sub_account:{
-            //                 address:VTHO.address,
-            //             }
-            //         },
-            //         amount:{
-            //             value:(BigInt(rosettaTx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
-            //             currency:VTHOCurrency
-            //         }
-            //     }
-            //     operations.push(payOp);
-            // } else {
-            //     const payOp:Operation = {
-            //         operation_identifier:{
-            //             index:0,
-            //             network_index:0
-            //         },
-            //         type:OperationType.Fee,
-            //         account:{
-            //             address:origin,
-            //             sub_account:{
-            //                 address:VTHO.address,
-            //             }
-            //         },
-            //         amount:{
-            //             value:(BigInt(rosettaTx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
-            //             currency:VTHOCurrency
-            //         }
-            //     }
-            //     operations.push(payOp);
-            // }
-
             for(let index = 0; index < operations.length; index++){
                 operations[index].operation_identifier.index = index;
             }
 
-            const response = {
-                operations:operations,
-                account_identifier_signers:[{
-                    address:origin
-                }]
-            }
-            if(delegator != undefined && delegator != ''){
-                response.account_identifier_signers.push({
-                    address:delegator
-                });
+            let response;
+            if(ctx.request.body.signed == true){
+                response = {
+                    operations:operations,
+                    account_identifier_signers:[{
+                        address:origin
+                    }]
+                }
+                if(delegator != undefined && delegator != ''){
+                    response.account_identifier_signers.push({address:delegator});
+                }
+            } else {
+                response = {
+                    operations:operations
+                }
             }
             ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
         }
@@ -419,11 +387,11 @@ export class Construction extends Router {
             const delegatorPayload = (ctx.request.body.signatures as Array<any>).find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.delegator || '').toLowerCase()});
             if(delegatorPayload != undefined){
                 rosettaTx.signature = Buffer.concat([
-                    Buffer.from(originPayload.hex_bytes.substring(2),'hex'),
-                    Buffer.from(delegatorPayload.hex_bytes.substring(2),'hex')
+                    Buffer.from(originPayload.hex_bytes,'hex'),
+                    Buffer.from(delegatorPayload.hex_bytes,'hex')
                 ]);
             } else {
-                rosettaTx.signature = Buffer.from(originPayload.hex_bytes.substring(2),'hex');
+                rosettaTx.signature = Buffer.from(originPayload.hex_bytes,'hex');
             }
             const encode = this.signedRosettaTransactionRlp.encode(rosettaTx);
             ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{signed_transaction:'0x' + encode.toString('hex')});
@@ -464,7 +432,7 @@ export class Construction extends Router {
         const schema = Joi.array().items(Joi.object({
             operation_identifier:Joi.object({
                 index:Joi.number().min(0).required(),
-                network_index:Joi.number().min(0).required()
+                network_index:Joi.number().min(0)
             }).required(),
             type:Joi.string().valid(OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation).required(),
             account:Joi.object({
@@ -560,7 +528,7 @@ export class Construction extends Router {
     private checkPublickeys(ctx:Router.IRouterContext):boolean {
         const schema = Joi.object({
             public_keys:Joi.array().items(Joi.object({
-                hex_bytes:Joi.string().lowercase().length(132).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                hex_bytes:Joi.string().lowercase().length(66).regex(/^[0-9a-f]*$/).required(),
                 curve_type:Joi.string().valid(CurveType.secp256k1).required()
             })).min(1).required()
         });
@@ -708,6 +676,13 @@ export class Construction extends Router {
             }));
         }
         return false;
+    }
+
+    private computeAddress(publickey:string):string {
+        if(publickey.substring(2) != '0x'){
+            publickey = '0x' +  publickey;
+        }
+        return ethers.utils.computeAddress(publickey).toLowerCase();
     }
     
 

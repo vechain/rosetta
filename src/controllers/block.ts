@@ -99,11 +99,12 @@ export class Block extends Router {
 
     private async blockTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
         let revision = undefined;
-        if(ctx.request.body.block_identifier?.index != undefined){
-            revision = ctx.request.body.block_identifier.index;
-        } else if (ctx.request.body.block_identifier?.hash != undefined){
+        if(ctx.request.body.block_identifier?.hash != undefined){
             revision = ctx.request.body.block_identifier.hash;
+        } else {
+            revision = ctx.request.body.block_identifier.index;
         }
+
         const txid = ctx.request.body.transaction_identifier.hash;
 
         if(revision == undefined){

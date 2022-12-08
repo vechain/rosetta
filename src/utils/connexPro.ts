@@ -26,7 +26,7 @@ export default class ConnexPro extends Framework
     }
 
     public get expiration():number {
-        return 60;
+        return 180;
     }
     
     public get blockRef():string{
