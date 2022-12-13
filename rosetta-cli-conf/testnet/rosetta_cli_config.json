@@ -1,0 +1,152 @@
+{
+    "network": {
+        "blockchain": "vechainthor",
+        "network": "test"
+    },
+    "online_url": "http://localhost:8080",
+    "data_directory": "cli-data",
+    "http_timeout": 300,
+    "max_retries": 15,
+    "tip_delay": 60,
+    "log_configuration": false,
+    "construction": {
+        "offline_url":"http://localhost:8080",
+        "stale_depth": 3,
+        "broadcast_limit": 5,
+        "constructor_dsl_file": "vechain.ros",
+        "prefunded_accounts":[
+            {
+                "privkey":"bbbbc840f7d25410545c2687641bbef8ec46b359ac21ccb8e59260e01445106b",
+                "account_identifier":{
+                    "address":"0xc05c334533c673582616ac2bf404b6c55efa1087"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"5959365666b6165dbbbe6c406d1f07f5f430bab3064c5ea89ff0a0edd8ff5e19",
+                "account_identifier":{
+                    "address":"0x16277a1ff38678291c41d1820957c78bb5da59ce"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"ef27a8dccf2b2b6b24b21ccfc81631b419e4ccc3413d1f572a7d46b734fb3b5b",
+                "account_identifier":{
+                    "address":"0x7428144053483fd9e22369e2d89ab8e667a67315"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"86b6abd05bc91cee1199bb6a790df0a7865aa113677856422a7c964e8043366b",
+                "account_identifier":{
+                    "address":"0x4251630dc820e90a5a6d14d79cac7acb93917983"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"ffdead9d21216499b321a43012abc72768c5d769f11c14894401bdeecf096f55",
+                "account_identifier":{
+                    "address":"0x18d93adf9c017cc9202f38c6d400c3b803ce2978"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"28c1564cba5ce7a10814b9c107fadeb9b3a35207a968519cb850478c158f38e1",
+                "account_identifier":{
+                    "address":"0x388fabc273525a710ac74af28f23d471710f89b5"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"a86f03282ce845463cf4ce71ea84f04bbf10de16ace63e0354ac81e3ade7a38e",
+                "account_identifier":{
+                    "address":"0x2e8dd0e358e90894aee9c45b7a4de09acac50479"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"e1e171a30b1034d715c7054b5c60b22e267e09c73398ea02e11af3e2a636439c",
+                "account_identifier":{
+                    "address":"0x6efff548e7450f444f8d1eeb9d34909c6a2e4952"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"951815b08dd63739f38d4866edcb4806185dd4dbaf4d84b12bd22f3b859370df",
+                "account_identifier":{
+                    "address":"0xad00b44caf08691f110b3dd041e25b6895d89339"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            },
+            {
+                "privkey":"3892650a99ba7a556913c14e7ad5a582a3da4fdd7f712dc532fc23bc2a9e66fa",
+                "account_identifier":{
+                    "address":"0x4e7e14bd544a613521ee6e68564df2d259aea46c"
+                },
+                "curve_type":"secp256k1",
+                "currency":{
+                    "symbol":"VET",
+                    "decimals":18
+                }
+            }
+        ],
+        "end_conditions": {
+            "create_account": 10,
+            "transfer": 20
+        }
+    },
+    "data": {
+    "results_output_file":"../../cli-data/checkdatalogs",
+    "pruning_block_disabled":true,
+	"initial_balance_fetch_disabled":true,
+    "active_reconciliation_concurrency": 10,
+    "inactive_reconciliation_concurrency": 10,
+    "inactive_reconciliation_frequency": 10,
+	"bootstrap_balances": "bootstrap_balances.json",
+    "log_blocks": false,
+    "log_transactions": false,
+    "end_conditions": {
+        "tip":true,
+        "reconciliation_coverage": {
+            "coverage": 0.95,
+            "from_tip": true
+        }
+    }
+    }
+}

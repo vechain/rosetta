@@ -2,13 +2,13 @@
 
 Implementing Rosetta Data API of VeChainThor BlockChain
 
-[![](https://badgen.net/badge/VeChainThorNode/>=1.3.4)]()
+[![](https://badgen.net/badge/VeChainThorNode/>=2.0.0)]()
 [![](https://badgen.net/badge/Network/main,test?list=|)]()
-[![](https://badgen.net/badge/Rosetta/=1.4.1)]()
+[![](https://badgen.net/badge/Rosetta/=1.4.12)]()
 
-[![](https://badgen.net/badge/node/>=12.16)]()
-[![](https://badgen.net/badge/typescript/>=3.8.3?icon=typescript&label)]()
-[![](https://badgen.net/badge/docker/>=19.03.8?icon=docker&label)]()
+[![](https://badgen.net/badge/node/>=16.6)]()
+[![](https://badgen.net/badge/typescript/>=4.7.4?icon=typescript&label)]()
+[![](https://badgen.net/badge/docker/>=20.10.17?icon=docker&label)]()
 [![](https://badgen.net/badge/Status/testing/orange)]()
 
 ## Installation
@@ -34,14 +34,13 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 
 ``` sh
     docker run -d\
-    -v {path-to-thornode-data-directory}:/root/.org.vechain.thor\
-    -v {path-to-rosetta-server-log-directory}:/usr/src/app/log\
+    -v {path-to-data-directory}:/data\
     -p {host_address_port}:8080 -p {host_address_port}:8669 -p 11235:11235 -p 11235:11235/udp\
     --env NETWORK={network_type} --env MODE={run_mode}\
     vechain/rosetta-server:latest
 ```
 
-- `path-to-thornode-data-directory` directory for block-chain databases
+- `path-to-data-directory` directory for data
 - `host_address_port` rosetta api service listening address
 - `network_type` rosetta and thornode to join network type (main|test)
 - `run_mode` the api service run mode (online|offline),if the mode is offline, some apis can not be used.
@@ -50,8 +49,7 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 
 ``` shell
     docker run -d\
-    -v /Users/rosetta/data/:/root/.org.vechain.thor\
-    -v /Users/rosetta/data/log/:/usr/src/app/log\
+    -v /Users/rosetta/data/:/data\
     -p 0.0.0.0:8080:8080 -p 0.0.0.0:8669:8669 -p 11235:11235 -p 11235:11235/udp\
     --env NETWORK=main --env MODE=online\
     vechain/rosetta-server:latest
@@ -72,6 +70,12 @@ Method| Endpoint | Implemented | Description | Mode
 POST | /block | Yes | Get a Block | online
 POST | /block/transaction | Yes | Get a Block Transaction | online
 
+### Call
+
+Method| Endpoint | Implemented | Description | Mode
+---------|----------|---------|---------|---------
+POST | /call | No | |
+
 ### Construction
 
 Method| Endpoint | Implemented | Description | Mode
@@ -84,6 +88,12 @@ POST | /construction/parse | Yes | Parse a Transaction | online & offline
 POST | /construction/payloads | Yes | Generate an Unsigned Transaction and Signing Payloads | online & offline
 POST | /construction/preprocess | Yes | Create a Request to Fetch Metadata | online & offline
 POST | /construction/submit | Yes | Submit a Signed Transaction | online
+
+### Events
+
+Method| Endpoint | Implemented | Description | Mode
+---------|----------|---------|---------|---------
+POST | /events/blocks | Yes | [INDEXER] Get a range of BlockEvents
 
 ### Mempool
 
@@ -99,6 +109,12 @@ Method| Endpoint | Implemented | Description | Mode
 POST | /network/list | Yes | Get List of Available Networks | online & offline
 POST | /network/options | Yes | Get Network Options | online & offline
 POST | /network/status | Yes | Get Network Status | online
+
+### Search
+
+Method| Endpoint | Implemented | Description | Mode
+---------|----------|---------|---------|---------
+POST | /search/transactions | Yes | [INDEXER] Search for Transactions | online
 
 ## About Fee Delegation (VIP191)
 

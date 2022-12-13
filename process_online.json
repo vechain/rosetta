@@ -2,13 +2,22 @@
     "apps": [
       {
         "name": "VeChainThor Node",
-        "cmd": "./thor --api-addr 0.0.0.0:8669 --network $NETWORK --disable-pruner"
+        "cmd": "/usr/src/app/thor --api-addr 0.0.0.0:8669 --data-dir /data --network $NETWORK --disable-pruner",
+        "autorestart":true,
+        "out_file":"/data/logs/thornode.log",
+        "error_file":"/data/logs/thornode_error.log"
       },
       {
         "name": "VeChain Rosetta Api Server",
-        "script": "./dist/app/index.js",
+        "script": "/usr/src/app/rosetta/dist/index.js",
         "exec_mode":"cluster",
-        "instances" : "4"
+        "instances" : "4",
+        "autorestart":true,
+        "env":{
+          "NODEURL":"http://localhost:8669"
+        },
+        "out_file":"/data/logs/rosetta.log",
+        "error_file":"/data/logs/rosetta_error.log"
       }
     ]
   }

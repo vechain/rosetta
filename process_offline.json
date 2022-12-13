@@ -1,10 +1,9 @@
 {
-    "apps": [
-      {
-        "name": "VeChain Rosetta Api Server",
-        "script": "./dist/app/index.js",
-        "exec_mode":"cluster",
-        "instances" : "4"
-      }
-    ]
-  }
+    "name": "VeChain Rosetta Api Server",
+    "script": "/usr/src/app/rosetta/dist/index.js",
+    "exec_mode":"cluster",
+    "instances" : "4",
+    "autorestart":true,
+    "out_file":"/data/logs/rosetta.log",
+    "error_file":"/data/logs/rosetta_error.log"
+}

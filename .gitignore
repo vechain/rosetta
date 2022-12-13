@@ -4,3 +4,5 @@ dist/
 log/
 *.patch
 .vscode/
+rosetta/bin/
+cli-data/

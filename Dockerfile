@@ -1,16 +1,33 @@
 # Build thor in a stock Go builder container
-# FROM vechain/thor:v1.3.6 as thorimage
-FROM vechain/thor@sha256:12dd82f109b731c2874e30955b3e299d30bfcc3310abc4250aa91328a963f1af as thorimage
-# FROM keymetrics/pm2:12-alpine
-FROM keymetrics/pm2@sha256:c0a3f3017cff09e1c8570216a716f41969f96ddc47a828653835df69095637f6
-RUN apk add --no-cache git
+ARG NODE_VERSION=v2.0.1
+
+FROM golang:1.19 as builder
+
+WORKDIR  /go/thor
+RUN git clone https://github.com/vechain/thor.git /go/thor
+RUN git checkout ${NODE_VERSION}
+RUN make all
+
+FROM ubuntu:20.04
+ENV NODE_VERSION=${NODE_VERSION}
+
+WORKDIR /data
 WORKDIR /usr/src/app
+RUN apt-get update
+RUN apt-get install -y git
+RUN apt-get install -y curl
 
-RUN git clone https://github.com/vechain/rosetta.git /usr/src/app
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
+RUN apt-get install -y nodejs
 
-ENV THORNODE_VERSION v1.3.6
-
+RUN git clone https://github.com/vechain/rosetta.git
+WORKDIR /usr/src/app/rosetta
+RUN git checkout master
 RUN npm ci && npm run build
-COPY --from=thorimage /usr/local/bin/thor /usr/src/app/
+
+RUN npm install -g pm2
+
+COPY --from=builder /go/thor/bin/thor /usr/src/app/
 EXPOSE 8080 8669 11235 11235/udp
+
 ENTRYPOINT ["sh","./start.sh"]
