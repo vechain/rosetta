@@ -2,7 +2,7 @@
 
 Implementing Rosetta Data API of VeChainThor BlockChain
 
-[![](https://badgen.net/badge/VeChainThorNode/>=2.0.0)]()
+[![](https://badgen.net/badge/VeChainThorNode/>=2.0.1)]()
 [![](https://badgen.net/badge/Network/main,test?list=|)]()
 [![](https://badgen.net/badge/Rosetta/=1.4.12)]()
 
@@ -62,6 +62,7 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 Method| Endpoint | Implemented | Description | Mode
 ---------|----------|---------|---------|---------
 POST | /account/balance | Yes | Get an Account Balance | online
+POST | /account/coins | No |
 
 ### Block
 
