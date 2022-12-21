@@ -1,7 +1,8 @@
 import Axios from "axios";
 import Router from "koa-router";
+import { VTHOCurrency } from "..";
 import { Errors, getError } from "../common/errors";
-import { Allow } from "../common/types/allow";
+import { Allow, ExemptionType } from "../common/types/allow";
 import { OperationStatus, OperationType } from "../common/types/operation";
 import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
@@ -54,7 +55,7 @@ export class Network extends Router {
             errors:new Array(),
             historical_balance_lookup:true,
             call_methods:new Array(),
-            balance_exemptions:new Array(),
+            balance_exemptions:[{currency: VTHOCurrency, exemption_type: ExemptionType.dynamic}],
             mempool_coins:false
         }
         for(const key of Errors.keys()){
