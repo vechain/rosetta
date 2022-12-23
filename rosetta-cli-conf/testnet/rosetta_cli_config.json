@@ -134,7 +134,7 @@
     "data": {
     "results_output_file":"../../cli-data/checkdatalogs",
     "pruning_block_disabled":true,
-	"initial_balance_fetch_disabled":true,
+	"initial_balance_fetch_disabled":false,
     "active_reconciliation_concurrency": 10,
     "inactive_reconciliation_concurrency": 10,
     "inactive_reconciliation_frequency": 10,
