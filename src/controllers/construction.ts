@@ -1,10 +1,9 @@
 import Joi, { valid } from "joi";
 import Router from "koa-router";
 import { address, RLP, Transaction as VeTransaction } from "thor-devkit";
-import { VETCurrency, VTHO, VTHOCurrency } from "..";
+import { VETCurrency, VTHOCurrency } from "..";
 import { Operation, OperationType } from "../common/types/operation";
 import { CurveType, SignatureType } from "../common/types/signature";
-import { Token } from "../common/types/token";
 import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
@@ -12,6 +11,7 @@ import { VIP180Token } from "../utils/vip180Token";
 import axios from "axios";
 import { getError } from "../common/errors";
 import { ethers } from "ethers";
+import { Currency } from "../common/types/currency";
 
 export class Construction extends Router {
     constructor(env:any){
@@ -325,7 +325,7 @@ export class Construction extends Router {
                 const clause = rosettaTx.clauses[index] as VeTransaction.Clause;
                 if(clause.value == 0 || clause.value == ''){
                     const decode = VIP180Token.decodeCallData(clause.data,'transfer');
-                    const token = this.tokenList.find( t => {return t.address == clause.to;})!;
+                    const token = this.tokenList.find( t => {return t.metadata.contractAddress.toLowerCase() == clause.to!.toLocaleLowerCase();})!;
                     const sendOp:Operation = {
                         operation_identifier:{
                             index:0,
@@ -340,11 +340,7 @@ export class Construction extends Router {
                         },
                         amount:{
                             value:(BigInt(decode._amount) * BigInt(-1)).toString(10),
-                            currency:{
-                                symbol:token.symbol,
-                                decimals:token.decimals,
-                                metadata:{...token.metadata,contractAddress:token.address}
-                            }
+                            currency:token
                         }
                     }
                     const receiptOp:Operation = {
@@ -361,11 +357,7 @@ export class Construction extends Router {
                         },
                         amount:{
                             value:BigInt(decode._amount).toString(10),
-                            currency:{
-                                symbol:token.symbol,
-                                decimals:token.decimals,
-                                metadata:{...token.metadata,contractAddress:token.address}
-                            }
+                            currency:token
                         }
                     }
                     operations = operations.concat([sendOp,receiptOp]);
@@ -600,7 +592,7 @@ export class Construction extends Router {
                 const tokenAddr = oper.account.sub_account.address as string;
                 const value = BigInt(oper.amount.value).toString(10);
                 const to = oper.account.address;
-                const tokenConf = this.tokenList.find(token => {return token.address == tokenAddr;});
+                const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress.toLowerCase() == tokenAddr.toLowerCase();});
                 if(tokenConf != undefined){
                     result.registered.push({token:tokenAddr,value:value,to:to});
                 } else {
@@ -690,9 +682,9 @@ export class Construction extends Router {
                 result.push({value:Number(BigInt(oper.amount.value)),to:oper.account.address,data:'0x'});
             }
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.account.sub_account?.address != undefined){
-                const tokenConf = this.tokenList.find(token => {return token.address == oper.account.sub_account.address;});
+                const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress == oper.account.sub_account.address;});
                 if(tokenConf != undefined){
-                    result.push({value:0,to:tokenConf.address,data:VIP180Token.encode('transfer',oper.account.address,oper.amount.value)})
+                    result.push({value:0,to:tokenConf.metadata.contractAddress,data:VIP180Token.encode('transfer',oper.account.address,oper.amount.value)})
                 }
             }
         }
@@ -774,14 +766,14 @@ export class Construction extends Router {
     }
 
     private gasToVTHO(gas:number,baseGasPrice:number):bigint {
-        return BigInt(gas) * BigInt(10**18) / BigInt(baseGasPrice);
+        return BigInt(gas) * BigInt(10**VTHOCurrency.decimals) / BigInt(baseGasPrice);
     }
     
 
     private env:any;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private tokenList:Array<Token> = new Array();
+    private tokenList:Array<Currency> = new Array();
     private readonly unsignedRosettaTransactionRlp = new RLP({
         name:'tx',
         kind:[

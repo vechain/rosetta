@@ -2,14 +2,14 @@ import Joi from "joi";
 import Router from "koa-router";
 import { getError } from "../common/errors";
 import { BlockIdentifier } from "../common/types/identifiers";
-import { Token } from "../common/types/token";
 import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
 import { Transaction as VeTransaction } from "thor-devkit";
 import { Operation, OperationStatus, OperationType } from "../common/types/operation";
 import { VIP180Token } from "../utils/vip180Token";
-import { VETCurrency, VTHO, VTHOCurrency } from "..";
+import { VETCurrency, VTHOCurrency } from "..";
+import { Currency } from "../common/types/currency";
 
 export class Search extends Router {
     constructor(env:any){
@@ -83,7 +83,7 @@ export class Search extends Router {
          for(let index = 0; index < tx.clauses.length; index++){
             const clause = tx.clauses[index] as VeTransaction.Clause;
             if(clause.value == 0 || clause.value == ''){
-                const token = this.tokenList.find( t => {return t.address == clause.to;})!;
+                const token = this.tokenList.find( t => {return t.metadata.contractAddress == clause.to;})!;
                 if(token == undefined || clause.data.substring(10) != '0xa9059cbb'){
                     continue;
                 }
@@ -174,7 +174,7 @@ export class Search extends Router {
                 account:{
                     address:delegator,
                     sub_account:{
-                        address:VTHO.address,
+                        address:VTHOCurrency.metadata.contractAddress,
                     }
                 },
                 amount:{
@@ -193,7 +193,7 @@ export class Search extends Router {
                 account:{
                     address:origin,
                     sub_account:{
-                        address:VTHO.address,
+                        address:VTHOCurrency.metadata.contractAddress,
                     }
                 },
                 amount:{
@@ -217,5 +217,5 @@ export class Search extends Router {
     private env:any;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private tokenList:Array<Token> = new Array();
+    private tokenList:Array<Currency> = new Array();
 }

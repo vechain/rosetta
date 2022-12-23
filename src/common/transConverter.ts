@@ -1,9 +1,9 @@
-import { VETCurrency, VTHO, VTHOCurrency } from "..";
+import { VETCurrency, VTHOCurrency } from "..";
 import { Transaction } from "../common/types/transaction";
 import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
+import { Currency } from "./types/currency";
 import { Operation, OperationStatus, OperationType } from "./types/operation";
-import { Token } from "./types/token";
 
 export class TransactionConverter {
 
@@ -75,9 +75,9 @@ export class TransactionConverter {
 
         if(rece.outputs.length > 0 && rece.outputs[clauseIndex].events.length > 0) {
            for(const ev of rece.outputs[clauseIndex].events){
-                const targetToken = this.tokenList.find( token => { return token.address.toLowerCase() == ev.address.toLowerCase()});
+                const targetToken = this.tokenList.find( token => { return token.metadata.contractAddress.toLowerCase() == ev.address.toLowerCase()});
                 if(targetToken != undefined){
-                    const transEvents = VIP180Token.filterEvents([ev],targetToken.address,'Transfer');
+                    const transEvents = VIP180Token.filterEvents([ev],targetToken.metadata.contractAddress,'Transfer');
                     if(transEvents.length == 1){
                         const transEvet = transEvents[0];
                         let sendOper:Operation = {
@@ -138,7 +138,7 @@ export class TransactionConverter {
             account:{
                 address:rece.gasPayer,
                 sub_account:{
-                    address:VTHO.address
+                    address:VTHOCurrency.metadata.contractAddress
                 }
             },
             amount:{
@@ -159,7 +159,7 @@ export class TransactionConverter {
             account:{
                 address:rece.gasPayer,
                 sub_account:{
-                    address:VTHO.address
+                    address:VTHOCurrency.metadata.contractAddress
                 }
             },
             amount:{
@@ -171,5 +171,5 @@ export class TransactionConverter {
 
     private env:any;
     private connex:ConnexPro;
-    private tokenList:Array<Token> = new Array();
+    private tokenList:Array<Currency> = new Array();
 }

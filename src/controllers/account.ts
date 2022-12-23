@@ -5,10 +5,10 @@ import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMid
 import ConnexPro from "../utils/connexPro";
 import Axios from "axios";
 import { BlockIdentifier } from "../common/types/identifiers";
-import { Token } from "../common/types/token";
 import { VIP180Token } from "../utils/vip180Token";
 import { getError } from "../common/errors";
-import { VETCurrency, VTHO, VTHOCurrency } from "..";
+import { VETCurrency, VTHOCurrency } from "..";
+import { Currency } from "../common/types/currency";
 
 export class Account extends Router {
     constructor(env:any){
@@ -41,9 +41,9 @@ export class Account extends Router {
             const block = await this.connex.thor.block(revision).get();
             if(block != null){
                 if(subaccount != ''){
-                    const tokenConf = this.tokenList.find( t => {return t.address.toLowerCase() == subaccount.toLowerCase()});
+                    const tokenConf = this.tokenList.find( t => {return t.metadata.contractAddress.toLowerCase() == subaccount.toLowerCase()});
                     if(tokenConf != undefined){
-                        const token = new VIP180Token(tokenConf.address,this.connex);
+                        const token = new VIP180Token(tokenConf.metadata.contractAddress,this.connex);
                         const created = await token.created(revision);
                         if(created == true){
                             const balance = await token.balanceOf(account,block.id);
@@ -57,7 +57,7 @@ export class Account extends Router {
                                     currency:{
                                         symbol:tokenConf.symbol,
                                         decimals:tokenConf.decimals,
-                                        metadata:{...tokenConf.metadata,contractAddress:tokenConf.address}
+                                        metadata:{...tokenConf.metadata,contractAddress:tokenConf.metadata.contractAddress}
                                     }
                                 }]
                             }
@@ -116,5 +116,5 @@ export class Account extends Router {
     private env:any;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private tokenList:Array<Token>;
+    private tokenList:Array<Currency>;
 }

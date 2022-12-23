@@ -14,7 +14,6 @@ import { Mempool } from "./controllers/mempool";
 import { Network } from "./controllers/network";
 import { Search } from "./controllers/search";
 import ConnexPro from "./utils/connexPro";
-import { Token } from "./common/types/token";
 import { Currency } from "./common/types/currency";
 
 process.setMaxListeners(50);
@@ -22,23 +21,18 @@ process.setMaxListeners(50);
 const configPath = path.join(__dirname, "../config/config.json");
 const config = require(configPath);
 
-export const VTHO:Token = {
-    name:'VeThor Token',
-    address:'0x0000000000000000000000000000456E65726779',
-    symbol:'VTHO',
-    decimals:18
-}
 
 export const VETCurrency:Currency = {
     symbol:'VET',
-    decimals:18
+    decimals:18,
+    metadata:{}
 }
 
 export const VTHOCurrency:Currency = {
-    symbol:VTHO.symbol,
-    decimals:VTHO.decimals,
+    symbol:'VTHO',
+    decimals:18,
     metadata:{
-        contractAddress:VTHO.address
+        contractAddress:'0x0000000000000000000000000000456E65726779'
     }
 }
 
@@ -63,8 +57,8 @@ class ApiServer {
     }
 
     private initTokenList() {
-        this.env.config.tokenlist = new Array<Token>();
-        this.env.config.tokenlist.push(VTHO);
+        this.env.config.tokenlist = new Array<Currency>();
+        this.env.config.tokenlist.push(VTHOCurrency);
         // const tokenListConfig = (process.env['TOKENLIST'] ||  path.join(__dirname,'../config/tokelist.json')) as string;
         // if(FileIO.existsSync(tokenListConfig)){
         //     const tokenlist = require(tokenListConfig);
