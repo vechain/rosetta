@@ -79,9 +79,9 @@ class ApiServer {
             const connex = await ConnexPro.instance(this.env.config.nodeApi);
             const apiVersion = await this.getApiVersion();
             this.env.config.apiVersion = apiVersion;
-            this.env.config.nodeVersion = process.env['NODE_VERSION'] || apiVersion;
+            this.env.config.nodeVersion = this.env.config.node_version || apiVersion;
             connex.apiVersion = apiVersion;
-            connex.nodeVersion = apiVersion;
+            connex.nodeVersion = this.env.config.nodeVersion;
             this.env.connex = connex;
             if(connex.network != this.env.config.network){
                 console.error(`The node ${this.env.config.nodeApi} is not ${this.env.config.network} network.`);

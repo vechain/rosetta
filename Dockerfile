@@ -1,15 +1,14 @@
 # Build thor in a stock Go builder container
-ARG NODE_VERSION=v2.0.1
+ARG THOR_VERSION=v2.0.1
 
 FROM golang:1.19 as builder
 
 WORKDIR  /go/thor
 RUN git clone https://github.com/vechain/thor.git /go/thor
-RUN git checkout ${NODE_VERSION}
+RUN git checkout ${THOR_VERSION}
 RUN make all
 
 FROM ubuntu:20.04
-ENV NODE_VERSION=${NODE_VERSION}
 
 WORKDIR /data
 WORKDIR /usr/src/app
