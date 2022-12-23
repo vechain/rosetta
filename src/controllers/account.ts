@@ -66,11 +66,13 @@ export class Account extends Router {
                             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(27,undefined,{
                                 revision:revision
                             }));
+                            return;
                         }
                     } else {
                         ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(1,undefined,{
                             subaccount:subaccount
                         }));
+                        return;
                     }
                 } else {
                     const balances = await this.getAccountBalance(account,block.id);
@@ -87,9 +89,11 @@ export class Account extends Router {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
                     revision:revision
                 }));
+                return;
             }
         } catch (error) {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
+            return;
         }
         await next();
     }
@@ -102,10 +106,10 @@ export class Account extends Router {
             value:BigInt(response.data.balance).toString(10),
             currency:VETCurrency
         });
-        // result.push({
-        //     value:BigInt(response.data.energy).toString(10),
-        //     currency:VTHOCurrency
-        // });
+        result.push({
+            value:BigInt(response.data.energy).toString(10),
+            currency:VTHOCurrency
+        });
         return result;
     }
 

@@ -64,7 +64,7 @@ class ApiServer {
 
     private initTokenList() {
         this.env.config.tokenlist = new Array<Token>();
-        //this.env.config.tokenlist.push(VTHO);
+        this.env.config.tokenlist.push(VTHO);
         // const tokenListConfig = (process.env['TOKENLIST'] ||  path.join(__dirname,'../config/tokelist.json')) as string;
         // if(FileIO.existsSync(tokenListConfig)){
         //     const tokenlist = require(tokenListConfig);

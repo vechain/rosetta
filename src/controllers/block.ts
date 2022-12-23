@@ -57,7 +57,7 @@ export class Block extends Router {
                 for(const txid of block.transactions){
                     const rosettaTx = await this.transConverter.parseRosettaTransacion(txid);
                     if(rosettaTx.operations.length > 0){
-                        trans.push(await this.transConverter.parseRosettaTransacion(txid));
+                        trans.push(rosettaTx);
                     } else {
                         other_trans.push({hash:rosettaTx.transaction_identifier.hash});
                     }
@@ -93,6 +93,7 @@ export class Block extends Router {
             }
         } catch (error) {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,{error}));
+            return;
         }
         await next();
     }
@@ -101,7 +102,7 @@ export class Block extends Router {
         let revision = undefined;
         if(ctx.request.body.block_identifier?.hash != undefined){
             revision = ctx.request.body.block_identifier.hash;
-        } else {
+        } else if (ctx.request.body.block_identifier?.index != undefined){
             revision = ctx.request.body.block_identifier.index;
         }
 
@@ -126,14 +127,17 @@ export class Block extends Router {
                     ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(4,undefined,{
                         transaction_identifier_hash:txid
                     }));
+                    return;
                 }
             } else {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
                     block_identifier_hash:revision || ''
                 }));
+                return;
             }
         } catch (error) {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
+            return;
         }
         await next();
     }

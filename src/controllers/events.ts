@@ -68,8 +68,8 @@ export class Events extends Router {
             return true;
         } else {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(21));
+            return false;
         }
-        return false;
     }
 
     private env:any;

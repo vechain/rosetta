@@ -81,6 +81,7 @@ export class Construction extends Router {
                 public_key:ctx.request.body.public_key,
                 error:verify.error
             }));
+            return;
         }
         await next();
     }
@@ -94,12 +95,16 @@ export class Construction extends Router {
             const tokensOpers = this.getTokensOperations(ctx.request.body.operations);
             if(origins.length > 1){
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(6));
+                return;
             } else if (origins.length == 0){
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(7));
+                return;
             } else if(delegators.length > 1) {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(8));
+                return;
             } else if (vetOpers.length == 0 && tokensOpers.registered.length == 0){
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(9));
+                return;
             } else if(tokensOpers.unregistered.length > 0){
                 const unregisteredToken = new Array<string>();
                 for(const addr of tokensOpers.unregistered){
@@ -108,11 +113,12 @@ export class Construction extends Router {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(10,undefined,{
                     unregisteredToken:unregisteredToken
                 }));
+                return;
             }
 
             const clauses = new Array<VeTransaction.Clause>();
             for(const op of vetOpers){
-                clauses.push({to:op.to,value:op.value,data:'0x00'});
+                clauses.push({to:op.to,value:op.value,data:'0x'});
             }
             for(const op of tokensOpers.registered){
                 clauses.push({to:op.token,value:0,data:VIP180Token.encode('transfer',op.to,op.value)});
@@ -134,15 +140,15 @@ export class Construction extends Router {
 
     private async metadata(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkPublickeys(ctx) && this.checkOptions(ctx)){
-            const origin = this.computeAddress(ctx.request.body.public_keys[0].hex_bytes as string);
+            const txOrigin = this.computeAddress(ctx.request.body.public_keys[0].hex_bytes as string);
             let delegator;
             if(ctx.request.body.public_keys.length == 2){
                 delegator = this.computeAddress(ctx.request.body.public_keys[1].hex_bytes as string);
             }
             try {
-                let gas = await this.estimateGas((ctx.request.body.options.clauses as VeTransaction.Clause[]),origin,delegator);
+                let gas = await this.estimateGas((ctx.request.body.options.clauses as VeTransaction.Clause[]),txOrigin,delegator);
                 gas = gas * 1.2;
-                const fee = BigInt(gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice);
+                const fee = this.gasToVTHO(gas,this.connex.baseGasPrice);
                 const blockRef = this.connex.blockRef;
                 const chainTag = this.connex.chainTag;
                 const response = {
@@ -150,15 +156,16 @@ export class Construction extends Router {
                         blockRef:blockRef,
                         chainTag:chainTag,
                         gas:gas
-                    }
-                    // suggested_fee:[{
-                    //     value:fee.toString(10),
-                    //     currency:VTHOCurrency
-                    // }]
+                    },
+                    suggested_fee:[{
+                        value:fee.toString(10),
+                        currency:VTHOCurrency
+                    }]
                 }
                 ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
             } catch (error) {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(11,undefined,error));
+                return;
             }
         }
         await next();
@@ -166,11 +173,49 @@ export class Construction extends Router {
 
     private async payloads(ctx:Router.IRouterContext,next:() => Promise<any>){
         if(this.checkOptions(ctx) && this.checkPublickeys(ctx) && this.checkMetadata(ctx)){
-            const origin = this.computeAddress(ctx.request.body.public_keys[0].hex_bytes as string);
-            let delegator;
-            if(ctx.request.body.public_keys.length == 2){
-                delegator = this.computeAddress(ctx.request.body.public_keys[1].hex_bytes as string);
+            
+            let txDelegator;
+            let txOrigin;
+            const delegators = this.getTxDelegators(ctx.request.body.operations);
+            if(delegators.length > 1 || ctx.request.body.public_keys.length > 2){
+                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(8));
+                return;
             }
+            if(delegators.length == 1 && ctx.request.body.public_keys.length != 2){
+                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(28));
+                return;
+            }
+            if(delegators.length == 1){
+                const dele = this.computeAddress(ctx.request.body.public_keys[1].hex_bytes as string).toLowerCase();
+                if(dele != delegators[0]){
+                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(29,undefined,{operation_account:delegators[0],public_key:ctx.request.body.public_keys[1].hex_bytes}));
+                    return;
+                } else {
+                    txDelegator = delegators[0];
+                }
+            }
+
+            const origins = this.getTxOrigins(ctx.request.body.operations);
+            if(origins.length > 1){
+                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(6));
+                return;
+            } else if(origins.length == 0){
+                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(7));
+                return;
+            } else if(ctx.request.body.public_keys.length == 0){
+                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(30));
+                return;
+            }
+            if(origins.length == 1 && ctx.request.body.public_keys.length >= 1){
+                const orig = this.computeAddress(ctx.request.body.public_keys[0].hex_bytes as string).toLowerCase();
+                if(orig != origins[0]){
+                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(29,undefined,{operation_account:origins[0],public_key:ctx.request.body.public_keys[0].hex_bytes}));
+                    return;
+                } else {
+                    txOrigin = origins[0];
+                }
+            }
+
             const clauses = this.convertOperationsToClauses(ctx.request.body.operations);
 
             const vechainTxBody:VeTransaction.Body = {
@@ -183,16 +228,14 @@ export class Construction extends Router {
                 gasPriceCoef:0,
                 dependsOn:null
             }
-            if(delegator != null && delegator.length == 42){
+            if(txDelegator != null && txDelegator.length == 42){
                 vechainTxBody.reserved = {
                     features:1
                 }
             }
 
-            console.debug(JSON.stringify(vechainTxBody));
-
             const vechainTx = new VeTransaction(vechainTxBody);
-            const signingHash = vechainTx.signingHash((delegator != null && delegator.length == 42) ? origin : undefined).toString('hex');
+            const originSignHash = vechainTx.signingHash().toString('hex');
             const rosettaTx = {
                 chainTag:vechainTxBody.chainTag,
                 blockRef:vechainTxBody.blockRef,
@@ -200,24 +243,25 @@ export class Construction extends Router {
                 clauses:vechainTxBody.clauses,
                 gas:vechainTxBody.gas,
                 nonce:vechainTxBody.nonce,
-                origin:origin,
-                delegator:delegator || undefined
+                origin:txOrigin,
+                delegator:txDelegator || undefined
             }
             const rosettaTxRaw = this.unsignedRosettaTransactionRlp.encode(rosettaTx);
             const response = {
                 unsigned_transaction:'0x' + rosettaTxRaw.toString('hex'),
                 payloads:[
                     {
-                        address:origin,
-                        hex_bytes:signingHash,
+                        address:txOrigin,
+                        hex_bytes:originSignHash,
                         signature_type:SignatureType.ecdsa_recovery
                     }
                 ]
             }
-            if(delegator != null && delegator.length == 42){
+            if(txDelegator != null && txDelegator.length == 42){
+                const delegationSignHash = vechainTx.signingHash(txOrigin).toString('hex');
                 response.payloads.push({
-                    address:delegator,
-                    hex_bytes:signingHash,
+                    address:txDelegator,
+                    hex_bytes:delegationSignHash,
                     signature_type:SignatureType.ecdsa_recovery
                 });
             }
@@ -232,6 +276,7 @@ export class Construction extends Router {
             rosettaTx = this.signedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
         } catch (error) {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(12));
+            return;
         }
         let vechainTxBody:VeTransaction.Body = {
             chainTag:rosettaTx.chainTag,
@@ -243,11 +288,12 @@ export class Construction extends Router {
             dependsOn:null,
             nonce:rosettaTx.nonce
         }
-        if(rosettaTx.delegator != undefined && rosettaTx.delegated.length == 42){
+        if(rosettaTx.delegator != undefined && rosettaTx.delegator.length == 42){
             vechainTxBody.reserved = {features:1};
         }
         const vechainTx = new VeTransaction(vechainTxBody);
         vechainTx.signature = rosettaTx.signature;
+
         const raw = '0x' + vechainTx.encode().toString('hex');
         try {
             const response = await axios.post(this.connex.baseUrl + '/transactions',{raw:raw},{responseType:'json'});
@@ -257,8 +303,9 @@ export class Construction extends Router {
                     hash:txid
                 }
             });
-        } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(13,undefined,error));
+        } catch (error:any) {
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(13,undefined,{status:error.response.status,error:error.response.data.trim(),raw:raw}));
+            return;
         }
         await next();
     }
@@ -271,7 +318,7 @@ export class Construction extends Router {
             } else {
                 rosettaTx = this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
             }
-            const origin = rosettaTx.origin as string;
+            const txOrigin = rosettaTx.origin as string;
             const delegator = rosettaTx.delegator as string
             let operations = new Array<Operation>();
             for(let index = 0; index < rosettaTx.clauses.length; index++){
@@ -286,7 +333,7 @@ export class Construction extends Router {
                         },
                         type:OperationType.Transfer,
                         account:{
-                            address:origin,
+                            address:txOrigin,
                             sub_account:{
                                 address:clause.to!
                             }
@@ -330,7 +377,7 @@ export class Construction extends Router {
                         },
                         type:OperationType.Transfer,
                         account:{
-                            address:origin
+                            address:txOrigin
                         },
                         amount:{
                             value:(BigInt(clause.value) * BigInt(-1)).toString(10),
@@ -355,6 +402,40 @@ export class Construction extends Router {
                 }
             }
 
+            if(delegator != undefined && delegator.length == 42){
+                const delegatinOp:Operation = {
+                    operation_identifier:{
+                        index:0,
+                        network_index:rosettaTx.clauses.length
+                    },
+                    type:OperationType.FeeDelegation,
+                    account:{
+                        address:delegator
+                    },
+                    amount:{
+                        value:(this.gasToVTHO(rosettaTx.gas,this.connex.baseGasPrice) * BigInt(-1)).toString(10),
+                        currency:VTHOCurrency
+                    }
+                }
+                operations.push(delegatinOp)
+            } else {
+                const feeOp:Operation = {
+                    operation_identifier:{
+                        index:0,
+                        network_index:rosettaTx.clauses.length + 1
+                    },
+                    type:OperationType.Fee,
+                    account:{
+                        address:txOrigin
+                    },
+                    amount:{
+                        value:(this.gasToVTHO(rosettaTx.gas,this.connex.baseGasPrice) * BigInt(-1)).toString(10),
+                        currency:VTHOCurrency
+                    }
+                }
+                operations.push(feeOp)
+            }
+
             for(let index = 0; index < operations.length; index++){
                 operations[index].operation_identifier.index = index;
             }
@@ -364,10 +445,10 @@ export class Construction extends Router {
                 response = {
                     operations:operations,
                     account_identifier_signers:[{
-                        address:origin
+                        address:txOrigin
                     }]
                 }
-                if(delegator != undefined && delegator != ''){
+                if(delegator != undefined && delegator.length != 42){
                     response.account_identifier_signers.push({address:delegator});
                 }
             } else {
@@ -412,11 +493,15 @@ export class Construction extends Router {
                 dependsOn:null,
                 nonce:rosettaTx.nonce
             }
-            if(rosettaTx.delegator != undefined && rosettaTx.delegated.length == 42){
+            if(rosettaTx.delegator != undefined && rosettaTx.delegator.length == 42){
                 vechainTxBody.reserved = {features:1};
             }
             const vechainTx = new VeTransaction(vechainTxBody);
             vechainTx.signature = rosettaTx.signature;
+
+            const reOri = vechainTx.origin;
+            const reDel = vechainTx.delegator;
+
             ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
                 transaction_identifier:{
                     hash:vechainTx.id
@@ -424,6 +509,7 @@ export class Construction extends Router {
             });
         } catch (error) {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(12));
+            return;
         }
         await next();
     }
@@ -456,8 +542,8 @@ export class Construction extends Router {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(14,undefined,{
                 error:verify.error
             }));
+            return false;
         }
-        return false;
     }
 
     private getTxOrigins(operations:Array<any>):string[] {
@@ -475,7 +561,7 @@ export class Construction extends Router {
         }
 
         for(const addr of originMap.keys()){
-            result.push(addr);
+            result.push(addr.toLocaleLowerCase());
         }
         return result;
     }
@@ -490,7 +576,7 @@ export class Construction extends Router {
         }
 
         for(const addr of originMap.keys()){
-            result.push(addr);
+            result.push(addr.toLowerCase());
         }
         return result;
     }
@@ -539,8 +625,8 @@ export class Construction extends Router {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(5,undefined,{
                 error:verify.error
             }));
+            return false;
         }
-        return false;
     }
 
     private checkOptions(ctx:Router.IRouterContext):boolean{
@@ -560,14 +646,14 @@ export class Construction extends Router {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(15,undefined,{
                 error:verify.error
             }));
+            return false;
         }
-        return false;
     }
 
-    private async estimateGas(clauses:VeTransaction.Clause[],origin:string,delegator?:string):Promise<number> {
+    private async estimateGas(clauses:VeTransaction.Clause[],txOrigin:string,delegator?:string):Promise<number> {
         let result = 16000;
         try {
-            const outputs = await this.connex.thor.explain(clauses).caller(origin).gasPayer(delegator || origin).execute();
+            const outputs = await this.connex.thor.explain(clauses).caller(txOrigin).gasPayer(delegator || txOrigin).execute();
             for(const output of outputs){
                 result = result + (output.gasUsed != 0 ? output.gasUsed : 5000);
             }
@@ -592,8 +678,8 @@ export class Construction extends Router {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(16,undefined,{
                 error:verify.error
             }));
+            return false;
         }
-        return false;
     }
 
     private convertOperationsToClauses(operations:Array<any>):VeTransaction.Clause[]{
@@ -601,7 +687,7 @@ export class Construction extends Router {
         const sorted = operations.sort((l,r) => {return l.operation_identifier.index - r.operation_identifier.index;});
         for(const oper of sorted){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer){
-                result.push({value:BigInt(oper.amount.value).toString(10),to:oper.account.address,data:'0x00'});
+                result.push({value:Number(BigInt(oper.amount.value)),to:oper.account.address,data:'0x'});
             }
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.account.sub_account?.address != undefined){
                 const tokenConf = this.tokenList.find(token => {return token.address == oper.account.sub_account.address;});
@@ -630,14 +716,15 @@ export class Construction extends Router {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(17,undefined,{
                     error:error
                 }));
+                return false;
             }
             return true;
         } else {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(18,undefined,{
                 error:verify.error
             }));
+            return false;
         }
-        return false;
     }
 
     private checkCombineRequest(ctx: Router.IRouterContext):boolean{
@@ -668,14 +755,15 @@ export class Construction extends Router {
                 this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
             } catch (error) {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(19));
+                return false;
             }
             return true;
         } else {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(20,undefined,{
                 error:verify.error
             }));
+            return false;
         }
-        return false;
     }
 
     private computeAddress(publickey:string):string {
@@ -683,6 +771,10 @@ export class Construction extends Router {
             publickey = '0x' +  publickey;
         }
         return ethers.utils.computeAddress(publickey).toLowerCase();
+    }
+
+    private gasToVTHO(gas:number,baseGasPrice:number):bigint {
+        return BigInt(gas) * BigInt(10**18) / BigInt(baseGasPrice);
     }
     
 

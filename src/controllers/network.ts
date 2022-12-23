@@ -101,6 +101,7 @@ export class Network extends Router {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,{
                 error:error
             }))
+            return;
         }
         
         await next();

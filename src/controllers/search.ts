@@ -53,6 +53,7 @@ export class Search extends Router {
                 })
             } else {
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(4));
+                return;
             }
         }
         await next();
@@ -71,8 +72,8 @@ export class Search extends Router {
             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(25,undefined,{
                 error:verify.error
             }));
+            return false;
         }
-        return false;
     }
 
     private convertClausesToOperations(tx:Connex.Thor.Transaction,txrecp?:Connex.Thor.Transaction.Receipt|null):Operation[] {
@@ -163,45 +164,45 @@ export class Search extends Router {
             }
         }
         
-        // if(delegator != null && delegator.length == 42){
-        //     const payOp:Operation = {
-        //         operation_identifier:{
-        //             index:0,
-        //             network_index:0
-        //         },
-        //         type:OperationType.FeeDelegation,
-        //         account:{
-        //             address:delegator,
-        //             sub_account:{
-        //                 address:VTHO.address,
-        //             }
-        //         },
-        //         amount:{
-        //             value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
-        //             currency:VTHOCurrency
-        //         }
-        //     }
-        //     operations.push(payOp);
-        // }else {
-        //     const payOp:Operation = {
-        //         operation_identifier:{
-        //             index:0,
-        //             network_index:0
-        //         },
-        //         type:OperationType.Fee,
-        //         account:{
-        //             address:origin,
-        //             sub_account:{
-        //                 address:VTHO.address,
-        //             }
-        //         },
-        //         amount:{
-        //             value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
-        //             currency:VTHOCurrency
-        //         }
-        //     }
-        //     operations.push(payOp);
-        // }
+        if(delegator != null && delegator.length == 42){
+            const payOp:Operation = {
+                operation_identifier:{
+                    index:0,
+                    network_index:0
+                },
+                type:OperationType.FeeDelegation,
+                account:{
+                    address:delegator,
+                    sub_account:{
+                        address:VTHO.address,
+                    }
+                },
+                amount:{
+                    value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
+                    currency:VTHOCurrency
+                }
+            }
+            operations.push(payOp);
+        }else {
+            const payOp:Operation = {
+                operation_identifier:{
+                    index:0,
+                    network_index:0
+                },
+                type:OperationType.Fee,
+                account:{
+                    address:origin,
+                    sub_account:{
+                        address:VTHO.address,
+                    }
+                },
+                amount:{
+                    value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
+                    currency:VTHOCurrency
+                }
+            }
+            operations.push(payOp);
+        }
 
         if(txrecp != undefined && txrecp != null){
             for(let oper of operations){

@@ -34,6 +34,9 @@ export const Errors = new Map<number,RosettaError>([
     [24,{code:24,message:'The request parame block_identifier invalid.',retriable:false}],
     [25,{code:25,message:'The request parame transaction_identifier invalid.',retriable:false}],
     [26,{code:26,message:'The api not support offline.',retriable:false}],
-    [27,{code:27,message:'The contract not create at the block_identifier.',retriable:false}]
+    [27,{code:27,message:'The contract not create at the block_identifier.',retriable:false}],
+    [28,{code:28,message:'No set delegator public_key',retriable:false}],
+    [29,{code:29,message:'The operation account and public_key not match',retriable:false}],
+    [30,{code:30,message:'No set origin public_key',retriable:false}],
 ]);
 

@@ -22,11 +22,11 @@ export class TransactionConverter {
                 const opers = this.parseRosettaOperations(index,txRece);
                 result.operations = result.operations.concat(opers);
             }
-            // if(txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
-            //     result.operations.push(this.feeDelegationOperation(txRece));
-            // } else {
-            //     result.operations.push(this.feeOperation(txRece));
-            // }
+            if(txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
+                result.operations.push(this.feeDelegationOperation(txRece));
+            } else {
+                result.operations.push(this.feeOperation(txRece));
+            }
             for(var index = 0; index < result.operations.length; index++ ){
                 result.operations[index].operation_identifier.index = index;
                 result.operations[index].status = txRece.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
@@ -131,7 +131,7 @@ export class TransactionConverter {
         return {
             operation_identifier:{
                 index:0,
-                network_index:rece.outputs.length + 1
+                network_index:rece.outputs.length
             },
             type:OperationType.FeeDelegation,
             status:OperationStatus.None,
@@ -152,7 +152,7 @@ export class TransactionConverter {
         return {
             operation_identifier:{
                 index:0,
-                network_index:rece.outputs.length + 1
+                network_index:rece.outputs.length
             },
             type:OperationType.Fee,
             status:OperationStatus.None,
