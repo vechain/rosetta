@@ -12,6 +12,7 @@ import axios from "axios";
 import { getError } from "../common/errors";
 import { ethers } from "ethers";
 import { Currency } from "../common/types/currency";
+import { randomBytes } from "crypto";
 
 export class Construction extends Router {
     constructor(env:any){
@@ -224,7 +225,7 @@ export class Construction extends Router {
                 expiration:this.env.config.expiration as number,
                 clauses:clauses,
                 gas:ctx.request.body.metadata.gas,
-                nonce:'0x' + Math.random().toString(10).slice(-16),
+                nonce:'0x' + randomBytes(8).toString('hex'),
                 gasPriceCoef:0,
                 dependsOn:null
             }
@@ -679,7 +680,7 @@ export class Construction extends Router {
         const sorted = operations.sort((l,r) => {return l.operation_identifier.index - r.operation_identifier.index;});
         for(const oper of sorted){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer){
-                result.push({value:Number(BigInt(oper.amount.value)),to:oper.account.address,data:'0x'});
+                result.push({value:'0x' + BigInt(oper.amount.value).toString(16),to:oper.account.address,data:'0x'});
             }
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.account.sub_account?.address != undefined){
                 const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress == oper.account.sub_account.address;});
