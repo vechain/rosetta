@@ -32,7 +32,7 @@ export const VTHOCurrency:Currency = {
     symbol:'VTHO',
     decimals:18,
     metadata:{
-        contractAddress:'0x0000000000000000000000000000456E65726779'
+        contractAddress:'0x0000000000000000000000000000456e65726779'
     }
 }
 
