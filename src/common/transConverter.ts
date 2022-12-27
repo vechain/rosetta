@@ -136,10 +136,7 @@ export class TransactionConverter {
             type:OperationType.FeeDelegation,
             status:OperationStatus.None,
             account:{
-                address:rece.gasPayer,
-                sub_account:{
-                    address:VTHOCurrency.metadata.contractAddress
-                }
+                address:rece.gasPayer
             },
             amount:{
                 value:(BigInt(rece.paid) * BigInt(-1)).toString(10),
@@ -157,10 +154,7 @@ export class TransactionConverter {
             type:OperationType.Fee,
             status:OperationStatus.None,
             account:{
-                address:rece.gasPayer,
-                sub_account:{
-                    address:VTHOCurrency.metadata.contractAddress
-                }
+                address:rece.gasPayer
             },
             amount:{
                 value:(BigInt(rece.paid) * BigInt(-1)).toString(10),
