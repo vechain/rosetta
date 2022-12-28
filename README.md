@@ -94,7 +94,7 @@ POST | /construction/submit | Yes | Submit a Signed Transaction | online
 
 Method| Endpoint | Implemented | Description | Mode
 ---------|----------|---------|---------|---------
-POST | /events/blocks | Yes | [INDEXER] Get a range of BlockEvents
+POST | /events/blocks | Yes | [INDEXER] Get a range of BlockEvents | online
 
 ### Mempool
 
@@ -129,7 +129,7 @@ POST | /search/transactions | Yes | [INDEXER] Search for Transactions | online
 
 - Step1: Create a VIP191 payloads
 
-Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` is fee delegator address,`sub_account.address` is VTHO smart contract address. `amount.value` default 0 .
+Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` is fee delegator address, `amount.value` default 0 .
 
 ``` json
     {
@@ -140,130 +140,264 @@ Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` 
     "operations": [
         {
             "operation_identifier": {
-                "index": 1,
+                "index": 0,
                 "network_index": 0
             },
             "type": "Transfer",
             "status": "None",
             "account": {
-                "address": "0xD3ae78222BEADB038203bE21eD5ce7C9B1BfF602"
+                "address": "0x16277a1ff38678291c41d1820957c78bb5da59ce"
             },
             "amount": {
-                "value": "12000000000000000000",
+                "value": "10000",
                 "currency": {
                     "symbol": "VET",
                     "decimals": 18
-                }
+                },
+                "metadata": {}
             }
         },
         {
             "operation_identifier": {
-                "index": 2,
-                "network_index": 0
-            },
-            "type": "Transfer",
-            "status": "None",
-            "account": {
-                "address": "0x7567D83b7b8d80ADdCb281A71d54Fc7B3364ffed"
-            },
-            "amount": {
-                "value": "-12000000000000000000",
-                "currency": {
-                    "symbol": "VET",
-                    "decimals": 18
-                }
-            }
-        },
-        {
-            "operation_identifier": {
-                "index": 3,
+                "index": 0,
                 "network_index": 1
             },
             "type": "Transfer",
             "status": "None",
             "account": {
-                "address": "0xD3ae78222BEADB038203bE21eD5ce7C9B1BfF602",
-                "sub_account": {
-                    "address": "0x0000000000000000000000000000456e65726779"
-                }
+                "address": "0xc05c334533c673582616ac2bf404b6c55efa1087"
             },
             "amount": {
-                "value": "12000000000000000000",
+                "value": "-10000",
                 "currency": {
-                    "symbol": "VTHO",
+                    "symbol": "VET",
                     "decimals": 18
-                }
+                },
+                "metadata": {}
             }
         },
         {
             "operation_identifier": {
-                "index": 4,
-                "network_index": 1
-            },
-            "type": "Transfer",
-            "status": "None",
-            "account": {
-                "address": "0x7567D83b7b8d80ADdCb281A71d54Fc7B3364ffed",
-                "sub_account": {
-                    "address": "0x0000000000000000000000000000456e65726779"
-                }
-            },
-            "amount": {
-                "value": "-12000000000000000000",
-                "currency": {
-                    "symbol": "VTHO",
-                    "decimals": 18
-                }
-            }
-        },
-        {
-            "operation_identifier": {
-                "index": 5,
+                "index": 0,
                 "network_index": 2
             },
             "type": "FeeDelegation",
             "status": "None",
             "account": {
-                "address": "0xd3ae78222beadb038203be21ed5ce7c9b1bff602",
-                "sub_account": {
-                    "address": "0x0000000000000000000000000000456e65726779"
-                }
+                "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983"
             },
             "amount": {
-                "value": "0",
+                "value": "-210000000000000000",
                 "currency": {
                     "symbol": "VTHO",
-                    "decimals": 18
+                    "decimals": 18,
+                    "metadata": {
+                        "contractAddress": "0x0000000000000000000000000000456E65726779"
+                    }
+                },
+                "metadata": {}
+            }
+        }
+    ]
+}
+```
+
+- Step2: Call /construction/preprocess
+
+When calling /construction/preprocess use VIP191 payloads, the api will return options and two required_public_keys, the first is transaction origin's public key,the second is fee-dalegation payer's public key.
+``` json
+  {
+    "options": {
+        "clauses": [
+            {
+                "to": "0x16277a1ff38678291c41d1820957c78bb5da59ce",
+                "value": "10000",
+                "data": "0x00"
+            }
+        ]
+    },
+    "required_public_keys": [
+        {
+            "address": "0xc05c334533c673582616ac2bf404b6c55efa1087"
+        },
+        {
+            "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983"
+        }
+    ]
+}
+```
+
+- Step3: Call /construction/metadata
+
+Use Step2 return value to call /construction/metadata, the api will calculate the gas online, return `metadata` and `suggested_fee`.
+``` json
+{
+    "metadata": {
+        "blockRef": "0x00d88b4ab127a39e",
+        "chainTag": 39,
+        "gas": 25200
+    },
+    "suggested_fee": [
+        {
+            "value": "2520000000",
+            "currency": {
+                "symbol": "VTHO",
+                "decimals": 18,
+                "metadata": {
+                    "contractAddress": "0x0000000000000000000000000000456E65726779"
                 }
+            }
+        }
+    ]
+}
+```
+
+- Step4 Call /construction/payloads
+
+call the /construction/payloads Api.
+
+``` json
+{
+    "network_identifier": {
+        "blockchain": "vechainthor",
+        "network": "test"
+    },
+    "operations": [
+        {
+            "operation_identifier": {
+                "index": 0,
+                "network_index": 0
+            },
+            "type": "Transfer",
+            "status": "None",
+            "account": {
+                "address": "0x16277a1ff38678291c41d1820957c78bb5da59ce"
+            },
+            "amount": {
+                "value": "10000",
+                "currency": {
+                    "symbol": "VET",
+                    "decimals": 18
+                },
+                "metadata": {}
+            }
+        },
+        {
+            "operation_identifier": {
+                "index": 0,
+                "network_index": 1
+            },
+            "type": "Transfer",
+            "status": "None",
+            "account": {
+                "address": "0xc05c334533c673582616ac2bf404b6c55efa1087"
+            },
+            "amount": {
+                "value": "-10000",
+                "currency": {
+                    "symbol": "VET",
+                    "decimals": 18
+                },
+                "metadata": {}
+            }
+        },
+        {
+            "operation_identifier": {
+                "index": 0,
+                "network_index": 2
+            },
+            "type": "FeeDelegation",
+            "status": "None",
+            "account": {
+                "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983"
+            },
+            "amount": {
+                "value": "-210000000000000000",
+                "currency": {
+                    "symbol": "VTHO",
+                    "decimals": 18,
+                    "metadata": {
+                        "contractAddress": "0x0000000000000000000000000000456E65726779"
+                    }
+                },
+                "metadata": {}
             }
         }
     ],
     "metadata": {
-        "chainTag":"0x27",
-        "blockRef":"0x00663ef78585491f"
-    }
+        "blockRef": "0x00d88b4ab127a39e",
+        "chainTag": 39,
+        "gas": 25200
+    },
+    "public_keys": [
+        {
+            "hex_bytes": "02d992bd203d2bf888389089db13d2d0807c1697091de377998efe6cf60d66fbb3",
+            "curve_type": "secp256k1"
+        },
+        {
+            "hex_bytes": "03a7e5b27bf35f3b1a863851a02b4d722927cd12f92bfb21f69c81c22fc4a1c6d3",
+            "curve_type": "secp256k1"
+        }
+    ]
 }
 ```
 
-- Step2: Call /construction/payloads
-
-When calling /construction/payloads use VIP191 payloads, the api will return two payload infomations. The first payload is the transaction origin infomation, the second payload is fee delegator infomation. The api will auto calculate transaction fee add the unsigned_transaction raw.
+the api will return `unsigned_transaction` and `payloads`.
 
 ``` json
-    {
-        "unsigned_transaction": "0xf89c2787663ef78585491f81b4f87edf94d3ae78222beadb038203be21ed5ce7c9b1bff60288a688906bd8b0000080f85c940000000000000000000000000000456e6572677980b844a9059cbb000000000000000000000000d3ae78222beadb038203be21ed5ce7c9b1bff602000000000000000000000000000000000000000000000000a688906bd8b0000080830101d08088a363332020238c1dc101",
-        "payloads": [
-            {
-                "address": "0x7567D83b7b8d80ADdCb281A71d54Fc7B3364ffed",
-                "hex_bytes": "0xf184335272ea0b534e653844d7c79d3de78902c41f98d86418028871c2c46b43",
+{
+    "unsigned_transaction": "0xf85d278800d88b4ab127a39e81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce822710808262708827c7571b85f5271594c05c334533c673582616ac2bf404b6c55efa1087944251630dc820e90a5a6d14d79cac7acb93917983",
+    "payloads": [
+        {
+            "address": "0xc05c334533c673582616ac2bf404b6c55efa1087",
+            "hex_bytes": "3fec5f2cfdd172e1372879992644513578a9917355488e23d5abf846990c1fe2",
+            "signature_type": "ecdsa_recovery"
+        },
+        {
+            "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983",
+            "hex_bytes": "16ff81dd942a6e42c6a352dbcf5615693c3659feb35cdc177d27a2851b73ee40",
+            "signature_type": "ecdsa_recovery"
+        }
+    ]
+}
+```
+
+- Step5 Sign with transaction orgin and fee-dalegation payer private keys and call `/construction/combine`
+
+```json
+{
+    "network_identifier": {
+        "blockchain": "vechainthor",
+        "network": "test"
+    },
+    "unsigned_transaction": "0xf85d278800d852ba843f1d4181b4dad99416277a1ff38678291c41d1820957c78bb5da59ce8227108082627088556581012357229594c05c334533c673582616ac2bf404b6c55efa1087944251630dc820e90a5a6d14d79cac7acb93917983",
+    "signatures": [
+        {
+            "signing_payload": {
+                "address": "0xc05c334533c673582616ac2bf404b6c55efa1087",
+                "hex_bytes": "3fec5f2cfdd172e1372879992644513578a9917355488e23d5abf846990c1fe2",
                 "signature_type": "ecdsa_recovery"
             },
-            {
-                "address": "0xd3ae78222beadb038203be21ed5ce7c9b1bff602",
-                "hex_bytes": "0x7573de904a86cf9d78147434a0caa3db0f68625e52a9907d4268f92d07acce64",
+            "public_key": {
+                "hex_bytes": "02d992bd203d2bf888389089db13d2d0807c1697091de377998efe6cf60d66fbb3",
+                "curve_type": "secp256k1"
+            },
+            "signature_type": "ecdsa_recovery",
+            "hex_bytes": "4ad82781abf5866020c9bf6a7b07f94ba4bb9e95ac1ca3c858ded24c08b6856213589bac265f656a87da255b855cfab9a96020d450593df2481015188ae7927000"
+        },
+        {
+            "signing_payload": {
+                "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983",
+                "hex_bytes": "16ff81dd942a6e42c6a352dbcf5615693c3659feb35cdc177d27a2851b73ee40",
                 "signature_type": "ecdsa_recovery"
-            }
-        ]
-    }
+            },
+            "public_key": {
+                "hex_bytes": "036aafc0aa461c6b2de2ca8a254ebc6685946a08dd7656dbb935ce4ce5cfac355b",
+                "curve_type": "secp256k1"
+            },
+            "signature_type": "ecdsa_recovery",
+            "hex_bytes": "7d6df64de2c4084b7809bdeba85784c6d031dd943e96271ac1cd22f3da9b5c3f2e610ec2d50e576583cff2d386fd6f7069b2883ca023b6000575ec0fcf4ddc9800"
+        }
+    ]
+}
 ```
-  
