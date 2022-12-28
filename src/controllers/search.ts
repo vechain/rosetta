@@ -96,17 +96,11 @@ export class Search extends Router {
                     type:OperationType.Transfer,
                     account:{
                         address:origin,
-                        sub_account:{
-                            address:clause.to!
-                        }
+                        sub_account: clause.to!.toLowerCase() != VTHOCurrency.metadata.contractAddress ? {address:clause.to!} : undefined
                     },
                     amount:{
                         value:(BigInt(decode._amount) * BigInt(-1)).toString(10),
-                        currency:{
-                            symbol:token.symbol,
-                            decimals:token.decimals,
-                            metadata:token.metadata
-                        }
+                        currency:token
                     }
                 }
                 const receiptOp:Operation = {
@@ -117,19 +111,14 @@ export class Search extends Router {
                     type:OperationType.Transfer,
                     account:{
                         address:decode._to as string,
-                        sub_account:{
-                            address:clause.to!
-                        }
+                        sub_account: clause.to!.toLowerCase() != VTHOCurrency.metadata.contractAddress ? {address:clause.to!} : undefined
                     },
                     amount:{
                         value:BigInt(decode._amount).toString(10),
-                        currency:{
-                            symbol:token.symbol,
-                            decimals:token.decimals,
-                            metadata:token.metadata
-                        }
+                        currency:token
                     }
                 }
+
                 operations = operations.concat([sendOp,receiptOp]);
             } else {
                 const sendOp:Operation = {
@@ -172,10 +161,7 @@ export class Search extends Router {
                 },
                 type:OperationType.FeeDelegation,
                 account:{
-                    address:delegator,
-                    sub_account:{
-                        address:VTHOCurrency.metadata.contractAddress,
-                    }
+                    address:delegator
                 },
                 amount:{
                     value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
@@ -191,10 +177,7 @@ export class Search extends Router {
                 },
                 type:OperationType.Fee,
                 account:{
-                    address:origin,
-                    sub_account:{
-                        address:VTHOCurrency.metadata.contractAddress,
-                    }
+                    address:origin
                 },
                 amount:{
                     value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
