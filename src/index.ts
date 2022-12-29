@@ -43,6 +43,20 @@ class ApiServer {
         if(this.env.config.mode == 'online'){
             await this.initConnex();
             this.env.config.node_version = this.env.connex.nodeVersion;
+        } else {
+            this.env.config.apiVersion = "";
+            this.env.config.nodeVersion = "";
+
+            switch(this.env.config.network as string){
+                case "main":
+                    this.env.config.chainTag = 0x4a;
+                    break;
+                case "test":
+                    this.env.config.chainTag = 0x27;
+                    break;
+                default:
+                    break;
+            }
         }
         this.runService();
     }
@@ -76,6 +90,7 @@ class ApiServer {
             this.env.config.nodeVersion = this.env.config.node_version || apiVersion;
             connex.apiVersion = apiVersion;
             connex.nodeVersion = this.env.config.nodeVersion;
+            this.env.config.chainTag = connex.chainTag;
             this.env.connex = connex;
             if(connex.network != this.env.config.network){
                 console.error(`The node ${this.env.config.nodeApi} is not ${this.env.config.network} network.`);
@@ -100,6 +115,7 @@ class ApiServer {
             ******************** VeChain Rosetta API Server ********************
             |   Api               |   localhost:${port}
             |   Rosetta Version   |   ${this.env.config.rosetta_version}
+            |   Mode              |   ${this.env.config.mode}
             |   Node URL          |   ${this.env.config.nodeApi}
             |   Node Version      |   ${this.env.config.nodeVersion}
             |   Network           |   ${this.env.config.network}

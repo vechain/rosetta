@@ -164,7 +164,7 @@ export class Search extends Router {
                     address:delegator
                 },
                 amount:{
-                    value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
+                    value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10),
                     currency:VTHOCurrency
                 }
             }
@@ -180,7 +180,7 @@ export class Search extends Router {
                     address:origin
                 },
                 amount:{
-                    value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10),
+                    value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10),
                     currency:VTHOCurrency
                 }
             }
@@ -192,7 +192,7 @@ export class Search extends Router {
                 oper.status = txrecp.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
             }
             let payOp = operations.find( op => {return op.type == OperationType.Fee || op.type == OperationType.FeeDelegation;})!;
-            payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / BigInt(this.connex.baseGasPrice)*BigInt(-1)).toString(10);
+            payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10);
         }
         return operations;
     }

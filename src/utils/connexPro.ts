@@ -20,14 +20,6 @@ export default class ConnexPro extends Framework
     public nodeVersion:string = '';
     
     public apiVersion:string = '';
-
-    public get baseGasPrice():number {
-        return 10000000000000;
-    }
-
-    public get expiration():number {
-        return 180;
-    }
     
     public get blockRef():string{
         return this.thor.status.head.id.substring(0,18);

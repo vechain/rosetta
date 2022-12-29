@@ -6,5 +6,7 @@
     "confirm_num":12,
     "rosetta_version":"1.4.12",
     "node_version":"2.0.1",
-    "expiration":180
+    "expiration":180,
+    "baseGasPrice":10000000000000,
+    "chainTag":0
 }

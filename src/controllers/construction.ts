@@ -149,9 +149,9 @@ export class Construction extends Router {
             try {
                 let gas = await this.estimateGas((ctx.request.body.options.clauses as VeTransaction.Clause[]),txOrigin,delegator);
                 gas = gas * 1.2;
-                const fee = this.gasToVTHO(gas,this.connex.baseGasPrice);
+                const fee = this.gasToVTHO(gas,this.env.config.baseGasPrice);
                 const blockRef = this.connex.blockRef;
-                const chainTag = this.connex.chainTag;
+                const chainTag = this.env.config.chainTag;
                 const response = {
                     metadata:{
                         blockRef:blockRef,
@@ -406,7 +406,7 @@ export class Construction extends Router {
                         address:delegator
                     },
                     amount:{
-                        value:(this.gasToVTHO(rosettaTx.gas,this.connex.baseGasPrice) * BigInt(-1)).toString(10),
+                        value:(this.gasToVTHO(rosettaTx.gas,this.env.config.baseGasPrice) * BigInt(-1)).toString(10),
                         currency:VTHOCurrency
                     }
                 }
@@ -422,7 +422,7 @@ export class Construction extends Router {
                         address:txOrigin
                     },
                     amount:{
-                        value:(this.gasToVTHO(rosettaTx.gas,this.connex.baseGasPrice) * BigInt(-1)).toString(10),
+                        value:(this.gasToVTHO(rosettaTx.gas,this.env.config.baseGasPrice) * BigInt(-1)).toString(10),
                         currency:VTHOCurrency
                     }
                 }
@@ -660,7 +660,7 @@ export class Construction extends Router {
         const schema = Joi.object({
             metadata:Joi.object({
                 blockRef:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
-                chainTag:Joi.number().valid(this.connex.chainTag).required(),
+                chainTag:Joi.number().valid(this.env.config.chainTag).required(),
                 gas:Joi.number().min(21000).required()
             })
         });
