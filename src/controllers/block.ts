@@ -34,9 +34,9 @@ export class Block extends Router {
 
     private async block(ctx:Router.IRouterContext,next: () => Promise<any>){
         let revision = undefined;
-        if(ctx.request.body.block_identifier.index != undefined){
+        if(ctx.request.body.block_identifier?.index != undefined){
             revision = ctx.request.body.block_identifier.index;
-        } else if (ctx.request.body.block_identifier.hash != undefined){
+        } else if (ctx.request.body.block_identifier?.hash != undefined){
             revision = ctx.request.body.block_identifier.hash;
         }
 
