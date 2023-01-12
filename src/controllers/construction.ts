@@ -159,7 +159,7 @@ export class Construction extends Router {
                         gas:gas
                     },
                     suggested_fee:[{
-                        value:fee.toString(10),
+                        value:(fee * BigInt(-1)).toString(10),
                         currency:VTHOCurrency
                     }]
                 }
