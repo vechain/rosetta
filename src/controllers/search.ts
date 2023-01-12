@@ -10,6 +10,7 @@ import { Operation, OperationStatus, OperationType } from "../common/types/opera
 import { VIP180Token } from "../utils/vip180Token";
 import { VETCurrency, VTHOCurrency } from "..";
 import { Currency } from "../common/types/currency";
+import { CheckSchema } from "../common/checkSchema";
 
 export class Search extends Router {
     constructor(env:any){
@@ -153,7 +154,7 @@ export class Search extends Router {
             }
         }
         
-        if(delegator != null && delegator.length == 42){
+        if(CheckSchema.isAddress(delegator)){
             const payOp:Operation = {
                 operation_identifier:{
                     index:0,
@@ -161,7 +162,7 @@ export class Search extends Router {
                 },
                 type:OperationType.FeeDelegation,
                 account:{
-                    address:delegator
+                    address:delegator!
                 },
                 amount:{
                     value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10),

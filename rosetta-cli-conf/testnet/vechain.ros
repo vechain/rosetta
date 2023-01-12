@@ -41,7 +41,7 @@ create_account(1){
   }
 }
 
-transfer(10){
+transfer(1){
   transfer{
     transfer.network = {"network":"test", "blockchain":"vechainthor"};
     currency = {"symbol":"VET", "decimals":18};
@@ -70,6 +70,7 @@ transfer(10){
       "create_probability": 50
     });
     transfer.confirmation_depth = "1";
+    gas_currency = {"symbol":"VTHO", "decimals":18,"metadata":{"contractAddress": "0x0000000000000000000000000000456E65726779"}};
     transfer.operations = [
       {
         "operation_identifier":{"index":0},
@@ -90,5 +91,8 @@ transfer(10){
         }
       }
     ];
+    transfer.preprocess_metadata = {
+      "fee_delagator_account":"0xc05c334533c673582616ac2bf404b6c55efa1087"
+    };
   }
 }

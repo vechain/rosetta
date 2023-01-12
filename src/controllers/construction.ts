@@ -13,6 +13,7 @@ import { getError } from "../common/errors";
 import { ethers } from "ethers";
 import { Currency } from "../common/types/currency";
 import { randomBytes } from "crypto";
+import { CheckSchema } from "../common/checkSchema";
 
 export class Construction extends Router {
     constructor(env:any){
@@ -91,7 +92,7 @@ export class Construction extends Router {
         const requestVerify = this.checkPreprocessRequest(ctx);
         if(requestVerify){
             const origins = this.getTxOrigins(ctx.request.body.operations);
-            const delegators = this.getTxDelegators(ctx.request.body.operations);
+            const delegator = ctx.request.body.metadata?.fee_delagator_account || undefined;
             const vetOpers = this.getVETOperations(ctx.request.body.operations);
             const tokensOpers = this.getTokensOperations(ctx.request.body.operations);
             if(origins.length > 1){
@@ -99,9 +100,6 @@ export class Construction extends Router {
                 return;
             } else if (origins.length == 0){
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(7));
-                return;
-            } else if(delegators.length > 1) {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(8));
                 return;
             } else if (vetOpers.length == 0 && tokensOpers.registered.length == 0){
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(9));
@@ -131,8 +129,8 @@ export class Construction extends Router {
                     {address:origins[0]}
                 ]
             }
-            if(delegators.length == 1){
-                response.required_public_keys.push({address:delegators[0]});
+            if(CheckSchema.isAddress(delegator) && delegator != origins[0]){
+                response.required_public_keys.push({address:delegator});
             }
             ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
         }
@@ -156,7 +154,8 @@ export class Construction extends Router {
                     metadata:{
                         blockRef:blockRef,
                         chainTag:chainTag,
-                        gas:gas
+                        gas:gas,
+                        fee_delagator_account:delegator
                     },
                     suggested_fee:[{
                         value:(fee * BigInt(-1)).toString(10),
@@ -174,25 +173,21 @@ export class Construction extends Router {
 
     private async payloads(ctx:Router.IRouterContext,next:() => Promise<any>){
         if(this.checkOptions(ctx) && this.checkPublickeys(ctx) && this.checkMetadata(ctx)){
-            
-            let txDelegator;
             let txOrigin;
-            const delegators = this.getTxDelegators(ctx.request.body.operations);
-            if(delegators.length > 1 || ctx.request.body.public_keys.length > 2){
+            const txDelegator = ctx.request.body.metadata.fee_delagator_account || undefined;
+            if(ctx.request.body.public_keys.length > 2){
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(8));
                 return;
             }
-            if(delegators.length == 1 && ctx.request.body.public_keys.length != 2){
+            if(txDelegator != undefined && ctx.request.body.public_keys.length != 2){
                 ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(28));
                 return;
             }
-            if(delegators.length == 1){
+            if(txDelegator != undefined){
                 const dele = this.computeAddress(ctx.request.body.public_keys[1].hex_bytes as string).toLowerCase();
-                if(dele != delegators[0]){
-                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(29,undefined,{operation_account:delegators[0],public_key:ctx.request.body.public_keys[1].hex_bytes}));
+                if(dele != txDelegator){
+                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(29,undefined,{operation_account:txDelegator,public_key:ctx.request.body.public_keys[1].hex_bytes}));
                     return;
-                } else {
-                    txDelegator = delegators[0];
                 }
             }
 
@@ -229,7 +224,7 @@ export class Construction extends Router {
                 gasPriceCoef:0,
                 dependsOn:null
             }
-            if(txDelegator != null && txDelegator.length == 42){
+            if(CheckSchema.isAddress(txDelegator)){
                 vechainTxBody.reserved = {
                     features:1
                 }
@@ -258,7 +253,7 @@ export class Construction extends Router {
                     }
                 ]
             }
-            if(txDelegator != null && txDelegator.length == 42){
+            if(CheckSchema.isAddress(txDelegator)){
                 const delegationSignHash = vechainTx.signingHash(txOrigin).toString('hex');
                 response.payloads.push({
                     address:txDelegator,
@@ -289,7 +284,7 @@ export class Construction extends Router {
             dependsOn:null,
             nonce:rosettaTx.nonce
         }
-        if(rosettaTx.delegator != undefined && rosettaTx.delegator.length == 42){
+        if(CheckSchema.isAddress(rosettaTx.delegator)){
             vechainTxBody.reserved = {features:1};
         }
         const vechainTx = new VeTransaction(vechainTxBody);
@@ -395,7 +390,7 @@ export class Construction extends Router {
                 }
             }
 
-            if(delegator != undefined && delegator.length == 42){
+            if(CheckSchema.isAddress(delegator)){
                 const delegatinOp:Operation = {
                     operation_identifier:{
                         index:0,
@@ -441,7 +436,7 @@ export class Construction extends Router {
                         address:txOrigin
                     }]
                 }
-                if(delegator != undefined && delegator.length != 42){
+                if(CheckSchema.isAddress(delegator)){
                     response.account_identifier_signers.push({address:delegator});
                 }
             } else {
@@ -486,7 +481,7 @@ export class Construction extends Router {
                 dependsOn:null,
                 nonce:rosettaTx.nonce
             }
-            if(rosettaTx.delegator != undefined && rosettaTx.delegator.length == 42){
+            if(CheckSchema.isAddress(rosettaTx.delegator)){
                 vechainTxBody.reserved = {features:1};
             }
             const vechainTx = new VeTransaction(vechainTxBody);
@@ -661,7 +656,8 @@ export class Construction extends Router {
             metadata:Joi.object({
                 blockRef:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                 chainTag:Joi.number().valid(this.env.config.chainTag).required(),
-                gas:Joi.number().min(21000).required()
+                gas:Joi.number().min(21000).required(),
+                fee_delagator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
             })
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});

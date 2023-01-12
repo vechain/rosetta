@@ -46,4 +46,10 @@ export class CheckSchema {
         const verify = schema.validate(signedTransaction,{allowUnknown:true});
         return {result:verify.error == undefined,error:verify.error};
     }
+
+    public static isAddress(addr:any):boolean {
+        const schema = Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required();
+        const verify = schema.validate(addr);
+        return verify.error == undefined ? true : false;
+    }
 }

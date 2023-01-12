@@ -1,10 +1,11 @@
 import { RLP } from "thor-devkit";
+import { CheckSchema } from "../../common/checkSchema";
 
 export class RosettaTransaction{
 
     public static encode(tx:RosettaTransactionStruct):Buffer{
         let rlp = new RLP(RosettaTransactionStruct.rlpProfile);
-        if(tx.delegator || (tx.delegator && tx.delegator.length == 42)){
+        if(tx.delegator || (CheckSchema.isAddress(tx.delegator))){
             tx.delegator = "0x";
         }
         tx.delegator = tx.delegator?.toLocaleLowerCase()
