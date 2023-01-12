@@ -767,7 +767,8 @@ export class Construction extends Router {
     }
 
     private gasToVTHO(gas:number,baseGasPrice:number):bigint {
-        return BigInt(gas) * BigInt(10**VTHOCurrency.decimals) / BigInt(baseGasPrice);
+        const c = BigInt(10**VTHOCurrency.decimals) / BigInt(baseGasPrice);
+        return BigInt(gas) * BigInt(10**VTHOCurrency.decimals) / c;
     }
     
 
