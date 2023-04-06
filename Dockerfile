@@ -1,5 +1,5 @@
 # Build thor in a stock Go builder container
-ARG THOR_VERSION=v2.0.1
+ARG THOR_VERSION=v2.0.3
 
 FROM golang:1.19 as builder
 
