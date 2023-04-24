@@ -26,7 +26,7 @@ export const Errors = new Map<number,RosettaError>([
     [16,{code:16,message:'The request parame metadata object invalid.',retriable:false}],
     [17,{code:17,message:'The request parame transaction can not decode.',retriable:false}],
     [18,{code:18,message:'The parse request parames invalid.',retriable:false}],
-    [19,{code:19,message:'The request parame signed_transaction invalid.',retriable:false}],
+    [19,{code:19,message:'The request parame unsigned_transaction invalid.',retriable:false}],
     [20,{code:20,message:'The combine request parames invalid.',retriable:false}],
     [21,{code:21,message:'The blocks request parames invalid.',retriable:false}],
     [22,{code:22,message:'The request parame network_identifier invalid.',retriable:false}],
