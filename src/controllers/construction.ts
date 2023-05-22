@@ -120,7 +120,7 @@ export class Construction extends Router {
                 clauses.push({to:op.to,value:op.value,data:'0x'});
             }
             for(const op of tokensOpers.registered){
-                clauses.push({to:op.token,value:0,data:VIP180Token.encode('transfer',op.to,op.value)});
+                clauses.push({to:op.token,value:'0',data:VIP180Token.encode('transfer',op.to,op.value)});
             }
 
             const response = {
@@ -681,7 +681,7 @@ export class Construction extends Router {
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.account.sub_account?.address != undefined){
                 const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress == oper.account.sub_account.address;});
                 if(tokenConf != undefined){
-                    result.push({value:0,to:tokenConf.metadata.contractAddress,data:VIP180Token.encode('transfer',oper.account.address,oper.amount.value)})
+                    result.push({value:'0',to:tokenConf.metadata.contractAddress,data:VIP180Token.encode('transfer',oper.account.address,oper.amount.value)})
                 }
             }
         }
