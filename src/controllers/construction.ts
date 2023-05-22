@@ -146,7 +146,7 @@ export class Construction extends Router {
             }
             try {
                 let gas = await this.estimateGas((ctx.request.body.options.clauses as VeTransaction.Clause[]),txOrigin,delegator);
-                gas = gas * 1.2;
+                gas = Math.ceil(gas * 1.2);
                 const fee = this.gasToVTHO(gas,this.env.config.baseGasPrice);
                 const blockRef = this.connex.blockRef;
                 const chainTag = this.env.config.chainTag;

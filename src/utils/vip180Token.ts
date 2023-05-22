@@ -371,7 +371,7 @@ export class VIP180Token {
     public static encode(fName:string,...args:any[]):string{
         let result = '';
         const funAbi = new abi.Function((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == fName;}));
-        return funAbi.encode(args);
+        return funAbi.encode(...args);
     }
     
     
