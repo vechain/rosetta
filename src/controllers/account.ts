@@ -9,6 +9,7 @@ import { VIP180Token } from "../utils/vip180Token";
 import { getError } from "../common/errors";
 import { VETCurrency, VTHOCurrency } from "..";
 import { Currency } from "../common/types/currency";
+import Joi from "joi";
 
 export class Account extends Router {
     constructor(env:any){
@@ -26,56 +27,127 @@ export class Account extends Router {
             );
     }
 
+    // private async balance_1(ctx:any,next: () => Promise<any>){
+    //     const account = ctx.request.body.account_identifier.address;
+    //     const subaccount = ctx.request.body.account_identifier.sub_account?.address || "";
+    //     let revision = undefined;
+
+    //     if(ctx.request.body.block_identifier?.hash != undefined){
+    //         revision = ctx.request.body.block_identifier.hash;
+    //     } else if(ctx.request.body.block_identifier?.index != undefined){
+    //         revision = ctx.request.body.block_identifier.index;
+    //     }
+
+    //     try {
+    //         const block = await this.connex.thor.block(revision).get();
+    //         if(block != null){
+    //             if(subaccount != ''){
+    //                 const tokenConf = this.tokenList.find( t => {return t.metadata.contractAddress.toLowerCase() == subaccount.toLowerCase()});
+    //                 if(tokenConf != undefined){
+    //                     const token = new VIP180Token(tokenConf.metadata.contractAddress,this.connex);
+    //                     const created = await token.created(revision);
+    //                     if(created == true){
+    //                         const balance = await token.balanceOf(account,block.id);
+    //                         const response:{block_identifier:BlockIdentifier,balances:Array<Amount>} = {
+    //                             block_identifier:{
+    //                                 index:block.number,
+    //                                 hash:block.id
+    //                             },
+    //                             balances:[{
+    //                                 value:balance.toString(10),
+    //                                 currency:{
+    //                                     symbol:tokenConf.symbol,
+    //                                     decimals:tokenConf.decimals,
+    //                                     metadata:{...tokenConf.metadata,contractAddress:tokenConf.metadata.contractAddress}
+    //                                 }
+    //                             }]
+    //                         }
+    //                         ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+    //                     } else {
+    //                         ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(27,undefined,{
+    //                             revision:revision
+    //                         }));
+    //                         return;
+    //                     }
+    //                 } else {
+    //                     ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(1,undefined,{
+    //                         subaccount:subaccount
+    //                     }));
+    //                     return;
+    //                 }
+    //             } else {
+    //                 const balances = await this.getAccountBalance(account,block.id);
+    //                 const response:{block_identifier:BlockIdentifier,balances:Array<Amount>} = {
+    //                     block_identifier:{
+    //                         index:block.number,
+    //                         hash:block.id
+    //                     },
+    //                     balances:balances
+    //                 }
+    //                 ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+    //             }
+    //         } else {
+    //             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
+    //                 revision:revision
+    //             }));
+    //             return;
+    //         }
+    //     } catch (error) {
+    //         ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
+    //         return;
+    //     }
+    //     await next();
+    // }
+
     private async balance(ctx:any,next: () => Promise<any>){
-        const account = ctx.request.body.account_identifier.address;
-        const subaccount = ctx.request.body.account_identifier.sub_account?.address || "";
-        let revision = undefined;
+        const verify = this.checkCurrencies(ctx.request.body.currencies);
+        if(verify.result){
+            const account = ctx.request.body.account_identifier.address;
+            let revision = undefined;
 
-        if(ctx.request.body.block_identifier?.hash != undefined){
-            revision = ctx.request.body.block_identifier.hash;
-        } else if(ctx.request.body.block_identifier?.index != undefined){
-            revision = ctx.request.body.block_identifier.index;
-        }
+            if(ctx.request.body.block_identifier?.hash != undefined){
+                revision = ctx.request.body.block_identifier.hash;
+            } else if(ctx.request.body.block_identifier?.index != undefined){
+                revision = ctx.request.body.block_identifier.index;
+            }
 
-        try {
-            const block = await this.connex.thor.block(revision).get();
-            if(block != null){
-                if(subaccount != ''){
-                    const tokenConf = this.tokenList.find( t => {return t.metadata.contractAddress.toLowerCase() == subaccount.toLowerCase()});
-                    if(tokenConf != undefined){
-                        const token = new VIP180Token(tokenConf.metadata.contractAddress,this.connex);
-                        const created = await token.created(revision);
-                        if(created == true){
-                            const balance = await token.balanceOf(account,block.id);
-                            const response:{block_identifier:BlockIdentifier,balances:Array<Amount>} = {
-                                block_identifier:{
-                                    index:block.number,
-                                    hash:block.id
-                                },
-                                balances:[{
-                                    value:balance.toString(10),
-                                    currency:{
-                                        symbol:tokenConf.symbol,
-                                        decimals:tokenConf.decimals,
-                                        metadata:{...tokenConf.metadata,contractAddress:tokenConf.metadata.contractAddress}
-                                    }
-                                }]
-                            }
-                            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+            let qlist = (ctx.request.body.currencies as Array<Currency>) || new Array<Currency>();
+            const balances = new Array<{value:string,currency:Currency}>();
+            if(qlist.length == 0){
+                qlist.push(VETCurrency);
+                qlist = qlist.concat(this.tokenList);
+            }
+
+            try {
+                const block = await this.connex.thor.block(revision).get();
+                if(block != null) {
+                    for(const qtoken of qlist) {
+                        if(qtoken.symbol == VETCurrency.symbol){
+                            const accbalance = await this.getAccountBalance(account,block.id);
+                            balances.push({value:accbalance[0].value,currency:accbalance[0].currency});
                         } else {
-                            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(27,undefined,{
-                                revision:revision
-                            }));
-                            return;
+                            const tokenConf = this.tokenList.find( t => {return qtoken.metadata.contractAddress != undefined && t.metadata.contractAddress.toLowerCase() == qtoken.metadata.contractAddress.toLowerCase()});
+                            if(tokenConf != undefined){
+                                const token = new VIP180Token(tokenConf.metadata.contractAddress,this.connex);
+                                const created = await token.created(revision);
+                                if(created == true){
+                                    const balance = await token.balanceOf(account,block.id);
+                                    balances.push({value:balance.toString(10),currency:tokenConf});
+                                } else {
+                                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(27,undefined,{
+                                        contractAddress:qtoken.metadata.contractAddress,
+                                        revision:revision
+                                    }));
+                                    return;
+                                }
+                            } else {
+                                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(1,undefined,{
+                                    contractAddress:qtoken.metadata.contractAddress
+                                }));
+                                return;
+                            }
                         }
-                    } else {
-                        ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(1,undefined,{
-                            subaccount:subaccount
-                        }));
-                        return;
                     }
-                } else {
-                    const balances = await this.getAccountBalance(account,block.id);
                     const response:{block_identifier:BlockIdentifier,balances:Array<Amount>} = {
                         block_identifier:{
                             index:block.number,
@@ -84,15 +156,21 @@ export class Account extends Router {
                         balances:balances
                     }
                     ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+                } else {
+                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
+                        revision:revision
+                    }));
+                    return;
                 }
-            } else {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
-                    revision:revision
-                }));
+
+            } catch (error) {
+                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
                 return;
             }
-        } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
+        } else {
+            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(31,undefined,{
+                error:verify.error
+            }));
             return;
         }
         await next();
@@ -111,6 +189,18 @@ export class Account extends Router {
             currency:VTHOCurrency
         });
         return result;
+    }
+
+    private checkCurrencies(currencies:any):{result:boolean,error:any}{
+        const schema = Joi.array().items(Joi.object({
+            symbol:Joi.string().required(),
+            decimals:Joi.number().min(0).required(),
+            metadata:Joi.object({
+                contractAddress:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
+            })
+        }));
+        const verify = schema.validate(currencies,{allowUnknown:true});
+        return {result:verify.error == undefined,error:verify.error};
     }
 
     private env:any;

@@ -9,7 +9,7 @@ export function getError(code:number,description?:string,details?:any):RosettaEr
 
 export const Errors = new Map<number,RosettaError>([
     [500,{code:500,message:'Internal server error.',retriable:true}],
-    [1,{code:1,message:'Account subaccount address not in tokenlist.',retriable:false}],
+    [1,{code:1,message:'The contractAddress not in tokenlist.',retriable:false}],
     [3,{code:3,message:'Not found the block identifier.',retriable:true}],
     [4,{code:4,message:'Not found the transaction identifier.',retriable:true}],
     [5,{code:5,message:'The request parame public_key object invalid.',retriable:false}],
@@ -38,5 +38,6 @@ export const Errors = new Map<number,RosettaError>([
     [28,{code:28,message:'No set delegator public_key',retriable:false}],
     [29,{code:29,message:'The operation account and public_key not match',retriable:false}],
     [30,{code:30,message:'No set origin public_key',retriable:false}],
+    [31,{code:31,message:'The request parame currencies invalid.',retriable:false}],
 ]);
 

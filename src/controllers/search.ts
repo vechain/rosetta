@@ -96,8 +96,7 @@ export class Search extends Router {
                     },
                     type:OperationType.Transfer,
                     account:{
-                        address:origin,
-                        sub_account: clause.to!.toLowerCase() != VTHOCurrency.metadata.contractAddress ? {address:clause.to!} : undefined
+                        address:origin
                     },
                     amount:{
                         value:(BigInt(decode._amount) * BigInt(-1)).toString(10),
@@ -111,8 +110,7 @@ export class Search extends Router {
                     },
                     type:OperationType.Transfer,
                     account:{
-                        address:decode._to as string,
-                        sub_account: clause.to!.toLowerCase() != VTHOCurrency.metadata.contractAddress ? {address:clause.to!} : undefined
+                        address:decode._to as string
                     },
                     amount:{
                         value:BigInt(decode._amount).toString(10),

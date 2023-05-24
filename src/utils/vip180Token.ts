@@ -363,13 +363,11 @@ export class VIP180Token {
     }
 
     public static decodeCallData(data:string,fName:string):abi.Decoded{
-        let result = new Array<{name:string,value:any}>();
         const funAbi = new abi.Function((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == fName;}));
-        return funAbi.decode(data);
+        return abi.decodeParameters(funAbi.definition.inputs,'0x' + data.substring(10));
     }
 
     public static encode(fName:string,...args:any[]):string{
-        let result = '';
         const funAbi = new abi.Function((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == fName;}));
         return funAbi.encode(...args);
     }

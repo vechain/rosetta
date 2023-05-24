@@ -329,10 +329,7 @@ export class Construction extends Router {
                         },
                         type:OperationType.Transfer,
                         account:{
-                            address:txOrigin,
-                            sub_account:{
-                                address:clause.to!
-                            }
+                            address:txOrigin
                         },
                         amount:{
                             value:(BigInt(decode._amount) * BigInt(-1)).toString(10),
@@ -346,10 +343,7 @@ export class Construction extends Router {
                         },
                         type:OperationType.Transfer,
                         account:{
-                            address:decode._to as string,
-                            sub_account:{
-                                address:clause.to!
-                            }
+                            address:decode._to as string
                         },
                         amount:{
                             value:BigInt(decode._amount).toString(10),
@@ -512,7 +506,7 @@ export class Construction extends Router {
             account:Joi.object({
                 address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                 sub_account:Joi.object({
-                    address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                    address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
                 })
             }).required(),
             amount:Joi.object({
@@ -639,7 +633,7 @@ export class Construction extends Router {
     }
 
     private async estimateGas(clauses:VeTransaction.Clause[],txOrigin:string,delegator?:string):Promise<number> {
-        let result = 16000;
+        let result = 21000;
         try {
             const outputs = await this.connex.thor.explain(clauses).caller(txOrigin).gasPayer(delegator || txOrigin).execute();
             for(const output of outputs){
@@ -724,7 +718,7 @@ export class Construction extends Router {
                     account_identifier:Joi.object({
                         address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                         sub_account:Joi.object({
-                            address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required()
+                            address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
                         })
                     }),
                     hex_bytes:Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/),
