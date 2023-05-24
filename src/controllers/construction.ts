@@ -584,8 +584,8 @@ export class Construction extends Router {
     private getTokensOperations(operations:Array<any>):{registered:Array<{token:string,value:string,to:string}>,unregistered:Array<string>} {
         let result ={registered:new Array(),unregistered:new Array()};
         for(const oper of operations){
-            if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.account.sub_account?.address != undefined){
-                const tokenAddr = oper.account.sub_account.address as string;
+            if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.amount.currency?.metadata?.contractAddress != undefined){
+                const tokenAddr = oper.amount.currency.metadata.contractAddress as string;
                 const value = BigInt(oper.amount.value).toString(10);
                 const to = oper.account.address;
                 const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress.toLowerCase() == tokenAddr.toLowerCase();});
@@ -678,8 +678,8 @@ export class Construction extends Router {
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer){
                 result.push({value:'0x' + BigInt(oper.amount.value).toString(16),to:oper.account.address,data:'0x'});
             }
-            if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.account.sub_account?.address != undefined){
-                const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress == oper.account.sub_account.address;});
+            if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.amount.currency?.metadata?.contractAddress != undefined){
+                const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress == oper.amount.currency.metadata.contractAddress;});
                 if(tokenConf != undefined){
                     result.push({value:'0',to:tokenConf.metadata.contractAddress,data:VIP180Token.encode('transfer',oper.account.address,oper.amount.value)})
                 }
