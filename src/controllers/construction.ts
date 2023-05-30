@@ -138,14 +138,9 @@ export class Construction extends Router {
     }
 
     private async metadata(ctx:Router.IRouterContext,next: () => Promise<any>){
-        if(this.checkPublickeys(ctx) && this.checkOptions(ctx)){
-            const txOrigin = this.computeAddress(ctx.request.body.public_keys[0].hex_bytes as string);
-            let delegator;
-            if(ctx.request.body.public_keys.length == 2){
-                delegator = this.computeAddress(ctx.request.body.public_keys[1].hex_bytes as string);
-            }
+        if(this.checkOptions(ctx)){
             try {
-                let gas = await this.estimateGas((ctx.request.body.options.clauses as VeTransaction.Clause[]),txOrigin,delegator);
+                let gas = await this.estimaterGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]),'','');
                 gas = Math.ceil(gas * 1.2);
                 const fee = this.gasToVTHO(gas,this.env.config.baseGasPrice);
                 const blockRef = this.connex.blockRef;
@@ -154,8 +149,7 @@ export class Construction extends Router {
                     metadata:{
                         blockRef:blockRef,
                         chainTag:chainTag,
-                        gas:gas,
-                        fee_delagator_account:delegator
+                        gas:gas
                     },
                     suggested_fee:[{
                         value:(fee * BigInt(-1)).toString(10),
@@ -642,6 +636,19 @@ export class Construction extends Router {
         } catch (error) {
             throw new Error('estimateGas error ' + error);
         }
+        return result;
+    }
+
+    private async estimaterGasLocal(clauses:VeTransaction.Clause[],txOrigin:string,delegator?:string):Promise<number> {
+        let result = 16000;
+        for(const clause of clauses){
+            if(clause.to?.toLocaleLowerCase() == VTHOCurrency.metadata.contractAddress.toLocaleLowerCase()) {
+                result = result + 15000;
+            } else {
+                result = result + 5000;
+            }
+        }
+
         return result;
     }
 
