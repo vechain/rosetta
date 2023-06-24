@@ -640,12 +640,12 @@ export class Construction extends Router {
     }
 
     private async estimaterGasLocal(clauses:VeTransaction.Clause[],txOrigin:string,delegator?:string):Promise<number> {
-        let result = 16000;
+        let result = 20000;
         for(const clause of clauses){
             if(clause.to?.toLocaleLowerCase() == VTHOCurrency.metadata.contractAddress.toLocaleLowerCase()) {
-                result = result + 15000;
+                result = result + 50000;
             } else {
-                result = result + 5000;
+                result = result + 10000;
             }
         }
 
