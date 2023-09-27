@@ -12,7 +12,7 @@
     "type": "git",
     "url": "git+https://github.com/vechain/rosetta.git"
   },
-  "author": "mog.lu@vechain.com",
+  "author": "vechain.org",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/vechain/rosetta/issues"
