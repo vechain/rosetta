@@ -1,32 +1,36 @@
 # Build thor in a stock Go builder container
-ARG THOR_VERSION=v2.0.4
+ARG THOR_VERSION=v2.1.4
 
-FROM golang:1.19 as builder
+FROM golang:1.22-alpine3.20 AS builder
+
+RUN apk add --no-cache make gcc musl-dev linux-headers git
 
 WORKDIR  /go/thor
 RUN git clone https://github.com/vechain/thor.git /go/thor
 RUN git checkout ${THOR_VERSION}
 RUN make all
 
-FROM ubuntu:20.04
+FROM alpine:3.20
 
-WORKDIR /data
-WORKDIR /usr/src/app
-RUN apt-get update
-RUN apt-get install -y git
-RUN apt-get install -y curl
+# Install necessary packages
+RUN apk add --no-cache ca-certificates git curl bash nodejs npm
 
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
-RUN apt-get install -y nodejs
-
-RUN git clone https://github.com/vechain/rosetta.git
-WORKDIR /usr/src/app/rosetta
-RUN git checkout master
-RUN npm ci && npm run build
-
+# Install pm2 globally
 RUN npm install -g pm2
 
-COPY --from=builder /go/thor/bin/thor /usr/src/app/
+# Copy and build rosetta
+WORKDIR /usr/src/app/rosetta
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY tsconfig.json ./
+COPY rosetta-cli-conf rosetta-cli-conf
+COPY config config
+COPY src src
+RUN npm run build
+COPY process_online.json process_offline.json start.sh ./
+
+COPY --from=builder /go/thor/bin/thor /usr/src/app
+
 EXPOSE 8080 8669 11235 11235/udp
 
-ENTRYPOINT ["sh","./start.sh"]
+ENTRYPOINT ["sh", "./start.sh"]

@@ -6,3 +6,4 @@ log/
 .vscode/
 rosetta/bin/
 cli-data/
+__snapshots__/
