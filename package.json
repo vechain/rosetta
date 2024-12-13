@@ -7,6 +7,7 @@
     "test": "vitest run",
     "build": "rm -rf ./dist && tsc -p ./",
     "serve": "rm -rf ./dist && tsc -p ./ && node ./dist/app/index.js",
+    "debug": "NODEURL=http://localhost:8669 NETWORK=custom MODE=online tsx ./src/index.ts",
     "generate:spec": "openapi-generator-cli generate -i https://raw.githubusercontent.com/coinbase/mesh-specifications/refs/heads/master/api.yaml -g typescript-node -o ./test/generated"
   },
   "repository": {
@@ -36,8 +37,10 @@
     "myvetools": "^1.4.1",
     "npm": "^8.19.2",
     "request": "^2.88.2",
+    "secp256k1": "^5.0.1",
     "testcontainers": "^10.16.0",
     "thor-devkit": "^2.0.5",
+    "tsx": "^4.19.2",
     "vitest": "^2.1.8"
   },
   "devDependencies": {

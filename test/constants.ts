@@ -36,6 +36,6 @@ const wallet: Wallet = {
 };
 
 const connex = ConnexPro.instance(inject("thorURL"), wallet);
-const vthoAddress = "0x0000000000000000000000000000456E65726779";
+const vthoAddress = "0x0000000000000000000000000000456E65726779".toLowerCase();
 
 export { accounts, networkIdentifier, hdNode, connex, vthoAddress };
