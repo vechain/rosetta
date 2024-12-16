@@ -3,15 +3,14 @@ import { ConstructionApi, CurveType, SignatureType } from "../generated/api";
 import { hdNode, networkIdentifier, vthoAddress } from "../constants";
 import { abi, secp256k1 as Sign } from "thor-devkit";
 import { Erc20ABI } from "../abis";
-import { del } from "request";
 import { pollReceipt } from "../helpers/transactions/pollReceipt";
 
 describe("construction", async () => {
   const client = new ConstructionApi(inject("rosettaURL"));
 
-  const delegator = hdNode.derive(0);
-  const origin = hdNode.derive(1);
-  const receiver = hdNode.derive(2);
+  const delegator = hdNode.derive(2);
+  const origin = hdNode.derive(3);
+  const receiver = hdNode.derive(4);
 
   it("should be able to fetch metadata", async () => {
     const transferABI = new abi.Function(Erc20ABI.transfer);
@@ -196,7 +195,7 @@ describe("construction", async () => {
     const txBodyRegex = /0x([0-9a-fA-F]{2}){1,}/g;
     expect(combine.body.signedTransaction.match(txBodyRegex)).toBeTruthy();
 
-    const submit = await client.constructionSubmit({
+    let submit = await client.constructionSubmit({
       networkIdentifier,
       signedTransaction: combine.body.signedTransaction,
     });

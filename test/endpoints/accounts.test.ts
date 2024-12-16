@@ -3,12 +3,13 @@ import { AccountApi, PartialBlockIdentifier } from "../generated/api";
 import { accounts, connex, networkIdentifier, vthoAddress } from "../constants";
 import { Erc20ABI } from "../abis";
 import { pollReceipt } from "../helpers/transactions/pollReceipt";
+import { HDNode, mnemonic } from "thor-devkit";
 
 describe("accounts", async () => {
   const { thor, vendor } = await connex;
   const client = new AccountApi(inject("rosettaURL"));
 
-  const newAddress = "0x87AA2B76f29583E4A9095DBb6029A9C41994E25B";
+  const newAddress = HDNode.fromMnemonic(mnemonic.generate()).address;
 
   const vthoClauus = thor
     .account(vthoAddress)
@@ -22,13 +23,13 @@ describe("accounts", async () => {
 
   const { txid } = await vendor
     .sign("tx", [vthoClauus, vetClause])
-    .signer(accounts[2].address)
+    .signer(accounts[0].address)
     .request();
 
   const receipt = await pollReceipt(txid);
 
   it("should be able to fetch an accounts balance", async () => {
-    const res = await getBalance(accounts[0].address, {
+    const res = await getBalance(accounts[9].address, {
       index: receipt.meta.blockNumber,
     });
 
@@ -38,7 +39,7 @@ describe("accounts", async () => {
       "1000000000000000000000000000".length,
     );
 
-    const res2 = await getBalance(accounts[0].address, {
+    const res2 = await getBalance(accounts[9].address, {
       hash: receipt.meta.blockID,
     });
     expect(res2.body.balances[0].value).toBe("1000000000000000000000000000");

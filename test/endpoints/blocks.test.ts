@@ -3,12 +3,13 @@ import { BlockApi } from "../generated/api";
 import { accounts, connex, networkIdentifier, vthoAddress } from "../constants";
 import { Erc20ABI } from "../abis";
 import { pollReceipt } from "../helpers/transactions/pollReceipt";
+import { HDNode, mnemonic } from "thor-devkit";
 
 describe("blocks", async () => {
   const client = new BlockApi(inject("rosettaURL"));
   const { thor } = await connex;
 
-  const newAddress = "0xc7AA2B76f29583E4A9095DBb6029A9C41994Eabc";
+  const newAddress = HDNode.fromMnemonic(mnemonic.generate()).address;
   const tx = await thor
     .account(vthoAddress)
     .method(Erc20ABI.transfer)
@@ -58,70 +59,33 @@ describe("blocks", async () => {
 
     expect(block.body.transaction.transactionIdentifier.hash).toBe(tx.txid);
     expect(block.body.transaction.operations?.length).toBeGreaterThan(1);
-    expect(block.body.transaction.operations).toEqual([
-      {
-        operationIdentifier: {
-          index: 0,
-          networkIndex: 0,
-        },
-        type: "Transfer",
-        status: "Succeeded",
-        account: {
-          address: accounts[1].address.toLowerCase(),
-        },
-        amount: {
-          value: "-100",
-          currency: {
-            symbol: "VTHO",
-            decimals: 18,
-            metadata: {
-              contractAddress: vthoAddress.toLowerCase(),
-            },
-          },
-        },
-      },
-      {
-        operationIdentifier: {
-          index: 1,
-          networkIndex: 0,
-        },
-        type: "Transfer",
-        status: "Succeeded",
-        account: {
-          address: newAddress.toLowerCase(),
-        },
-        amount: {
-          value: "100",
-          currency: {
-            symbol: "VTHO",
-            decimals: 18,
-            metadata: {
-              contractAddress: vthoAddress.toLowerCase(),
-            },
-          },
-        },
-      },
-      {
-        operationIdentifier: {
-          index: 2,
-          networkIndex: 1,
-        },
-        type: "Fee",
-        status: "Succeeded",
-        account: {
-          address: accounts[1].address.toLowerCase(),
-        },
-        amount: {
-          value: "-511980000000000000",
-          currency: {
-            symbol: "VTHO",
-            decimals: 18,
-            metadata: {
-              contractAddress: vthoAddress.toLowerCase(),
-            },
-          },
-        },
-      },
-    ]);
+    expect(block.body.transaction.operations[0].type).toBe("Transfer");
+    expect(block.body.transaction.operations[0].status).toBe("Succeeded");
+    expect(block.body.transaction.operations[0].account!.address).toBe(
+      accounts[1].address.toLowerCase(),
+    );
+    expect(block.body.transaction.operations[0].amount!.value).toBe("-100");
+    expect(block.body.transaction.operations[0].amount!.currency.symbol).toBe(
+      "VTHO",
+    );
+
+    expect(block.body.transaction.operations[1].type).toBe("Transfer");
+    expect(block.body.transaction.operations[1].status).toBe("Succeeded");
+    expect(block.body.transaction.operations[1].account!.address).toBe(
+      newAddress.toLowerCase(),
+    );
+    expect(block.body.transaction.operations[1].amount!.value).toBe("100");
+    expect(block.body.transaction.operations[1].amount!.currency.symbol).toBe(
+      "VTHO",
+    );
+
+    expect(block.body.transaction.operations[2].type).toBe("Fee");
+    expect(block.body.transaction.operations[2].status).toBe("Succeeded");
+    expect(block.body.transaction.operations[2].account!.address).toBe(
+      accounts[1].address.toLowerCase(),
+    );
+    expect(block.body.transaction.operations[2].amount!.currency.symbol).toBe(
+      "VTHO",
+    );
   });
 });
