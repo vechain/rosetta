@@ -21,7 +21,6 @@ process.setMaxListeners(50);
 const configPath = path.join(__dirname, "../config/config.json");
 const config = require(configPath);
 
-
 export const VETCurrency:Currency = {
     symbol:'VET',
     decimals:18,
@@ -121,7 +120,7 @@ class ApiServer {
             |   Network           |   ${this.env.config.network}
             *******************************************************************
             `);
-        
+
     }
 
     private initRouter():Router{

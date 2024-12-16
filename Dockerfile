@@ -1,34 +1,34 @@
-ARG THOR_VERSION=v2.1.4
+ARG THOR_VERSION=v2.1.5
 
-FROM golang:1.22-alpine3.20 AS builder
+FROM vechain/thor:${THOR_VERSION} as thor-builder
 
-RUN apk add --no-cache make gcc musl-dev linux-headers git
+FROM alpine:3.20 as node-buider
 
-WORKDIR  /go/thor
-RUN git clone https://github.com/vechain/thor.git /go/thor
-RUN git checkout ${THOR_VERSION}
-RUN make all
+# Install necessary packages
+RUN apk add --no-cache ca-certificates bash nodejs npm
+
+# Copy and build rosetta
+WORKDIR /usr/src/app/rosetta
+COPY package.json package-lock.json tsconfig.json ./
+RUN npm ci
+COPY src src
+RUN npm run build
 
 FROM alpine:3.20
 
-# Install necessary packages
-RUN apk add --no-cache ca-certificates git curl bash nodejs npm
+RUN apk add --no-cache ca-certificates nodejs npm
 
 # Install pm2 globally
 RUN npm install -g pm2
 
-# Copy and build rosetta
 WORKDIR /usr/src/app/rosetta
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY tsconfig.json ./
+
+COPY --from=thor-builder /usr/local/bin/thor /usr/src/app
+COPY --from=node-buider /usr/src/app/rosetta/dist/index.js /usr/src/app/rosetta/dist/index.js
+
+COPY process_online.json process_offline.json start.sh ./
 COPY rosetta-cli-conf rosetta-cli-conf
 COPY config config
-COPY src src
-RUN npm run build
-COPY process_online.json process_offline.json start.sh ./
-
-COPY --from=builder /go/thor/bin/thor /usr/src/app
 
 # Create a non-root user
 RUN adduser -D -s /bin/ash thor
