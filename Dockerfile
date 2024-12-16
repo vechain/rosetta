@@ -1,4 +1,3 @@
-# Build thor in a stock Go builder container
 ARG THOR_VERSION=v2.1.4
 
 FROM golang:1.22-alpine3.20 AS builder
@@ -30,6 +29,20 @@ RUN npm run build
 COPY process_online.json process_offline.json start.sh ./
 
 COPY --from=builder /go/thor/bin/thor /usr/src/app
+
+# Create a non-root user
+RUN adduser -D -s /bin/ash thor
+
+# Create /data/logs directory and set permissions for the thor user
+RUN mkdir -p /data/logs && chown -R thor:thor /data/logs
+
+# Prepare PM2 directories with correct permissions
+RUN mkdir -p /home/thor/.pm2/logs /home/thor/.pm2/pids && \
+    chown -R thor:thor /home/thor/.pm2
+
+ENV PM2_HOME=/home/thor/.pm2
+
+USER thor
 
 EXPOSE 8080 8669 11235 11235/udp
 
