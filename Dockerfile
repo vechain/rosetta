@@ -1,8 +1,8 @@
 ARG THOR_VERSION=v2.1.5
 
-FROM vechain/thor:${THOR_VERSION} as thor-builder
+FROM vechain/thor:${THOR_VERSION} AS thor-builder
 
-FROM alpine:3.20 as node-buider
+FROM alpine:3.20 AS node-buider
 
 # Install necessary packages
 RUN apk add --no-cache ca-certificates bash nodejs npm
@@ -10,7 +10,9 @@ RUN apk add --no-cache ca-certificates bash nodejs npm
 # Copy and build rosetta
 WORKDIR /usr/src/app/rosetta
 COPY package.json package-lock.json tsconfig.json ./
-RUN npm ci
+RUN npm ci --ignore-scripts \
+    && cd node_modules/@pzzh/solc \
+    && npm run postinstall
 COPY src src
 RUN npm run build
 
