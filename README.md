@@ -175,28 +175,6 @@ Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` 
                 },
                 "metadata": {}
             }
-        },
-        {
-            "operation_identifier": {
-                "index": 0,
-                "network_index": 2
-            },
-            "type": "FeeDelegation",
-            "status": "None",
-            "account": {
-                "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983"
-            },
-            "amount": {
-                "value": "-210000000000000000",
-                "currency": {
-                    "symbol": "VTHO",
-                    "decimals": 18,
-                    "metadata": {
-                        "contractAddress": "0x0000000000000000000000000000456E65726779"
-                    }
-                },
-                "metadata": {}
-            }
         }
     ]
 }
@@ -262,6 +240,9 @@ call the /construction/payloads Api.
         "blockchain": "vechainthor",
         "network": "test"
     },
+    "metadata": {
+        "fee_delagator_account": "0x87AA2B76f29583E4A9095DBb6029A9C41994E25B"
+    },
     "operations": [
         {
             "operation_identifier": {
@@ -297,28 +278,6 @@ call the /construction/payloads Api.
                 "currency": {
                     "symbol": "VET",
                     "decimals": 18
-                },
-                "metadata": {}
-            }
-        },
-        {
-            "operation_identifier": {
-                "index": 0,
-                "network_index": 2
-            },
-            "type": "FeeDelegation",
-            "status": "None",
-            "account": {
-                "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983"
-            },
-            "amount": {
-                "value": "-210000000000000000",
-                "currency": {
-                    "symbol": "VTHO",
-                    "decimals": 18,
-                    "metadata": {
-                        "contractAddress": "0x0000000000000000000000000000456E65726779"
-                    }
                 },
                 "metadata": {}
             }
