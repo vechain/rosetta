@@ -9,8 +9,15 @@ const composeFilePath = path.join(__dirname);
 const composeFile = "docker-compose.yaml";
 
 export function dockerCompose(): Promise<StartedDockerComposeEnvironment> {
-  return new DockerComposeEnvironment(composeFilePath, composeFile)
+  const compose =  new DockerComposeEnvironment(composeFilePath, composeFile)
     .withWaitStrategy("rosetta", Wait.forLogMessage("http://localhost:8669"))
     .withBuild()
-    .up();
+
+  if (process.env["THOR_VERSION"]){
+    compose.withEnvironment({
+      THOR_VERSION: process.env["THOR_VERSION"]
+    })
+  }
+
+  return compose.up();
 }
