@@ -1,16 +1,22 @@
 import { describe, expect, inject, it } from "vitest";
-import { ConstructionApi, CurveType, SignatureType } from "../generated/api";
+import {
+  AccountApi,
+  ConstructionApi,
+  CurveType,
+  SignatureType,
+} from "../generated/api";
 import { hdNode, networkIdentifier, vthoAddress } from "../constants";
-import { abi, secp256k1 as Sign } from "thor-devkit";
+import { abi, HDNode, mnemonic, secp256k1 as Sign } from "thor-devkit";
 import { Erc20ABI } from "../abis";
 import { pollReceipt } from "../helpers/transactions/pollReceipt";
 
 describe("construction", async () => {
   const client = new ConstructionApi(inject("rosettaURL"));
+  const accountClient = new AccountApi(inject("rosettaURL"));
 
   const delegator = hdNode.derive(2);
   const origin = hdNode.derive(3);
-  const receiver = hdNode.derive(4);
+  const receiver = HDNode.fromMnemonic(mnemonic.generate());
 
   it("should be able to fetch metadata", async () => {
     const transferABI = new abi.Function(Erc20ABI.transfer);
@@ -86,28 +92,29 @@ describe("construction", async () => {
             metadata: {},
           },
         },
-        {
-          operationIdentifier: {
-            index: 0,
-            networkIndex: 2,
-          },
-          type: "FeeDelegation",
-          status: "None",
-          account: {
-            address: delegator.address,
-          },
-          amount: {
-            value: "-210000000000000000",
-            currency: {
-              symbol: "VTHO",
-              decimals: 18,
-              metadata: {
-                contractAddress: "0x0000000000000000000000000000456E65726779",
-              },
-            },
-            metadata: {},
-          },
-        },
+        // TODO: according to readme, this is how coinbase should delegate, but it seems we should pass the `fee_delagator_account` in metadata instead
+        // {
+        //   operationIdentifier: {
+        //     index: 0,
+        //     networkIndex: 2,
+        //   },
+        //   type: "FeeDelegation",
+        //   status: "None",
+        //   account: {
+        //     address: delegator.address,
+        //   },
+        //   amount: {
+        //     value: "-210000000000000000",
+        //     currency: {
+        //       symbol: "VTHO",
+        //       decimals: 18,
+        //       metadata: {
+        //         contractAddress: "0x0000000000000000000000000000456E65726779",
+        //       },
+        //     },
+        //     metadata: {},
+        //   },
+        // },
       ],
     };
     const preprocess = await client.constructionPreprocess(preprocessBody);
@@ -202,5 +209,16 @@ describe("construction", async () => {
 
     const receipt = await pollReceipt(submit.body.transactionIdentifier.hash);
     expect(receipt.reverted).toBeFalsy();
+    expect(receipt.gasPayer).toBe(delegator.address);
+    expect(receipt.meta.txOrigin).toBe(origin.address);
+
+    const balance = await accountClient.accountBalance({
+      networkIdentifier,
+      accountIdentifier: {
+        address: receiver.address,
+      },
+    });
+
+    expect(balance.body.balances[0].value).toBe("10000");
   });
 });
