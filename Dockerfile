@@ -1,32 +1,51 @@
-# Build thor in a stock Go builder container
-ARG THOR_VERSION=v2.0.4
+ARG THOR_VERSION=v2.1.5
 
-FROM golang:1.19 as builder
+FROM vechain/thor:${THOR_VERSION} AS thor-builder
 
-WORKDIR  /go/thor
-RUN git clone https://github.com/vechain/thor.git /go/thor
-RUN git checkout ${THOR_VERSION}
-RUN make all
+FROM alpine:3.20 AS node-buider
 
-FROM ubuntu:20.04
+# Install necessary packages
+RUN apk add --no-cache ca-certificates bash nodejs npm
 
-WORKDIR /data
-WORKDIR /usr/src/app
-RUN apt-get update
-RUN apt-get install -y git
-RUN apt-get install -y curl
-
-RUN curl -sL https://deb.nodesource.com/setup_18.x | bash
-RUN apt-get install -y nodejs
-
-RUN git clone https://github.com/vechain/rosetta.git
+# Copy and build rosetta
 WORKDIR /usr/src/app/rosetta
-RUN git checkout master
-RUN npm ci && npm run build
+COPY package.json package-lock.json tsconfig.json ./
+RUN npm ci --ignore-scripts \
+    && cd node_modules/@pzzh/solc \
+    && npm run postinstall
+COPY src src
+RUN npm run build
 
+FROM alpine:3.20
+
+RUN apk add --no-cache ca-certificates nodejs npm
+
+# Install pm2 globally
 RUN npm install -g pm2
 
-COPY --from=builder /go/thor/bin/thor /usr/src/app/
+WORKDIR /usr/src/app/rosetta
+
+COPY --from=thor-builder /usr/local/bin/thor /usr/src/app
+COPY --from=node-buider /usr/src/app/rosetta/dist/index.js /usr/src/app/rosetta/dist/index.js
+
+COPY process_online.json process_offline.json start.sh ./
+COPY rosetta-cli-conf rosetta-cli-conf
+COPY config config
+
+# Create a non-root user
+RUN adduser -D -s /bin/ash thor
+
+# Create /data/logs directory and set permissions for the thor user
+RUN mkdir -p /data/logs && chown -R thor:thor /data/logs
+
+# Prepare PM2 directories with correct permissions
+RUN mkdir -p /home/thor/.pm2/logs /home/thor/.pm2/pids && \
+    chown -R thor:thor /home/thor/.pm2
+
+ENV PM2_HOME=/home/thor/.pm2
+
+USER thor
+
 EXPOSE 8080 8669 11235 11235/udp
 
-ENTRYPOINT ["sh","./start.sh"]
+ENTRYPOINT ["sh", "./start.sh"]

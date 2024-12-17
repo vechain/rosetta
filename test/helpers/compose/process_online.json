@@ -1,0 +1,23 @@
+{
+  "apps": [
+    {
+      "name": "VeChainThor Node",
+      "cmd": "/usr/src/app/thor solo --api-addr 0.0.0.0:8669",
+      "autorestart": true,
+      "out_file": "/data/logs/thornode.log",
+      "error_file": "/data/logs/thornode_error.log"
+    },
+    {
+      "name": "VeChain Rosetta Api Server",
+      "script": "/usr/src/app/rosetta/dist/index.js",
+      "exec_mode": "cluster",
+      "instances": "4",
+      "autorestart": true,
+      "env": {
+        "NODEURL": "http://localhost:8669"
+      },
+      "out_file": "/data/logs/rosetta.log",
+      "error_file": "/data/logs/rosetta_error.log"
+    }
+  ]
+}

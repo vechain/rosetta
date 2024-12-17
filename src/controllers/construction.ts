@@ -216,7 +216,7 @@ export class Construction extends Router {
                 gas:ctx.request.body.metadata.gas,
                 nonce:'0x' + randomBytes(8).toString('hex'),
                 gasPriceCoef:0,
-                dependsOn:null
+                dependsOn:null,
             }
             if(CheckSchema.isAddress(txDelegator)){
                 vechainTxBody.reserved = {
@@ -360,18 +360,19 @@ export class Construction extends Router {
                             currency:VETCurrency
                         }
                     }
-                    const receiptOp:Operation = {
-                        operation_identifier:{
-                            index:0,
-                            network_index:index
+                    let receiptOp: Operation
+                    receiptOp = {
+                        operation_identifier: {
+                            index: 0,
+                            network_index: index
                         },
-                        type:OperationType.Transfer,
-                        account:{
-                            address:clause.to as string,
+                        type: OperationType.Transfer,
+                        account: {
+                            address: clause.to as string
                         },
-                        amount:{
-                            value:BigInt(clause.value).toString(10),
-                            currency:VETCurrency
+                        amount: {
+                            value: BigInt(clause.value).toString(10),
+                            currency: VETCurrency
                         }
                     }
                     operations = operations.concat([sendOp,receiptOp]);
@@ -442,13 +443,23 @@ export class Construction extends Router {
             let rosettaTx = this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
             const originPayload = (ctx.request.body.signatures as Array<any>).find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.origin || '').toLowerCase()});
             const delegatorPayload = (ctx.request.body.signatures as Array<any>).find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.delegator || '').toLowerCase()});
+
+            let originSignature = originPayload.hex_bytes;
+            if (originSignature.startsWith('0x')) {
+                originSignature = originSignature.substring(2);
+            }
+
             if(delegatorPayload != undefined){
+                let delegatorSignature = delegatorPayload.hex_bytes;
+                if (delegatorSignature.startsWith('0x')) {
+                    delegatorSignature = delegatorSignature.substring(2);
+                }
                 rosettaTx.signature = Buffer.concat([
-                    Buffer.from(originPayload.hex_bytes,'hex'),
-                    Buffer.from(delegatorPayload.hex_bytes,'hex')
+                    Buffer.from(originSignature,'hex'),
+                    Buffer.from(delegatorSignature,'hex')
                 ]);
             } else {
-                rosettaTx.signature = Buffer.from(originPayload.hex_bytes,'hex');
+                rosettaTx.signature = Buffer.from(originSignature,'hex');
             }
             const encode = this.signedRosettaTransactionRlp.encode(rosettaTx);
             ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{signed_transaction:'0x' + encode.toString('hex')});
@@ -542,21 +553,6 @@ export class Construction extends Router {
         return result;
     }
 
-    private getTxDelegators(operations:Array<any>):string[] {
-        const result = new Array<string>();
-        const originMap = new Map<string,undefined>();
-        const opers = operations.filter(oper => {return oper.type == OperationType.FeeDelegation});
-
-        for(const oper of opers){
-            originMap.set(oper.account.address,undefined);
-        }
-
-        for(const addr of originMap.keys()){
-            result.push(addr.toLowerCase());
-        }
-        return result;
-    }
-
     private getVETOperations(operations:Array<any>):Array<{value:string,to:string}> {
         let result = new Array<{value:'',to:''}>;
         const opers = operations.filter( oper => {
@@ -609,7 +605,9 @@ export class Construction extends Router {
         const schema = Joi.object({
             options:Joi.object({
                 clauses:Joi.array().items(Joi.object({
-                    to:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                    to:Joi.string()
+                      .regex(/^0x[0-9a-fA-F]{40}$/)
+                      .required(),
                     value:Joi.string().allow('').required(),
                     data:Joi.string().allow('').required()
                 })).min(1).required()
@@ -767,7 +765,7 @@ export class Construction extends Router {
         const c = BigInt(10**VTHOCurrency.decimals) / BigInt(baseGasPrice);
         return BigInt(gas) * BigInt(10**VTHOCurrency.decimals) / c;
     }
-    
+
 
     private env:any;
     private connex:ConnexPro;
