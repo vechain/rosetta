@@ -16,6 +16,7 @@ export async function setup({ provide }: GlobalSetupContext) {
   if (!port) {
     throw new Error("Rosetta port not found");
   }
+  // const port = 8080
   console.log(`Rosetta running on http://localhost:${port}`);
   provide("rosettaURL", `http://localhost:${port}`);
 
@@ -23,6 +24,7 @@ export async function setup({ provide }: GlobalSetupContext) {
   if (!thorPort) {
     throw new Error("Thor port not found");
   }
+  // const thorPort = 8669
   provide("thorURL", `http://localhost:${thorPort}`);
 
   console.log("docker-compose started, waiting for a block to mine...");
