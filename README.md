@@ -127,9 +127,9 @@ POST | /search/transactions | Yes | [INDEXER] Search for Transactions | online
 
 ### How to use it
 
-- Step 1: Create a VIP191 payloads
+- Step 1: Create a VIP191 payload
 
-Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` is fee delegator address, `amount.value` default 0 .
+Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` is fee delegator address, `amount.value` default 0.
 
 ``` json
     {
