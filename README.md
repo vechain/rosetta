@@ -360,7 +360,7 @@ The api will return `unsigned_transaction` and `payloads`.
 }
 ```
 
-- Step 5: Sign with transaction orgin and fee-dalegation payer private keys and call `/construction/combine`
+- Step 5: Sign with transaction orgin and fee-delegation payer private keys and call `/construction/combine`
 
 ```json
 {
