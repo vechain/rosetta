@@ -1,0 +1,9 @@
+node_modules
+dist
+.idea
+test
+sonar-project.properties
+openapitools.json
+vitest.Dockerfile
+vitest.config.ts
+Dockerfile

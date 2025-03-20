@@ -28,7 +28,7 @@ export class CheckSchema {
         const schema = Joi.object({
             index:Joi.number().min(0),
             hash:Joi.string().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/)
-        }).or('index','hash');
+        });
         const verify = schema.validate(blockIdentifier,{allowUnknown:true});
         return {result:verify.error == undefined,error:verify.error};
     }
