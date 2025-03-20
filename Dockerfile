@@ -12,13 +12,13 @@ FROM ubuntu:24.04
 
 WORKDIR /data
 WORKDIR /usr/src/app
-RUN apt-get update && apt-get install -y curl git \
-    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs \
+RUN apt-get update && apt-get --no-install-recommends install -y ca-certificates curl git \
+    && curl --proto "=https" --tlsv1.2 -sSf -L https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get --no-install-recommends install -y nodejs \
     && rm -rf /var/lib/apt/lists/* \
     && git clone https://github.com/vechain/rosetta.git
 WORKDIR /usr/src/app/rosetta
-RUN npm ci && npm run build && npm install -g pm2 \
+RUN npm ci --ignore-scripts && npm run build && npm install --ignore-scripts -g pm2 \
     && groupadd -r rosettagroup \
     && useradd -r -g rosettagroup rosettauser
 
