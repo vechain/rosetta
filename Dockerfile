@@ -18,9 +18,14 @@ RUN apt-get update && apt-get --no-install-recommends install -y ca-certificates
     && rm -rf /var/lib/apt/lists/* \
     && git clone https://github.com/vechain/rosetta.git
 WORKDIR /usr/src/app/rosetta
-RUN npm ci --ignore-scripts && npm run build && npm install --ignore-scripts -g pm2 \
+RUN npm ci --ignore-scripts && \
+    npm rebuild @pzzh/solc && \
+    npm run build && \
+    npm install --ignore-scripts -g pm2 \
     && groupadd -r rosettagroup \
-    && useradd -r -g rosettagroup rosettauser
+    && useradd -r -g rosettagroup rosettauser \
+    && mkdir -p /home/rosettauser/.pm2 \
+    && chown -R rosettauser:rosettagroup /home/rosettauser/.pm2
 
 COPY --from=builder /go/thor/bin/thor /usr/src/app/
 EXPOSE 8080 8669 11235 11235/udp
