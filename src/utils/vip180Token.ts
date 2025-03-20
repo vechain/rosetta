@@ -4,7 +4,7 @@ import { abi } from "thor-devkit";
 import ConnexPro from "./connexPro";
 
 export class VIP180Token {
-    private contract:Contract;
+    private readonly contract:Contract;
 
     constructor(addr:string,connex:ConnexPro){
         this.connex = connex ;
