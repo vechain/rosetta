@@ -123,11 +123,11 @@ POST | /search/transactions | Yes | [INDEXER] Search for Transactions | online
 
 ### Why exchanges need VIP191
 
-- The exchange will transfer currencies from hot wallet to the safe cold wallet from time to time. When there's not enough VTHO in the hot wallet or want to transfer all currencies includ VTHO, the exchange can use the exchange can use VIP191 function to pay the transaction fee.
+- The exchange will transfer currencies from hot wallet to the safe cold wallet from time to time. When there's not enough VTHO in the hot wallet or want to transfer all currencies includ VTHO, the exchange can use VIP191 function to pay the transaction fee.
 
 ### How to use it
 
-- Step1: Create a VIP191 payloads
+- Step 1: Create a VIP191 payloads
 
 Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` is fee delegator address, `amount.value` default 0 .
 
@@ -202,7 +202,7 @@ Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` 
 }
 ```
 
-- Step2: Call /construction/preprocess
+- Step 2: Call /construction/preprocess
 
 When calling /construction/preprocess use VIP191 payloads, the api will return options and two required_public_keys, the first is transaction origin's public key,the second is fee-dalegation payer's public key.
 ``` json
@@ -227,9 +227,9 @@ When calling /construction/preprocess use VIP191 payloads, the api will return o
 }
 ```
 
-- Step3: Call /construction/metadata
+- Step 3: Call /construction/metadata
 
-Use Step2 return value to call /construction/metadata, the api will calculate the gas online, return `metadata` and `suggested_fee`.
+Use step 2 return value to call /construction/metadata, the api will calculate the gas online, return `metadata` and `suggested_fee`.
 ``` json
 {
     "metadata": {
@@ -252,9 +252,7 @@ Use Step2 return value to call /construction/metadata, the api will calculate th
 }
 ```
 
-- Step4 Call /construction/payloads
-
-call the /construction/payloads Api.
+- Step 4: Call /construction/payloads
 
 ``` json
 {
@@ -342,7 +340,7 @@ call the /construction/payloads Api.
 }
 ```
 
-the api will return `unsigned_transaction` and `payloads`.
+The api will return `unsigned_transaction` and `payloads`.
 
 ``` json
 {
@@ -362,7 +360,7 @@ the api will return `unsigned_transaction` and `payloads`.
 }
 ```
 
-- Step5 Sign with transaction orgin and fee-dalegation payer private keys and call `/construction/combine`
+- Step 5: Sign with transaction orgin and fee-dalegation payer private keys and call `/construction/combine`
 
 ```json
 {
