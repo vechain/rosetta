@@ -57,6 +57,8 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 
 ## Endpoints
 
+This implementation is meant to cover [this reference](https://docs.cdp.coinbase.com/mesh/docs/api-reference).
+
 ### Account
 
 Method| Endpoint | Implemented | Description | Mode
