@@ -77,7 +77,7 @@ POST | /block/transaction | Yes | Get a Block Transaction | online
 
 Method| Endpoint | Implemented | Description | Mode
 ---------|----------|---------|---------|---------
-POST | /call | No | |
+POST | /call | No | Make a Network-Specific Procedure Call |
 
 ### Construction
 
