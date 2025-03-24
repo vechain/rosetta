@@ -10,7 +10,6 @@ import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
 import axios from "axios";
 import { getError } from "../common/errors";
-import { ethers } from "ethers";
 import { Currency } from "../common/types/currency";
 import { randomBytes } from "crypto";
 import { CheckSchema } from "../common/checkSchema";
@@ -755,10 +754,10 @@ export class Construction extends Router {
     }
 
     private computeAddress(publickey:string):string {
-        if(publickey.substring(2) != '0x'){
-            publickey = '0x' +  publickey;
+        if(publickey.startsWith('0x')){
+            publickey = publickey.substring(2);
         }
-        return ethers.utils.computeAddress(publickey).toLowerCase();
+        return address.fromPublicKey(Buffer.from(publickey, "hex")).toLowerCase()
     }
 
     private gasToVTHO(gas:number,baseGasPrice:number):bigint {
