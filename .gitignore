@@ -8,3 +8,4 @@ rosetta/bin/
 cli-data/
 __snapshots__/
 logs
+test/generated/
