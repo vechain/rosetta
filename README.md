@@ -59,63 +59,63 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 
 ### Account
 
-Method| Endpoint | Implemented | Description | Mode
----------|----------|---------|---------|---------
-POST | /account/balance | Yes | Get an Account Balance | online
-POST | /account/coins | No |
+| Method | Endpoint         | Implemented | Description            | Mode   |
+|--------|------------------|-------------|------------------------|--------|
+| POST   | /account/balance | Yes         | Get an Account Balance | online |
+| POST   | /account/coins   | No          |                        |        |
 
 ### Block
 
-Method| Endpoint | Implemented | Description | Mode
----------|----------|---------|---------|---------
-POST | /block | Yes | Get a Block | online
-POST | /block/transaction | Yes | Get a Block Transaction | online
+| Method | Endpoint           | Implemented | Description             | Mode   |
+|--------|--------------------|-------------|-------------------------|--------|
+| POST   | /block             | Yes         | Get a Block             | online |
+| POST   | /block/transaction | Yes         | Get a Block Transaction | online |
 
 ### Call
 
-Method| Endpoint | Implemented | Description | Mode
----------|----------|---------|---------|---------
-POST | /call | No | |
+| Method | Endpoint | Implemented | Description | Mode |
+|--------|----------|-------------|-------------|------|
+| POST   | /call    | No          |             |      |
 
 ### Construction
 
-Method| Endpoint | Implemented | Description | Mode
----------|----------|---------|---------|---------
-POST | /construction/combine | Yes | Create Network Transaction from Signatures | online & offline
-POST | /construction/derive | Yes | Derive an AccountIdentifier from a PublicKey | online & offline
-POST | /construction/hash | Yes | Get the Hash of a Signed Transaction | online & offline
-POST | /construction/metadata | Yes | Get Metadata for Transaction Construction | online
-POST | /construction/parse | Yes | Parse a Transaction | online & offline
-POST | /construction/payloads | Yes | Generate an Unsigned Transaction and Signing Payloads | online & offline
-POST | /construction/preprocess | Yes | Create a Request to Fetch Metadata | online & offline
-POST | /construction/submit | Yes | Submit a Signed Transaction | online
+| Method | Endpoint                 | Implemented | Description                                           | Mode             |
+|--------|--------------------------|-------------|-------------------------------------------------------|------------------|
+| POST   | /construction/combine    | Yes         | Create Network Transaction from Signatures            | online & offline |
+| POST   | /construction/derive     | Yes         | Derive an AccountIdentifier from a PublicKey          | online & offline |
+| POST   | /construction/hash       | Yes         | Get the Hash of a Signed Transaction                  | online & offline |
+| POST   | /construction/metadata   | Yes         | Get Metadata for Transaction Construction             | online           |
+| POST   | /construction/parse      | Yes         | Parse a Transaction                                   | online & offline |
+| POST   | /construction/payloads   | Yes         | Generate an Unsigned Transaction and Signing Payloads | online & offline |
+| POST   | /construction/preprocess | Yes         | Create a Request to Fetch Metadata                    | online & offline |
+| POST   | /construction/submit     | Yes         | Submit a Signed Transaction                           | online           |
 
 ### Events
 
-Method| Endpoint | Implemented | Description | Mode
----------|----------|---------|---------|---------
-POST | /events/blocks | Yes | [INDEXER] Get a range of BlockEvents | online
+| Method | Endpoint       | Implemented | Description                          | Mode   |
+|--------|----------------|-------------|--------------------------------------|--------|
+| POST   | /events/blocks | Yes         | [INDEXER] Get a range of BlockEvents | online |
 
 ### Mempool
 
-Method| Endpoint | Implemented | Description | Mode
----------|----------|---------|---------|---------
-POST | /construction/metadata | No | Node API no support
-POST | /construction/submit | No | Node API no support
+| Method | Endpoint               | Implemented | Description         | Mode |
+|--------|------------------------|-------------|---------------------|------|
+| POST   | /construction/metadata | No          | Node API no support |      |
+| POST   | /construction/submit   | No          | Node API no support |      |
 
 ### Network
 
-Method| Endpoint | Implemented | Description | Mode
----------|----------|---------|---------|---------
-POST | /network/list | Yes | Get List of Available Networks | online & offline
-POST | /network/options | Yes | Get Network Options | online & offline
-POST | /network/status | Yes | Get Network Status | online
+| Method | Endpoint         | Implemented | Description                    | Mode             |
+|--------|------------------|-------------|--------------------------------|------------------|
+| POST   | /network/list    | Yes         | Get List of Available Networks | online & offline |
+| POST   | /network/options | Yes         | Get Network Options            | online & offline |
+| POST   | /network/status  | Yes         | Get Network Status             | online           |
 
 ### Search
 
-Method| Endpoint | Implemented | Description | Mode
----------|----------|---------|---------|---------
-POST | /search/transactions | Yes | [INDEXER] Search for Transactions | online
+| Method | Endpoint             | Implemented | Description                       | Mode   |
+|--------|----------------------|-------------|-----------------------------------|--------|
+| POST   | /search/transactions | Yes         | [INDEXER] Search for Transactions | online |
 
 ## About Fee Delegation (VIP191)
 
@@ -172,28 +172,6 @@ Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` 
                 "currency": {
                     "symbol": "VET",
                     "decimals": 18
-                },
-                "metadata": {}
-            }
-        },
-        {
-            "operation_identifier": {
-                "index": 0,
-                "network_index": 2
-            },
-            "type": "FeeDelegation",
-            "status": "None",
-            "account": {
-                "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983"
-            },
-            "amount": {
-                "value": "-210000000000000000",
-                "currency": {
-                    "symbol": "VTHO",
-                    "decimals": 18,
-                    "metadata": {
-                        "contractAddress": "0x0000000000000000000000000000456E65726779"
-                    }
                 },
                 "metadata": {}
             }
@@ -262,6 +240,9 @@ call the /construction/payloads Api.
         "blockchain": "vechainthor",
         "network": "test"
     },
+    "metadata": {
+        "fee_delagator_account": "0x87AA2B76f29583E4A9095DBb6029A9C41994E25B"
+    },
     "operations": [
         {
             "operation_identifier": {
@@ -297,28 +278,6 @@ call the /construction/payloads Api.
                 "currency": {
                     "symbol": "VET",
                     "decimals": 18
-                },
-                "metadata": {}
-            }
-        },
-        {
-            "operation_identifier": {
-                "index": 0,
-                "network_index": 2
-            },
-            "type": "FeeDelegation",
-            "status": "None",
-            "account": {
-                "address": "0x4251630dc820e90a5a6d14d79cac7acb93917983"
-            },
-            "amount": {
-                "value": "-210000000000000000",
-                "currency": {
-                    "symbol": "VTHO",
-                    "decimals": 18,
-                    "metadata": {
-                        "contractAddress": "0x0000000000000000000000000000456E65726779"
-                    }
                 },
                 "metadata": {}
             }

@@ -1,0 +1,17 @@
+services:
+  rosetta:
+    container_name: rosetta
+    build:
+      context: ../../..
+      dockerfile: vitest.Dockerfile
+      args:
+        - THOR_VERSION=${THOR_VERSION:-v2.1.6}
+    ports:
+      - "8080:8080"
+      - "8669:8669"
+    environment:
+      NODEURL: "http://0.0.0.0:8669"
+      NETWORK: "custom"
+      MODE: "online"
+    volumes:
+      - "./process_online.json:/usr/src/app/rosetta/process_online.json:ro"

@@ -4,9 +4,12 @@
   "description": "Rosetta implementation of VechainThor",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -rf ./dist && tsc -p ./",
-    "serve": "rm -rf ./dist && tsc -p ./ && node ./dist/app/index.js"
+    "pretest": "yarn test:generate:spec",
+    "test": "vitest run",
+    "build": "rm -rf ./dist && npx esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js",
+    "serve": "npm run build && node dist/index.js",
+    "debug": "NODEURL=http://localhost:8669 NETWORK=custom MODE=online tsx watch ./src/index.ts",
+    "test:generate:spec": "openapi-generator-cli generate -i https://raw.githubusercontent.com/coinbase/mesh-specifications/refs/heads/master/api.yaml -g typescript-node -o test/generated"
   },
   "repository": {
     "type": "git",
@@ -19,10 +22,11 @@
   },
   "homepage": "https://github.com/vechain/rosetta#readme",
   "dependencies": {
+    "@openapitools/openapi-generator-cli": "^2.15.3",
     "@vechain/connex-driver": "^2.0.10",
     "@vechain/connex-framework": "^2.0.10",
     "axios": "^0.27.2",
-    "ethers": "^5.7.2",
+    "esbuild": "^0.24.0",
     "group-array": "^0.3.4",
     "i": "^0.3.7",
     "joi": "^17.6.0",
@@ -34,7 +38,11 @@
     "myvetools": "^1.4.1",
     "npm": "^11.2.0",
     "request": "^2.88.2",
-    "thor-devkit": "^2.0.5"
+    "secp256k1": "^5.0.1",
+    "testcontainers": "^10.16.0",
+    "thor-devkit": "^2.0.5",
+    "tsx": "^4.19.2",
+    "vitest": "^2.1.8"
   },
   "devDependencies": {
     "@types/joi": "^17.2.3",

@@ -40,11 +40,6 @@ export class Block extends Router {
             revision = ctx.request.body.block_identifier.hash;
         }
 
-        if(revision == undefined){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(24,undefined));
-            return;
-        }
-
         try {
             const block = await this.connex.thor.block(revision).get();
             if(block != null){
