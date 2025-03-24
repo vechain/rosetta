@@ -4,11 +4,12 @@
   "description": "Rosetta implementation of VechainThor",
   "main": "index.js",
   "scripts": {
+    "pretest": "yarn test:generate:spec",
     "test": "vitest run",
     "build": "rm -rf ./dist && npx esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js",
     "serve": "npm run build && node dist/index.js",
     "debug": "NODEURL=http://localhost:8669 NETWORK=custom MODE=online tsx watch ./src/index.ts",
-    "test:generate:spec": "openapi-generator-cli generate -i https://raw.githubusercontent.com/coinbase/mesh-specifications/refs/heads/master/api.yaml -g typescript-node -o ./test/generated"
+    "test:generate:spec": "openapi-generator-cli generate -i https://raw.githubusercontent.com/coinbase/mesh-specifications/refs/heads/master/api.yaml -g typescript-node -o test/generated"
   },
   "repository": {
     "type": "git",
