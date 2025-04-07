@@ -799,3 +799,4 @@ export class Construction extends Router {
         kind: [...this.unsignedRosettaTransactionRlp.profile.kind as Array<any>, { name: 'signature', kind: new RLP.BufferKind() }],
     });
 }
+
