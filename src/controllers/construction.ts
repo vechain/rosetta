@@ -656,7 +656,7 @@ export class Construction extends Router {
         const schema = Joi.object({
             metadata:Joi.object({
                 blockRef:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
-                nonce:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).optional(),
+                nonce:Joi.string().lowercase().length(18).regex(/^(0x)?[0-9a-f]+$/).optional(),
                 chainTag:Joi.number().valid(this.env.config.chainTag).required(),
                 gas:Joi.number().min(21000).required(),
                 fee_delagator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
