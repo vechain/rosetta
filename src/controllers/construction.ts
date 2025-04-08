@@ -214,7 +214,7 @@ export class Construction extends Router {
                 expiration:this.env.config.expiration as number,
                 clauses:clauses,
                 gas:ctx.request.body.metadata.gas,
-                nonce:'0x' + randomBytes(8).toString('hex'),
+                nonce: ctx.request.body.metadata.nonce || '0x' + randomBytes(8).toString('hex'),
                 gasPriceCoef:0,
                 dependsOn:null
             }
@@ -656,6 +656,7 @@ export class Construction extends Router {
         const schema = Joi.object({
             metadata:Joi.object({
                 blockRef:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+                nonce:Joi.string().lowercase().length(18).regex(/^(0x)?[0-9a-f]+$/).optional(),
                 chainTag:Joi.number().valid(this.env.config.chainTag).required(),
                 gas:Joi.number().min(21000).required(),
                 fee_delagator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
