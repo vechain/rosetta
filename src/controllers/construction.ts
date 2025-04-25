@@ -149,7 +149,8 @@ export class Construction extends Router {
                     metadata:{
                         blockRef:blockRef,
                         chainTag:chainTag,
-                        gas:gas
+                        gas:gas,
+                        nonce:'0x' + randomBytes(8).toString('hex')
                     },
                     suggested_fee:[{
                         value:(fee * BigInt(-1)).toString(10),
