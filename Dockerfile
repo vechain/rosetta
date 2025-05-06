@@ -12,17 +12,23 @@ RUN git clone https://github.com/vechain/thor.git . && \
 FROM node:18-alpine AS node-builder
 
 WORKDIR /usr/src/app/rosetta
+
 COPY package*.json ./
-RUN npm install --ignore-scripts && \
+RUN npm install && \
     npm rebuild @pzzh/solc
 
-COPY . .
+COPY process_online.json ./
+COPY process_offline.json ./
+COPY tsconfig.json ./
+COPY src/ ./src/
+COPY start.sh ./
+COPY config/ ./config/
+
 RUN npm run build
 
 # Final stage
 FROM ubuntu:24.04
 
-# Install system dependencies
 RUN apt-get update && \
     apt-get --no-install-recommends install -y \
     ca-certificates \
@@ -31,32 +37,30 @@ RUN apt-get update && \
     && apt-get --no-install-recommends install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Setup application directories and user
 RUN groupadd -r rosettagroup && \
     useradd -r -g rosettagroup rosettauser && \
     mkdir -p /home/rosettauser/.pm2 && \
     chown -R rosettauser:rosettagroup /home/rosettauser/.pm2
 
-# Set working directories
-WORKDIR /data
 WORKDIR /usr/src/app
 
-# Copy built artifacts and scripts
-COPY --from=thor-builder /go/thor/bin/thor /usr/src/app/
-COPY --from=node-builder /usr/src/app/rosetta /usr/src/app/rosetta
-COPY --from=node-builder /usr/src/app/rosetta/start.sh /usr/src/app/
+# Copy only necessary built artifacts
+COPY --from=thor-builder /go/thor/bin/thor ./
+COPY --from=node-builder /usr/src/app/rosetta/dist ./rosetta/dist
+COPY --from=node-builder /usr/src/app/rosetta/start.sh ./
+COPY --from=node-builder /usr/src/app/rosetta/package*.json ./rosetta/
+COPY --from=node-builder /usr/src/app/rosetta/process_online.json ./rosetta/
+COPY --from=node-builder /usr/src/app/rosetta/process_offline.json ./rosetta/
+COPY --from=node-builder /usr/src/app/rosetta/node_modules ./rosetta/node_modules
+COPY --from=node-builder /usr/src/app/rosetta/config ./rosetta/config
 
-# Make start.sh executable
-RUN chmod +x /usr/src/app/start.sh
+WORKDIR /usr/src/app
+RUN chmod +x start.sh
 
-# Install PM2 globally
 RUN npm install --ignore-scripts -g pm2
 
-# Expose ports
 EXPOSE 8080 8669 11235 11235/udp
 
-# Switch to non-root user
 USER rosettauser
 
-# Set entrypoint
 ENTRYPOINT ["sh","./start.sh"]
