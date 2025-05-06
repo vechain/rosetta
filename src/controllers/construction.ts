@@ -779,7 +779,7 @@ export class Construction extends Router {
         name:'tx',
         kind:[
             {name:'chainTag',kind:new RLP.NumericKind(1)},
-            {name:'blockRef',kind:new RLP.NullableFixedBlobKind(8)},
+            {name:'blockRef',kind:new RLP.CompactFixedBlobKind(8)},
             {name:'expiration',kind:new RLP.NumericKind(4)},
             {name:'clauses',kind:{
                 item:[
