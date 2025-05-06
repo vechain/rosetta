@@ -18,10 +18,12 @@ RUN apt-get update && apt-get --no-install-recommends install -y ca-certificates
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app/rosetta
+COPY package*.json ./
+RUN npm install --ignore-scripts && \
+    npm rebuild @pzzh/solc
+
 COPY . .
-RUN npm ci --ignore-scripts && \
-    npm rebuild @pzzh/solc && \
-    npm run build && \
+RUN npm run build && \
     npm install --ignore-scripts -g pm2 \
     && groupadd -r rosettagroup \
     && useradd -r -g rosettagroup rosettauser \
