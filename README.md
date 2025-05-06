@@ -22,37 +22,54 @@ Implementing Rosetta Data API of VeChainThor BlockChain
     cd rosetta
 ```
 
-### Building
+### Docker Compose
 
-- Building Docker
+The project uses a multi-stage Docker build process for optimal deployment. This configuration:
 
-``` shell
-    docker build ./ -t vechain/rosetta-server:latest
+- Builds the Thor binary and Node.js application in separate stages
+- Mounts a local data directory for persistence
+- Exposes all necessary ports for the Rosetta API and Thor node
+- Sets up environment variables for network type and run mode
+
+To use docker-compose:
+
+```shell
+# Build and start the container
+docker-compose up -d
+
+# View logs
+docker-compose logs -f rosetta-server
+
+# Stop the container
+docker-compose down
 ```
 
-### Docker
+The configuration can be customized by modifying the `docker-compose.yml` file:
 
-``` sh
-    docker run -d\
-    -v {path-to-data-directory}:/data\
-    -p {host_address_port}:8080 -p {host_address_port}:8669 -p 11235:11235 -p 11235:11235/udp\
-    --env NETWORK={network_type} --env MODE={run_mode}\
-    vechain/rosetta-server:latest
-```
+- Change the data directory path in the volumes section
+- Modify the exposed ports if needed
+- Adjust environment variables (NETWORK and MODE)
+- Update the build context if needed
 
-- `path-to-data-directory` directory for data
-- `host_address_port` rosetta api service listening address
-- `network_type` rosetta and thornode to join network type (main|test)
-- `run_mode` the api service run mode (online|offline),if the mode is offline, some apis can not be used.
+#### Example docker-compose.yml
 
-#### Example
-
-``` shell
-    docker run -d\
-    -v /Users/rosetta/data/:/data\
-    -p 0.0.0.0:8080:8080 -p 0.0.0.0:8669:8669 -p 11235:11235 -p 11235:11235/udp\
-    --env NETWORK=main --env MODE=online\
-    vechain/rosetta-server:latest
+```yaml
+version: '3.8'
+services:
+  rosetta-server:
+    build:
+      context: .
+    volumes:
+      - ./data:/data # Points to your local directory
+    ports:
+      - "8080:8080"  # Rosetta API
+      - "8669:8669"  # Thor node
+      - "11235:11235"  # P2P
+      - "11235:11235/udp"  # P2P UDP
+    environment:
+      - NETWORK=main
+      - MODE=online
+    restart: unless-stopped
 ```
 
 ## Endpoints
