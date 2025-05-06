@@ -14,7 +14,7 @@ FROM node:18-alpine AS node-builder
 WORKDIR /usr/src/app/rosetta
 
 COPY package*.json ./
-RUN npm install && \
+RUN npm install --ignore-scripts && \
     npm rebuild @pzzh/solc
 
 COPY process_online.json ./
