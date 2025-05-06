@@ -15,9 +15,10 @@ WORKDIR /usr/src/app
 RUN apt-get update && apt-get --no-install-recommends install -y ca-certificates curl git \
     && curl --proto "=https" --tlsv1.2 -sSf -L https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get --no-install-recommends install -y nodejs \
-    && rm -rf /var/lib/apt/lists/* \
-    && git clone https://github.com/vechain/rosetta.git
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /usr/src/app/rosetta
+COPY . .
 RUN npm ci --ignore-scripts && \
     npm rebuild @pzzh/solc && \
     npm run build && \

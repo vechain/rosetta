@@ -3,10 +3,7 @@ version: '3.8'
 services:
   rosetta-server:
     build:
-      context: ./
-      dockerfile: Dockerfile
-    image: vechain/rosetta-server:latest
-    container_name: rosetta-server
+      context: .
     volumes:
       - /tmp/rosetta_data/:/data
     ports:
