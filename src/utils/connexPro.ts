@@ -1,5 +1,5 @@
+import { Driver, SimpleNet, Wallet } from "@vechain/connex-driver";
 import { Framework } from "@vechain/connex-framework";
-import { Wallet, Driver, SimpleNet } from "@vechain/connex-driver";
 
 export default class ConnexPro extends Framework
 {

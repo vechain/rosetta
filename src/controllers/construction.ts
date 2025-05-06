@@ -1,19 +1,19 @@
-import Joi, { valid } from "joi";
+import axios from "axios";
+import { randomBytes } from "crypto";
+import { ethers } from "ethers";
+import Joi from "joi";
 import Router from "koa-router";
-import { address, RLP, Transaction as VeTransaction } from "thor-devkit";
+import { RLP, Transaction as VeTransaction } from "thor-devkit";
 import { VETCurrency, VTHOCurrency } from "..";
+import { CheckSchema } from "../common/checkSchema";
+import { getError } from "../common/errors";
+import { Currency } from "../common/types/currency";
 import { Operation, OperationType } from "../common/types/operation";
 import { CurveType, SignatureType } from "../common/types/signature";
 import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
-import axios from "axios";
-import { getError } from "../common/errors";
-import { ethers } from "ethers";
-import { Currency } from "../common/types/currency";
-import { randomBytes } from "crypto";
-import { CheckSchema } from "../common/checkSchema";
 
 export class Construction extends Router {
     constructor(env:any){
@@ -147,9 +147,9 @@ export class Construction extends Router {
                 const chainTag = this.env.config.chainTag;
                 const response = {
                     metadata:{
-                        blockRef:blockRef,
-                        chainTag:chainTag,
-                        gas:gas,
+                        blockRef,
+                        chainTag,
+                        gas,
                         nonce:'0x' + randomBytes(8).toString('hex')
                     },
                     suggested_fee:[{
@@ -211,7 +211,7 @@ export class Construction extends Router {
 
             const vechainTxBody:VeTransaction.Body = {
                 chainTag:ctx.request.body.metadata.chainTag,
-                blockRef:ctx.request.body.metadata.blockRef as string,
+                blockRef: ctx.request.body.metadata.blockRef as string,
                 expiration:this.env.config.expiration as number,
                 clauses:clauses,
                 gas:ctx.request.body.metadata.gas,
@@ -779,7 +779,7 @@ export class Construction extends Router {
         name:'tx',
         kind:[
             {name:'chainTag',kind:new RLP.NumericKind(1)},
-            {name:'blockRef',kind:new RLP.NullableFixedBlobKind(8)},
+            {name:'blockRef',kind:new RLP.BlobKind()},
             {name:'expiration',kind:new RLP.NumericKind(4)},
             {name:'clauses',kind:{
                 item:[
