@@ -10,7 +10,7 @@ import { getError } from "../common/errors";
 import { Currency } from "../common/types/currency";
 import { Operation, OperationType } from "../common/types/operation";
 import { CurveType, SignatureType } from "../common/types/signature";
-import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
+import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
@@ -77,9 +77,9 @@ export class Construction extends Router {
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
         if(verify.error == undefined){
             const account = this.computeAddress(ctx.request.body.public_key.hex_bytes as string);
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{address:account});
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{address:account});
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(5,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(5,undefined,{
                 public_key:ctx.request.body.public_key,
                 error:verify.error
             }));
@@ -92,24 +92,24 @@ export class Construction extends Router {
         const requestVerify = this.checkPreprocessRequest(ctx);
         if(requestVerify){
             const origins = this.getTxOrigins(ctx.request.body.operations);
-            const delegator = ctx.request.body.metadata?.fee_delagator_account || undefined;
+            const delegator = ctx.request.body.metadata?.fee_delegator_account || undefined;
             const vetOpers = this.getVETOperations(ctx.request.body.operations);
             const tokensOpers = this.getTokensOperations(ctx.request.body.operations);
             if(origins.length > 1){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(6));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(6));
                 return;
             } else if (origins.length == 0){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(7));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(7));
                 return;
             } else if (vetOpers.length == 0 && tokensOpers.registered.length == 0){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(9));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(9));
                 return;
             } else if(tokensOpers.unregistered.length > 0){
                 const unregisteredToken = new Array<string>();
                 for(const addr of tokensOpers.unregistered){
                     unregisteredToken.push(addr);
                 }
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(10,undefined,{
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(10,undefined,{
                     unregisteredToken:unregisteredToken
                 }));
                 return;
@@ -132,7 +132,7 @@ export class Construction extends Router {
             if(CheckSchema.isAddress(delegator) && delegator != origins[0]){
                 response.required_public_keys.push({address:delegator});
             }
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
         }
         await next();
     }
@@ -157,9 +157,9 @@ export class Construction extends Router {
                         currency:VTHOCurrency
                     }]
                 }
-                ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+                ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
             } catch (error) {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(11,undefined,error));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(11,undefined,error));
                 return;
             }
         }
@@ -169,38 +169,38 @@ export class Construction extends Router {
     private async payloads(ctx:Router.IRouterContext,next:() => Promise<any>){
         if(this.checkOptions(ctx) && this.checkPublickeys(ctx) && this.checkMetadata(ctx)){
             let txOrigin;
-            const txDelegator = ctx.request.body.metadata.fee_delagator_account || undefined;
+            const txDelegator = ctx.request.body.metadata.fee_delegator_account || undefined;
             if(ctx.request.body.public_keys.length > 2){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(8));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(8));
                 return;
             }
             if(txDelegator != undefined && ctx.request.body.public_keys.length != 2){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(28));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(28));
                 return;
             }
             if(txDelegator != undefined){
                 const dele = this.computeAddress(ctx.request.body.public_keys[1].hex_bytes as string).toLowerCase();
                 if(dele != txDelegator){
-                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(29,undefined,{operation_account:txDelegator,public_key:ctx.request.body.public_keys[1].hex_bytes}));
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(29,undefined,{operation_account:txDelegator,public_key:ctx.request.body.public_keys[1].hex_bytes}));
                     return;
                 }
             }
 
             const origins = this.getTxOrigins(ctx.request.body.operations);
             if(origins.length > 1){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(6));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(6));
                 return;
             } else if(origins.length == 0){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(7));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(7));
                 return;
             } else if(ctx.request.body.public_keys.length == 0){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(30));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(30));
                 return;
             }
             if(origins.length == 1 && ctx.request.body.public_keys.length >= 1){
                 const orig = this.computeAddress(ctx.request.body.public_keys[0].hex_bytes as string).toLowerCase();
                 if(orig != origins[0]){
-                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(29,undefined,{operation_account:origins[0],public_key:ctx.request.body.public_keys[0].hex_bytes}));
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(29,undefined,{operation_account:origins[0],public_key:ctx.request.body.public_keys[0].hex_bytes}));
                     return;
                 } else {
                     txOrigin = origins[0];
@@ -256,7 +256,7 @@ export class Construction extends Router {
                     signature_type:SignatureType.ecdsa_recovery
                 });
             }
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response)
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response)
         }
         await next();
     }
@@ -266,7 +266,7 @@ export class Construction extends Router {
         try {
             rosettaTx = this.signedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
         } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(12));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
             return;
         }
         let vechainTxBody:VeTransaction.Body = {
@@ -289,13 +289,13 @@ export class Construction extends Router {
         try {
             const response = await axios.post(this.connex.baseUrl + '/transactions',{raw:raw},{responseType:'json'});
             const txid = response.data.id;
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction_identifier:{
                     hash:txid
                 }
             });
         } catch (error:any) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(13,undefined,{status:error.response.status,error:error.response.data.trim(),raw:raw}));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(13,undefined,{status:error.response.status,error:error.response.data.trim(),raw:raw}));
             return;
         }
         await next();
@@ -433,7 +433,7 @@ export class Construction extends Router {
                     operations:operations
                 }
             }
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
         }
         await next();
     }
@@ -452,7 +452,7 @@ export class Construction extends Router {
                 rosettaTx.signature = Buffer.from(originPayload.hex_bytes,'hex');
             }
             const encode = this.signedRosettaTransactionRlp.encode(rosettaTx);
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{signed_transaction:'0x' + encode.toString('hex')});
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{signed_transaction:'0x' + encode.toString('hex')});
         }
         await next();
     }
@@ -479,13 +479,13 @@ export class Construction extends Router {
             const reOri = vechainTx.origin;
             const reDel = vechainTx.delegator;
 
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction_identifier:{
                     hash:vechainTx.id
                 }
             });
         } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(12));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
             return;
         }
         await next();
@@ -516,7 +516,7 @@ export class Construction extends Router {
         if(verify.error == undefined){
             return true;
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(14,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(14,undefined,{
                 error:verify.error
             }));
             return false;
@@ -599,7 +599,7 @@ export class Construction extends Router {
         if(verify.error == undefined){
             return true;
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(5,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(5,undefined,{
                 error:verify.error
             }));
             return false;
@@ -620,7 +620,7 @@ export class Construction extends Router {
         if(verify.error == undefined){
             return true;
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(15,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(15,undefined,{
                 error:verify.error
             }));
             return false;
@@ -660,14 +660,14 @@ export class Construction extends Router {
                 nonce:Joi.string().lowercase().length(18).regex(/^(0x)?[0-9a-f]+$/).optional(),
                 chainTag:Joi.number().valid(this.env.config.chainTag).required(),
                 gas:Joi.number().min(21000).required(),
-                fee_delagator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
+                fee_delegator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
             })
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
         if(verify.error == undefined){
             return true;
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(16,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(16,undefined,{
                 error:verify.error
             }));
             return false;
@@ -705,14 +705,14 @@ export class Construction extends Router {
                     this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
                 }
             } catch (error) {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(17,undefined,{
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(17,undefined,{
                     error:error
                 }));
                 return false;
             }
             return true;
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(18,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(18,undefined,{
                 error:verify.error
             }));
             return false;
@@ -746,12 +746,12 @@ export class Construction extends Router {
             try {
                 this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
             } catch (error) {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(19));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
                 return false;
             }
             return true;
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(20,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(20,undefined,{
                 error:verify.error
             }));
             return false;

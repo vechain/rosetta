@@ -1,16 +1,16 @@
 import Joi from "joi";
 import Router from "koa-router";
+import { Transaction as VeTransaction } from "thor-devkit";
+import { VETCurrency, VTHOCurrency } from "..";
+import { CheckSchema } from "../common/checkSchema";
 import { getError } from "../common/errors";
+import { Currency } from "../common/types/currency";
 import { BlockIdentifier } from "../common/types/identifiers";
-import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
+import { Operation, OperationStatus, OperationType } from "../common/types/operation";
+import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
-import { Transaction as VeTransaction } from "thor-devkit";
-import { Operation, OperationStatus, OperationType } from "../common/types/operation";
 import { VIP180Token } from "../utils/vip180Token";
-import { VETCurrency, VTHOCurrency } from "..";
-import { Currency } from "../common/types/currency";
-import { CheckSchema } from "../common/checkSchema";
 
 export class Search extends Router {
     constructor(env:any){
@@ -38,7 +38,7 @@ export class Search extends Router {
                     hash:tx.meta.blockID
                 }
                 const operations = this.convertClausesToOperations(tx,txRecp);
-                ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+                ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                     transactions:[
                         {
                             block_identifier:block_identifier,
@@ -53,7 +53,7 @@ export class Search extends Router {
                     total_count:1
                 })
             } else {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(4));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(4));
                 return;
             }
         }
@@ -70,7 +70,7 @@ export class Search extends Router {
         if(verify.error == undefined){
             return true;
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(25,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(25,undefined,{
                 error:verify.error
             }));
             return false;
