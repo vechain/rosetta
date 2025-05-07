@@ -1,15 +1,15 @@
+import Axios from "axios";
+import Joi from "joi";
 import Router from "koa-router";
+import { VETCurrency, VTHOCurrency } from "..";
+import { getError } from "../common/errors";
 import { Amount } from "../common/types/amount";
-import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
+import { Currency } from "../common/types/currency";
+import { BlockIdentifier } from "../common/types/identifiers";
+import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
-import Axios from "axios";
-import { BlockIdentifier } from "../common/types/identifiers";
 import { VIP180Token } from "../utils/vip180Token";
-import { getError } from "../common/errors";
-import { VETCurrency, VTHOCurrency } from "..";
-import { Currency } from "../common/types/currency";
-import Joi from "joi";
 
 export class Account extends Router {
     constructor(env:any){
@@ -62,15 +62,15 @@ export class Account extends Router {
     //                                 }
     //                             }]
     //                         }
-    //                         ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+    //                         ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
     //                     } else {
-    //                         ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(27,undefined,{
+    //                         ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(27,undefined,{
     //                             revision:revision
     //                         }));
     //                         return;
     //                     }
     //                 } else {
-    //                     ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(1,undefined,{
+    //                     ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(1,undefined,{
     //                         subaccount:subaccount
     //                     }));
     //                     return;
@@ -84,16 +84,16 @@ export class Account extends Router {
     //                     },
     //                     balances:balances
     //                 }
-    //                 ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+    //                 ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
     //             }
     //         } else {
-    //             ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
+    //             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
     //                 revision:revision
     //             }));
     //             return;
     //         }
     //     } catch (error) {
-    //         ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
+    //         ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,error));
     //         return;
     //     }
     //     await next();
@@ -134,14 +134,14 @@ export class Account extends Router {
                                     const balance = await token.balanceOf(account,block.id);
                                     balances.push({value:balance.toString(10),currency:tokenConf});
                                 } else {
-                                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(27,undefined,{
+                                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(27,undefined,{
                                         contractAddress:qtoken.metadata.contractAddress,
                                         revision:revision
                                     }));
                                     return;
                                 }
                             } else {
-                                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(1,undefined,{
+                                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(1,undefined,{
                                     contractAddress:qtoken.metadata.contractAddress
                                 }));
                                 return;
@@ -155,20 +155,20 @@ export class Account extends Router {
                         },
                         balances:balances
                     }
-                    ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+                    ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
                 } else {
-                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
                         revision:revision
                     }));
                     return;
                 }
 
             } catch (error) {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,error));
                 return;
             }
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(31,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(31,undefined,{
                 error:verify.error
             }));
             return;

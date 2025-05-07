@@ -4,7 +4,7 @@ import { VTHOCurrency } from "..";
 import { Errors, getError } from "../common/errors";
 import { Allow, ExemptionType } from "../common/types/allow";
 import { OperationStatus, OperationType } from "../common/types/operation";
-import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
+import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
 
@@ -31,7 +31,7 @@ export class Network extends Router {
     }
 
     private async list(ctx:Router.IRouterContext,next: () => Promise<any>){
-        ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+        ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
             network_identifiers:[{
                 blockchain:'vechainthor',
                 network:this.env.config.network
@@ -61,7 +61,7 @@ export class Network extends Router {
         for(const key of Errors.keys()){
             allow.errors.push(Errors.get(key)!);
         }
-        ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+        ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
             version:versions,
             allow:allow
         });
@@ -96,9 +96,9 @@ export class Network extends Router {
             for(const peer of peers){
                 response.peers.push({peer_id:peer.peerID});
             }
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
         } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{
                 error:error
             }))
             return;

@@ -1,11 +1,11 @@
 import Router from "koa-router";
+import { getError } from "../common/errors";
 import { TransactionConverter } from "../common/transConverter";
 import { BlockIdentifier } from "../common/types/identifiers";
 import { Transaction } from "../common/types/transaction";
-import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
+import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
-import { getError } from "../common/errors";
 
 
 export class Block extends Router {
@@ -41,7 +41,7 @@ export class Block extends Router {
         }
 
         if(revision == undefined){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(24,undefined));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(24,undefined));
             return;
         }
 
@@ -85,14 +85,14 @@ export class Block extends Router {
                     },
                     other_transactions:other_trans.length > 0 ? other_trans : undefined
                 }
-                ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+                ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
             } else {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
                     revision:revision
                 }));
             }
         } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,{error}));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{error}));
             return;
         }
         await next();
@@ -109,7 +109,7 @@ export class Block extends Router {
         const txid = ctx.request.body.transaction_identifier.hash;
 
         if(revision == undefined){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(24,undefined));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(24,undefined));
             return;
         }
 
@@ -122,21 +122,21 @@ export class Block extends Router {
                     const response:{transaction:Transaction} = {
                         transaction:rosettaTx
                     }
-                    ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+                    ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
                 } else {
-                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(4,undefined,{
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(4,undefined,{
                         transaction_identifier_hash:txid
                     }));
                     return;
                 }
             } else {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
                     block_identifier_hash:revision || ''
                 }));
                 return;
             }
         } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,error));
             return;
         }
         await next();
