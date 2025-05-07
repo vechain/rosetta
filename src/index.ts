@@ -1,10 +1,9 @@
-import path from "path";
 import Axios from "axios";
-import { Logger } from "./utils/logger";
 import Koa from 'koa';
-import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
 import bodyParser from "koa-bodyparser";
 import Router from "koa-router";
+import path from "path";
+import { Currency } from "./common/types/currency";
 import { Account } from "./controllers/account";
 import { Block } from "./controllers/block";
 import { Call } from "./controllers/call";
@@ -13,8 +12,9 @@ import { Events } from "./controllers/events";
 import { Mempool } from "./controllers/mempool";
 import { Network } from "./controllers/network";
 import { Search } from "./controllers/search";
+import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
 import ConnexPro from "./utils/connexPro";
-import { Currency } from "./common/types/currency";
+import { Logger } from "./utils/logger";
 
 process.setMaxListeners(50);
 
@@ -93,11 +93,11 @@ class ApiServer {
             this.env.config.chainTag = connex.chainTag;
             this.env.connex = connex;
             if(connex.network != this.env.config.network){
-                console.error(`The node ${this.env.config.nodeApi} is not ${this.env.config.network} network.`);
+                console.error(`The node ${connex.network} is not ${this.env.config.network} network.`);
                 process.exit();
             }
         } catch (error) {
-            console.error(`Connect vechain node ${this.env.config.nodeApi} failed.`);
+            console.error(`Connect vechain node ${this.env.config.nodeApi} failed.`, error);
             process.exit();
         }
     }

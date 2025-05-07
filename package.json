@@ -6,7 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf ./dist && tsc -p ./",
-    "serve": "rm -rf ./dist && tsc -p ./ && node ./dist/app/index.js"
+    "serve": "rm -rf ./dist && tsc -p ./ && node ./dist/app/index.js",
+    "start:main": "NETWORK=main docker-compose up --build",
+    "start:test": "NETWORK=test docker-compose up --build",
+    "start:galactica:devnet": "NETWORK=https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json THOR_VERSION=release/galactica docker-compose up --build",
+    "stop": "docker-compose down"
   },
   "repository": {
     "type": "git",

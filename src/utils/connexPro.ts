@@ -13,6 +13,8 @@ export default class ConnexPro extends Framework
             instance._network = 'main';
         } else if(instance._chainTag == 0x27){
             instance._network = 'test';
+        } else if (instance._chainTag == 0xe4){
+            instance._network = 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json';
         }
         return instance;
     }
@@ -42,12 +44,12 @@ export default class ConnexPro extends Framework
         return this._driver;
     }
 
-    public get network():'main'|'test'|'custom'{
+    public get network():'main'|'test'|'custom'|'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json'{
         return this._network;
     }
 
     protected _baseUrl:string = '';
     protected _chainTag:number = 0;
     protected _driver:Driver;
-    protected _network:'main'|'test'|'custom' = 'custom';
+    protected _network:'main'|'test'|'custom'|'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json' = 'custom';
 }
