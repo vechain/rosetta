@@ -380,7 +380,7 @@ export class Construction extends Router {
             }
 
             if(CheckSchema.isAddress(delegator)){
-                const delegatinOp:Operation = {
+                const delegationOp:Operation = {
                     operation_identifier:{
                         index:0,
                         network_index:rosettaTx.clauses.length
@@ -394,7 +394,7 @@ export class Construction extends Router {
                         currency:VTHOCurrency
                     }
                 }
-                operations.push(delegatinOp)
+                operations.push(delegationOp)
             } else {
                 const feeOp:Operation = {
                     operation_identifier:{
@@ -445,11 +445,11 @@ export class Construction extends Router {
             const delegatorPayload = (ctx.request.body.signatures as Array<any>).find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.delegator || '').toLowerCase()});
             if(delegatorPayload != undefined){
                 rosettaTx.signature = Buffer.concat([
-                    Buffer.from(originPayload.hex_bytes,'hex'),
-                    Buffer.from(delegatorPayload.hex_bytes,'hex')
+                    Uint8Array.from(Buffer.from(originPayload.hex_bytes,'hex')),
+                    Uint8Array.from(Buffer.from(delegatorPayload.hex_bytes,'hex'))
                 ]);
             } else {
-                rosettaTx.signature = Buffer.from(originPayload.hex_bytes,'hex');
+                rosettaTx.signature = Uint8Array.from(Buffer.from(originPayload.hex_bytes,'hex'));
             }
             const encode = this.signedRosettaTransactionRlp.encode(rosettaTx);
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{signed_transaction:'0x' + encode.toString('hex')});
@@ -609,6 +609,7 @@ export class Construction extends Router {
     private checkOptions(ctx:Router.IRouterContext):boolean{
         const schema = Joi.object({
             options:Joi.object({
+                transactionType: Joi.string().valid('legacy', 'dynamic').default('dynamic'),
                 clauses:Joi.array().items(Joi.object({
                     to:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                     value:Joi.string().allow('').required(),
