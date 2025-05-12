@@ -145,6 +145,7 @@ export class Construction extends Router {
                 const fee = this.gasToVTHO(gas,this.env.config.baseGasPrice);
                 const blockRef = this.connex.blockRef;
                 const chainTag = this.env.config.chainTag;
+                // TODO: Collect the best block base fee and fill in maxFeePerGas and maxPriorityFeePerGas
                 const response = {
                     metadata:{
                         transactionType: ctx.request.body.options.transactionType,
