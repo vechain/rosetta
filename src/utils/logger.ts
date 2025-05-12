@@ -1,4 +1,3 @@
-import Router from "koa-router";
 import log4js from "log4js";
 import path from "path";
 
@@ -10,7 +9,7 @@ export class Logger {
     }
 
     public async httpLoggerMiddleware(ctx:any, next: () => Promise<any>){
-        let parames = {
+        let params = {
             remoteAdd: ctx.headers['x-forwarded-for'] || (ctx as any).ip || ctx.ips || (ctx.socket && (ctx.socket.remoteAddress || ((ctx as any).socket.socket && (ctx as any).socket.socket.remoteAddress))),
             method: ctx.method,
             body: JSON.stringify(ctx.request.body),
@@ -25,20 +24,20 @@ export class Logger {
         const startTs = new Date().getTime();
         await next();
         const endTs = new Date().getTime();
-        if (String(parames.remoteAdd).startsWith("::ffff:")) {
-            let remoteAdd: string = parames.remoteAdd;
-            parames.remoteAdd = remoteAdd.replace("::ffff:", "");
+        if (String(params.remoteAdd).startsWith("::ffff:")) {
+            let remoteAdd: string = params.remoteAdd;
+            params.remoteAdd = remoteAdd.replace("::ffff:", "");
         }
-        parames.responseTime = (endTs - startTs);
-        parames.status = ctx.status || ctx.response.status || ctx.res.statusCode;
+        params.responseTime = (endTs - startTs);
+        params.status = ctx.status || ctx.response.status || ctx.res.statusCode;
         if(ctx.body != undefined){
-            parames.response = JSON.stringify(ctx.body);
+            params.response = JSON.stringify(ctx.body);
         }
-        if (parames.status >= 300) { logLevel = 'WARN' };
-        if (parames.status >= 400) { logLevel = 'WARN' };
-        if (parames.status >= 500) { logLevel = 'ERROR' };
-        let logMessage = `${parames.remoteAdd} ${parames.requestTime} ${parames.method} ${parames.url} ${parames.responseTime} ${parames.body} ${parames.status}`;
-        let debuglogMessage = `${parames.remoteAdd} ${parames.requestTime} ${parames.method} ${parames.url} ${parames.responseTime} ${parames.header} ${parames.body} ${parames.status} ${parames.response}`;
+        if (params.status >= 300) { logLevel = 'WARN' };
+        if (params.status >= 400) { logLevel = 'WARN' };
+        if (params.status >= 500) { logLevel = 'ERROR' };
+        let logMessage = `${params.remoteAdd} ${params.requestTime} ${params.method} ${params.url} ${params.responseTime} ${params.body} ${params.status}`;
+        let debuglogMessage = `${params.remoteAdd} ${params.requestTime} ${params.method} ${params.url} ${params.responseTime} ${params.header} ${params.body} ${params.status} ${params.response}`;
 
         switch (this.env.config.logLevel) {
             case "dev": {
