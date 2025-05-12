@@ -38,7 +38,7 @@
     "myvetools": "^1.4.1",
     "npm": "^11.2.0",
     "request": "^2.88.2",
-    "thor-devkit": "^2.0.5"
+    "thor-devkit": "^2.1.0"
   },
   "devDependencies": {
     "@types/joi": "^17.2.3",

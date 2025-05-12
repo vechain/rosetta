@@ -150,6 +150,7 @@ export class Construction extends Router {
                         blockRef,
                         chainTag,
                         gas,
+                        gasPriceCoef: randomBytes(1).readUInt8(),
                         nonce:'0x' + randomBytes(8).toString('hex')
                     },
                     suggested_fee:[{
@@ -209,14 +210,14 @@ export class Construction extends Router {
 
             const clauses = this.convertOperationsToClauses(ctx.request.body.operations);
 
-            const vechainTxBody:VeTransaction.Body = {
-                chainTag:ctx.request.body.metadata.chainTag,
+            const vechainTxBody: VeTransaction.LegacyBody = {
+                chainTag:ctx.request.body.metadata.chainTag as number,
                 blockRef: ctx.request.body.metadata.blockRef as string,
                 expiration:this.env.config.expiration as number,
                 clauses:clauses,
                 gas:ctx.request.body.metadata.gas,
                 nonce: ctx.request.body.metadata.nonce || '0x' + randomBytes(8).toString('hex'),
-                gasPriceCoef:0,
+                gasPriceCoef:ctx.request.body.metadata.gasPriceCoef as number,
                 dependsOn:null
             }
             if(CheckSchema.isAddress(txDelegator)){
@@ -233,6 +234,7 @@ export class Construction extends Router {
                 expiration:vechainTxBody.expiration,
                 clauses:vechainTxBody.clauses,
                 gas:vechainTxBody.gas,
+                gasPriceCoef:vechainTxBody.gasPriceCoef,
                 nonce:vechainTxBody.nonce,
                 origin:txOrigin,
                 delegator:txDelegator || undefined
@@ -269,12 +271,12 @@ export class Construction extends Router {
             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
             return;
         }
-        let vechainTxBody:VeTransaction.Body = {
+        let vechainTxBody: VeTransaction.LegacyBody = {
             chainTag:rosettaTx.chainTag,
             blockRef:rosettaTx.blockRef,
             expiration:rosettaTx.expiration,
             clauses:rosettaTx.clauses,
-            gasPriceCoef:0,
+            gasPriceCoef:rosettaTx.gasPriceCoef,
             gas:rosettaTx.gas,
             dependsOn:null,
             nonce:rosettaTx.nonce
@@ -460,12 +462,12 @@ export class Construction extends Router {
     private async hash(ctx:Router.IRouterContext,next: () => Promise<any>) {
         try {
             const rosettaTx = this.signedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
-            let vechainTxBody:VeTransaction.Body = {
+            let vechainTxBody:VeTransaction.LegacyBody = {
                 chainTag:rosettaTx.chainTag,
                 blockRef:rosettaTx.blockRef,
                 expiration:rosettaTx.expiration,
                 clauses:rosettaTx.clauses,
-                gasPriceCoef:0,
+                gasPriceCoef:rosettaTx.gasPriceCoef,
                 gas:rosettaTx.gas,
                 dependsOn:null,
                 nonce:rosettaTx.nonce
@@ -475,9 +477,6 @@ export class Construction extends Router {
             }
             const vechainTx = new VeTransaction(vechainTxBody);
             vechainTx.signature = rosettaTx.signature;
-
-            const reOri = vechainTx.origin;
-            const reDel = vechainTx.delegator;
 
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction_identifier:{
@@ -609,7 +608,6 @@ export class Construction extends Router {
     private checkOptions(ctx:Router.IRouterContext):boolean{
         const schema = Joi.object({
             options:Joi.object({
-                transactionType: Joi.string().valid('legacy', 'dynamic').default('dynamic'),
                 clauses:Joi.array().items(Joi.object({
                     to:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                     value:Joi.string().allow('').required(),
@@ -790,6 +788,10 @@ export class Construction extends Router {
                 ]
             }},
             {name:'gas',kind:new RLP.NumericKind(8)},
+            {name:'gasPriceCoef',kind:new RLP.NumericKind(1)},
+            // TODO: Add maxFeePerGas and maxPriorityFeePerGas
+            // {name:'maxFeePerGas',kind:new RLP.NumericKind(32)},
+            // {name:'maxPriorityFeePerGas',kind:new RLP.NumericKind(32)},
             {name:'nonce',kind:new RLP.NullableFixedBlobKind(8)},
             {name:'origin',kind:new RLP.NullableFixedBlobKind(20)},
             {name:'delegator',kind:new RLP.NullableFixedBlobKind(20)}
