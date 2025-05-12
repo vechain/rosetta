@@ -659,6 +659,7 @@ export class Construction extends Router {
                 nonce:Joi.string().lowercase().length(18).regex(/^(0x)?[0-9a-f]+$/).optional(),
                 chainTag:Joi.number().valid(this.env.config.chainTag).required(),
                 gas:Joi.number().min(21000).required(),
+                gasPriceCoef:Joi.number().min(0).max(255).required(),
                 fee_delegator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
             })
         });
