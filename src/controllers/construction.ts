@@ -147,6 +147,7 @@ export class Construction extends Router {
                 const chainTag = this.env.config.chainTag;
                 const response = {
                     metadata:{
+                        transactionType: ctx.request.body.options.transactionType,
                         blockRef,
                         chainTag,
                         gas,
@@ -606,13 +607,20 @@ export class Construction extends Router {
     }
 
     private checkOptions(ctx:Router.IRouterContext):boolean{
+        if (!ctx.request.body.options) {
+            ctx.request.body.options = {};
+        }
+        if (!ctx.request.body.options.transactionType) {
+            ctx.request.body.options.transactionType = 'dynamic';
+        }
         const schema = Joi.object({
             options:Joi.object({
+                transactionType: Joi.string().valid('legacy', 'dynamic').default('dynamic'),
                 clauses:Joi.array().items(Joi.object({
                     to:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                     value:Joi.string().allow('').required(),
                     data:Joi.string().allow('').required()
-                })).min(1).required()
+                })).min(1)
             })
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
@@ -655,11 +663,26 @@ export class Construction extends Router {
     private checkMetadata(ctx:Router.IRouterContext):boolean{
         const schema = Joi.object({
             metadata:Joi.object({
+                transactionType: Joi.string().valid('legacy', 'dynamic').default('dynamic'),
                 blockRef:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                 nonce:Joi.string().lowercase().length(18).regex(/^(0x)?[0-9a-f]+$/).optional(),
                 chainTag:Joi.number().valid(this.env.config.chainTag).required(),
                 gas:Joi.number().min(21000).required(),
-                gasPriceCoef:Joi.number().min(0).max(255).required(),
+                gasPriceCoef: Joi.when('transactionType', {
+                    is: 'legacy',
+                    then: Joi.number().min(0).max(255).required(),
+                    otherwise: Joi.forbidden()
+                }),
+                maxFeePerGas: Joi.when('transactionType', {
+                    is: 'dynamic',
+                    then: Joi.number().min(this.env.config.initialBaseFee as number).required(),
+                    otherwise: Joi.forbidden()
+                }),
+                maxPriorityFeePerGas: Joi.when('transactionType', {
+                    is: 'dynamic',
+                    then: Joi.number().min(0).required(),
+                    otherwise: Joi.forbidden()
+                }),
                 fee_delegator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
             })
         });
