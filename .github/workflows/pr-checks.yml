@@ -41,7 +41,7 @@ jobs:
 
       - name: Prepare volume dir
         run: |
-          mkdir -p rosetta_data/logs
+          mkdir -p rosetta_data
           chmod -R 777 rosetta_data
 
       - name: Build Docker images
