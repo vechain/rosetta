@@ -90,7 +90,7 @@ export class Network extends Router {
                     stage:'block sync',
                     synced:process == 1 ? true:false
                 },
-                peers:[]
+                peers:[] as {peer_id:string}[]
             };
             
             for(const peer of peers){

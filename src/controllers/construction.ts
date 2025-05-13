@@ -707,7 +707,10 @@ export class Construction extends Router {
     }
 
     private getTokensOperations(operations:Array<any>):{registered:Array<{token:string,value:string,to:string}>,unregistered:Array<string>} {
-        const result ={registered:[],unregistered:[]};
+        const result: { registered: {token:string,value:string,to:string}[]; unregistered: string[] } = {
+            registered: [],
+            unregistered: []
+        }; 
         for(const oper of operations){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.amount.currency?.metadata?.contractAddress != undefined){
                 const tokenAddr = oper.amount.currency.metadata.contractAddress as string;
