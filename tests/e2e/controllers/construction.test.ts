@@ -234,7 +234,9 @@ describe('Construction Controller', () => {
                 ]
             });
 
-            expect(response).toHaveProperty('signed_transaction');
+            expect(response).toStrictEqual({
+                signed_transaction: "0xf88d81e486039791786ecd81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce82271080828ca08869f045ffc9f2c1af94c05c334533c673582616ac2bf404b6c55efa10878081cbb8414ad82781abf5866020c9bf6a7b07f94ba4bb9e95ac1ca3c858ded24c08b6856213589bac265f656a87da255b855cfab9a96020d450593df2481015188ae7927000"
+            });
         });
     });
 
