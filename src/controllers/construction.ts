@@ -92,7 +92,7 @@ export class Construction extends Router {
         const requestVerify = this.checkPreprocessRequest(ctx);
         if(requestVerify){
             const origins = this.getTxOrigins(ctx.request.body.operations);
-            const delegator = ctx.request.body.metadata?.fee_delegator_account || undefined;
+            const delegator = ctx.request.body.metadata?.fee_delegator_account;
             const vetOpers = this.getVETOperations(ctx.request.body.operations);
             const tokensOpers = this.getTokensOperations(ctx.request.body.operations);
             if(origins.length > 1){
@@ -205,7 +205,7 @@ export class Construction extends Router {
     private async payloads(ctx:Router.IRouterContext,next:() => Promise<any>){
         if(this.checkOptions(ctx) && this.checkPublickeys(ctx) && this.checkMetadata(ctx)){
             let txOrigin;
-            const txDelegator = ctx.request.body.metadata.fee_delegator_account || undefined;
+            const txDelegator = ctx.request.body.metadata.fee_delegator_account;
             if(ctx.request.body.public_keys.length > 2){
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(8));
                 return;
@@ -284,7 +284,7 @@ export class Construction extends Router {
             const originSignHash = vechainTx.signingHash().toString('hex');
             const rosettaTx = {
                 origin:txOrigin,
-                delegator:txDelegator || undefined,
+                delegator: txDelegator,
                 ...vechainTxBody
             }
             const rosettaTxRaw = encoder.encode(rosettaTx);
