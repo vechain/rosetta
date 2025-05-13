@@ -14,7 +14,7 @@ beforeAll(async () => {
         // Using docker compose instead of docker-compose, change back if needed
         await execAsync(`NETWORK=${network} THOR_VERSION=${thorVersion} docker compose up -d`);
         // Wait for services to be ready
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 20000));
         client = new TestClient();
     } catch (error) {
         console.error('Failed to start docker compose services:', error);
