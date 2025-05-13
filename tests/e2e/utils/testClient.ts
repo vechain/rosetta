@@ -4,7 +4,7 @@ export class TestClient {
     private client: AxiosInstance;
     private baseURL: string;
 
-    constructor(baseURL: string = 'http://localhost:8080') {
+    constructor(baseURL: string = 'http://127.0.0.1:8080') {
         this.baseURL = baseURL;
         this.client = axios.create({
             baseURL: this.baseURL,
