@@ -248,8 +248,66 @@ describe('Construction Controller', () => {
                 transaction: '0xf85081e486039791786ecd81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce82271080828ca088e6e47234f992efad94c05c334533c673582616ac2bf404b6c55efa1087808609184e72a00080'
             });
 
-            expect(response).toHaveProperty('operations');
-            expect(response.operations).toBeInstanceOf(Array);
+            expect(response).toStrictEqual({
+                operations: [
+                    {
+                        operation_identifier: {
+                            index: 0,
+                            network_index: 0
+                        },
+                        type: "Transfer",
+                        account: {
+                            address: "0xc05c334533c673582616ac2bf404b6c55efa1087"
+                        },
+                        amount: {
+                            value: "-10000",
+                            currency: {
+                                symbol: "VET",
+                                decimals: 18,
+                                metadata: {}
+                            }
+                        }
+                    },
+                    {
+                        operation_identifier: {
+                            index: 1,
+                            network_index: 0
+                        },
+                        type: "Transfer",
+                        account: {
+                            address: "0x16277a1ff38678291c41d1820957c78bb5da59ce"
+                        },
+                        amount: {
+                            value: "10000",
+                            currency: {
+                                symbol: "VET",
+                                decimals: 18,
+                                metadata: {}
+                            }
+                        }
+                    },
+                    {
+                        operation_identifier: {
+                            index: 2,
+                            network_index: 2
+                        },
+                        type: "Fee",
+                        account: {
+                            address: "0xc05c334533c673582616ac2bf404b6c55efa1087"
+                        },
+                        amount: {
+                            value: "-360000000000000000",
+                            currency: {
+                                symbol: "VTHO",
+                                decimals: 18,
+                                metadata: {
+                                    contractAddress: "0x0000000000000000000000000000456e65726779"
+                                }
+                            }
+                        }
+                    }
+                ]
+            });
         });
 
         it('should parse signed transaction', async () => {
