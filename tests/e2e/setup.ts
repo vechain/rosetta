@@ -15,7 +15,7 @@ beforeAll(async () => {
         await execAsync(`NETWORK=${network} THOR_VERSION=${thorVersion} docker compose up -d`);
         // Wait for services to be ready
         await new Promise(resolve => setTimeout(resolve, 5000));
-        const logs = await execAsync('docker compose logs -f');
+        const logs = await execAsync('docker compose logs');
         console.log('LLEGA logs', logs);
         client = new TestClient();
     } catch (error) {
