@@ -559,7 +559,7 @@ export class Construction extends Router {
                     Uint8Array.from(Buffer.from(delegatorPayload.hex_bytes,'hex'))
                 ]);
             } else {
-                rosettaTx.signature = Uint8Array.from(Buffer.from(originPayload.hex_bytes,'hex'));
+                rosettaTx.signature = Buffer.from(originPayload.hex_bytes,'hex');
             }
             let encoded;
             try {
