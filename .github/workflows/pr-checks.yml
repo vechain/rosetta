@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prepare volume dir
+        run: mkdir -p rosetta_data/logs
+
       - name: Build Docker images
         run: docker compose build
           

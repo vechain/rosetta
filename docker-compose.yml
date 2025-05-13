@@ -7,7 +7,7 @@ services:
       args:
         - THOR_VERSION=${THOR_VERSION}
     volumes:
-      - /tmp/rosetta_data/:/data
+      - ./rosetta_data/:/data
     ports:
       - "0.0.0.0:8080:8080"
       - "0.0.0.0:8669:8669"
