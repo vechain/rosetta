@@ -7,7 +7,7 @@ const execAsync = promisify(exec);
 let client: TestClient;
 
 beforeAll(async () => {
-    // Start docker-compose services with Galactica devnet configuration
+    // Start docker compose services with Galactica devnet configuration
     try {
         const network = 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json';
         const thorVersion = 'master';
