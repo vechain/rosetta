@@ -856,8 +856,8 @@ export class Construction extends Router {
                             this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
                         } catch (error) {
                             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                            return false;
                         }
-                        return false;
                     }
                 } else {
                     try {
@@ -870,8 +870,8 @@ export class Construction extends Router {
                             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(17,undefined,{
                                 error:error
                             }));
+                            return false;
                         }
-                        return false;
                     }
                 }
             } catch (error) {
