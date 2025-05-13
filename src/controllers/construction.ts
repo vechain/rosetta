@@ -137,23 +137,56 @@ export class Construction extends Router {
         await next();
     }
 
+    private async getDynamicGasPrice():Promise<{
+        baseFee: bigint,
+        reward: bigint
+    }> {
+        const response = await axios.get(this.connex.baseUrl + '/fees/history?blockCount=1&newestBlock=best&rewardPercentiles=50');
+        const lastBlockFees = response.data as {
+            oldestBlock: string,
+            baseFeePerGas: string[],
+            gasUsedRatio: number[],
+            reward: string[]
+        };
+
+        return {
+            baseFee: BigInt(lastBlockFees.baseFeePerGas[0]),
+            reward: BigInt(lastBlockFees.reward[0])
+        }
+    }
+
     private async metadata(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkOptions(ctx)){
             try {
-                let gas = await this.estimaterGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]),'','');
+                const transactionType = ctx.request.body.options.transactionType;
+                let gasPrice: bigint;
+                let metadataFieldsByType;
+                const dynamicGasPrice = await this.getDynamicGasPrice();
+                if (transactionType == 'legacy' || dynamicGasPrice.baseFee == BigInt(0)) {
+                    gasPrice = BigInt(this.env.config.baseGasPrice);
+                    metadataFieldsByType = {
+                        gasPriceCoef: randomBytes(1).readUInt8()
+                    }
+                } else {
+                    gasPrice = dynamicGasPrice.baseFee + dynamicGasPrice.reward;
+                    metadataFieldsByType = {
+                        maxFeePerGas: gasPrice.toString(10),
+                        maxPriorityFeePerGas: dynamicGasPrice.reward.toString(10)
+                    }
+                }
+                let gas = await this.estimaterGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]));
                 gas = Math.ceil(gas * 1.2);
-                const fee = this.gasToVTHO(gas,this.env.config.baseGasPrice);
+                const fee = this.gasToVTHO(gas,gasPrice);
                 const blockRef = this.connex.blockRef;
                 const chainTag = this.env.config.chainTag;
-                // TODO: Collect the best block base fee and fill in maxFeePerGas and maxPriorityFeePerGas
                 const response = {
                     metadata:{
                         transactionType: ctx.request.body.options.transactionType,
                         blockRef,
                         chainTag,
                         gas,
-                        gasPriceCoef: randomBytes(1).readUInt8(),
-                        nonce:'0x' + randomBytes(8).toString('hex')
+                        nonce:'0x' + randomBytes(8).toString('hex'),
+                        ...metadataFieldsByType
                     },
                     suggested_fee:[{
                         value:(fee * BigInt(-1)).toString(10),
@@ -394,7 +427,7 @@ export class Construction extends Router {
                         address:delegator
                     },
                     amount:{
-                        value:(this.gasToVTHO(rosettaTx.gas,this.env.config.baseGasPrice) * BigInt(-1)).toString(10),
+                        value:(this.gasToVTHO(rosettaTx.gas,BigInt(this.env.config.baseGasPrice)) * BigInt(-1)).toString(10),
                         currency:VTHOCurrency
                     }
                 }
@@ -410,7 +443,7 @@ export class Construction extends Router {
                         address:txOrigin
                     },
                     amount:{
-                        value:(this.gasToVTHO(rosettaTx.gas,this.env.config.baseGasPrice) * BigInt(-1)).toString(10),
+                        value:(this.gasToVTHO(rosettaTx.gas,BigInt(this.env.config.baseGasPrice)) * BigInt(-1)).toString(10),
                         currency:VTHOCurrency
                     }
                 }
@@ -648,7 +681,7 @@ export class Construction extends Router {
         return result;
     }
 
-    private async estimaterGasLocal(clauses:VeTransaction.Clause[],txOrigin:string,delegator?:string):Promise<number> {
+    private async estimaterGasLocal(clauses:VeTransaction.Clause[]):Promise<number> {
         let result = 20000;
         for(const clause of clauses){
             if(clause.to?.toLocaleLowerCase() == VTHOCurrency.metadata.contractAddress.toLocaleLowerCase()) {
@@ -789,9 +822,8 @@ export class Construction extends Router {
         return ethers.utils.computeAddress(publickey).toLowerCase();
     }
 
-    private gasToVTHO(gas:number,baseGasPrice:number):bigint {
-        const c = BigInt(10**VTHOCurrency.decimals) / BigInt(baseGasPrice);
-        return BigInt(gas) * BigInt(10**VTHOCurrency.decimals) / c;
+    private gasToVTHO(gas:number, gasPrice:bigint):bigint {
+        return BigInt(gas) * gasPrice;
     }
     
 
