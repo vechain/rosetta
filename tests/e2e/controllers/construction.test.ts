@@ -199,9 +199,16 @@ describe('Construction Controller', () => {
                 ]
             });
 
-            expect(response).toHaveProperty('unsigned_transaction');
-            expect(response).toHaveProperty('payloads');
-            expect(response.payloads).toBeInstanceOf(Array);
+            expect(response).toStrictEqual({
+                unsigned_transaction: "0xf84a81e486039791786ecd81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce82271080828ca08869f045ffc9f2c1af94c05c334533c673582616ac2bf404b6c55efa10878081cb",
+                payloads: [
+                    {
+                        address: "0xc05c334533c673582616ac2bf404b6c55efa1087",
+                        hex_bytes: "894915aeafa5f96ac25f6e0ea0945542888874ecc3113567e96a687d83bf271d",
+                        signature_type: "ecdsa_recovery"
+                    }
+                ]
+            });
         });
     });
 
