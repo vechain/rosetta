@@ -187,10 +187,10 @@ export class Search extends Router {
         }
 
         if(txrecp != undefined && txrecp != null){
-            for(let oper of operations){
+            for(const oper of operations){
                 oper.status = txrecp.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
             }
-            let payOp = operations.find( op => {return op.type == OperationType.Fee || op.type == OperationType.FeeDelegation;})!;
+            const payOp = operations.find( op => {return op.type == OperationType.Fee || op.type == OperationType.FeeDelegation;})!;
             payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10);
         }
         return operations;
@@ -199,5 +199,5 @@ export class Search extends Router {
     private env:any;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private tokenList:Array<Currency> = new Array();
+    private tokenList:Array<Currency> = [];
 }

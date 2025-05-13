@@ -695,7 +695,7 @@ export class Construction extends Router {
     }
 
     private getVETOperations(operations:Array<any>):Array<{value:string,to:string}> {
-        let result = new Array<{value:'',to:''}>;
+        const result = new Array<{value:'',to:''}>;
         const opers = operations.filter( oper => {
             return oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer;});
         if(opers.length > 0){
@@ -707,7 +707,7 @@ export class Construction extends Router {
     }
 
     private getTokensOperations(operations:Array<any>):{registered:Array<{token:string,value:string,to:string}>,unregistered:Array<string>} {
-        let result ={registered:new Array(),unregistered:new Array()};
+        const result ={registered:[],unregistered:[]};
         for(const oper of operations){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.amount.currency?.metadata?.contractAddress != undefined){
                 const tokenAddr = oper.amount.currency.metadata.contractAddress as string;
@@ -821,7 +821,7 @@ export class Construction extends Router {
     }
 
     private convertOperationsToClauses(operations:Array<any>):VeTransaction.Clause[]{
-        let result = new Array<VeTransaction.Clause>();
+        const result = new Array<VeTransaction.Clause>();
         const sorted = operations.sort((l,r) => {return l.operation_identifier.index - r.operation_identifier.index;});
         for(const oper of sorted){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer){
@@ -944,7 +944,7 @@ export class Construction extends Router {
     private env:any;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private tokenList:Array<Currency> = new Array();
+    private tokenList:Array<Currency> = [];
 
     private readonly commonRosettaTxRlpProfile: RLP.Profile = {
         name:'rosetta tx',

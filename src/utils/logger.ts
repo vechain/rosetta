@@ -9,7 +9,7 @@ export class Logger {
     }
 
     public async httpLoggerMiddleware(ctx:any, next: () => Promise<any>){
-        let params = {
+        const params = {
             remoteAdd: ctx.headers['x-forwarded-for'] || (ctx as any).ip || ctx.ips || (ctx.socket && (ctx.socket.remoteAddress || ((ctx as any).socket.socket && (ctx as any).socket.socket.remoteAddress))),
             method: ctx.method,
             body: JSON.stringify(ctx.request.body),
@@ -25,7 +25,7 @@ export class Logger {
         await next();
         const endTs = new Date().getTime();
         if (String(params.remoteAdd).startsWith("::ffff:")) {
-            let remoteAdd: string = params.remoteAdd;
+            const remoteAdd: string = params.remoteAdd;
             params.remoteAdd = remoteAdd.replace("::ffff:", "");
         }
         params.responseTime = (endTs - startTs);
@@ -33,11 +33,11 @@ export class Logger {
         if(ctx.body != undefined){
             params.response = JSON.stringify(ctx.body);
         }
-        if (params.status >= 300) { logLevel = 'WARN' };
-        if (params.status >= 400) { logLevel = 'WARN' };
-        if (params.status >= 500) { logLevel = 'ERROR' };
-        let logMessage = `${params.remoteAdd} ${params.requestTime} ${params.method} ${params.url} ${params.responseTime} ${params.body} ${params.status}`;
-        let debuglogMessage = `${params.remoteAdd} ${params.requestTime} ${params.method} ${params.url} ${params.responseTime} ${params.header} ${params.body} ${params.status} ${params.response}`;
+        if (params.status >= 300) { logLevel = 'WARN' }
+        if (params.status >= 400) { logLevel = 'WARN' }
+        if (params.status >= 500) { logLevel = 'ERROR' }
+        const logMessage = `${params.remoteAdd} ${params.requestTime} ${params.method} ${params.url} ${params.responseTime} ${params.body} ${params.status}`;
+        const debuglogMessage = `${params.remoteAdd} ${params.requestTime} ${params.method} ${params.url} ${params.responseTime} ${params.header} ${params.body} ${params.status} ${params.response}`;
 
         switch (this.env.config.logLevel) {
             case "dev": {

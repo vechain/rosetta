@@ -1,7 +1,7 @@
 import { RosettaError } from "./types/error";
 
 export function getError(code:number,description?:string,details?:any):RosettaError {
-    let error = Object.assign({},Errors.get(code) || Errors.get(500)!);
+    const error = Object.assign({},Errors.get(code) || Errors.get(500)!);
     error.description = error.description || description,
     error.details = error.details || details;
     return error;

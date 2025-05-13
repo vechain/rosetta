@@ -40,7 +40,7 @@ export class Network extends Router {
         await next();
     }
 
-    private async option(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async option(ctx:Router.IRouterContext,_: () => Promise<any>){
         const versions = {
             rosetta_version:this.env.config.rosetta_version,
             node_version:this.env.config.node_version
@@ -52,9 +52,9 @@ export class Network extends Router {
                 {status:OperationStatus.Reverted,successful:false}
             ],
             operation_types:[OperationType.None,OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation],
-            errors:new Array(),
+            errors:[],
             historical_balance_lookup:true,
-            call_methods:new Array(),
+            call_methods:[],
             balance_exemptions:[{currency: VTHOCurrency, exemption_type: ExemptionType.dynamic}],
             mempool_coins:false
         }
@@ -90,7 +90,7 @@ export class Network extends Router {
                     stage:'block sync',
                     synced:process == 1 ? true:false
                 },
-                peers:new Array()
+                peers:[]
             };
             
             for(const peer of peers){
@@ -108,7 +108,7 @@ export class Network extends Router {
     }
 
     private async getPeers():Promise<Array<{peerID:string,bestBlockID:string}>>{
-        let result = new Array<{peerID:string,bestBlockID:string}>();
+        const result = new Array<{peerID:string,bestBlockID:string}>();
         try {
             const url = this.env.config.nodeApi + '/node/network/peers';
             const response = await Axios({url:url,method:'Get',responseType:'json'});

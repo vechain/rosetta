@@ -12,7 +12,9 @@
     "start:galactica:devnet": "NETWORK=https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json THOR_VERSION=master docker-compose up --build",
     "stop": "docker-compose down",
     "test:e2e": "jest",
-    "test:e2e:watch": "jest --watch"
+    "test:e2e:watch": "jest --watch",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix"
   },
   "repository": {
     "type": "git",
@@ -55,6 +57,10 @@
     "jest": "^29.5.0",
     "ts-jest": "^29.1.0",
     "supertest": "^6.3.3",
-    "@types/supertest": "^2.0.12"
+    "@types/supertest": "^2.0.12",
+    "eslint": "^8.56.0",
+    "@typescript-eslint/parser": "^7.0.1",
+    "@typescript-eslint/eslint-plugin": "^7.0.1",
+    "eslint-plugin-jest": "^27.9.0"
   }
 }
