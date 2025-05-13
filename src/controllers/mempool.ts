@@ -1,11 +1,9 @@
 import Router from "koa-router";
 
-export class Mempool extends Router {
-    constructor(env:any){
+export class Mempool extends Router {  
+    constructor(_:any){
         super();
-        this.env = env;
-        this.post('/mempool', async (ctx,next) => {});
-        this.post('/mempool/transaction',async (ctx,next) => {});
+        this.post('/mempool', async (_,next) => {});
+        this.post('/mempool/transaction',async (_,next) => {});
     }
-    private env:any;
 }

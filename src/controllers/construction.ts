@@ -186,7 +186,7 @@ export class Construction extends Router {
                         maxPriorityFeePerGas: dynamicGasPrice.reward.toString(10)
                     }
                 }
-                let gas = await this.estimaterGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]));
+                let gas = await this.estimateGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]));
                 gas = Math.ceil(gas * 1.2);
                 const fee = this.gasToVTHO(gas,gasPrice);
                 const blockRef = this.connex.blockRef;
@@ -694,21 +694,6 @@ export class Construction extends Router {
         return result;
     }
 
-    private getTxDelegators(operations:Array<any>):string[] {
-        const result = new Array<string>();
-        const originMap = new Map<string,undefined>();
-        const opers = operations.filter(oper => {return oper.type == OperationType.FeeDelegation});
-
-        for(const oper of opers){
-            originMap.set(oper.account.address,undefined);
-        }
-
-        for(const addr of originMap.keys()){
-            result.push(addr.toLowerCase());
-        }
-        return result;
-    }
-
     private getVETOperations(operations:Array<any>):Array<{value:string,to:string}> {
         let result = new Array<{value:'',to:''}>;
         const opers = operations.filter( oper => {
@@ -785,7 +770,7 @@ export class Construction extends Router {
         }
     }
 
-    private async estimaterGasLocal(clauses:VeTransaction.Clause[]):Promise<number> {
+    private async estimateGasLocal(clauses:VeTransaction.Clause[]):Promise<number> {
         let result = 20000;
         for(const clause of clauses){
             if(clause.to?.toLocaleLowerCase() == VTHOCurrency.metadata.contractAddress.toLocaleLowerCase()) {
