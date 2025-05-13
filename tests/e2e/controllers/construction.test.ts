@@ -48,8 +48,24 @@ describe('Construction Controller', () => {
                 ]
             });
 
-            expect(response).toHaveProperty('options');
-            expect(response).toHaveProperty('required_public_keys');
+            expect(response).toStrictEqual(
+                {
+                    options: {
+                        clauses: [
+                            {
+                                to: "0x16277a1ff38678291c41d1820957c78bb5da59ce",
+                                value: "10000",
+                                data: "0x"
+                            }
+                        ]
+                    },
+                    required_public_keys: [
+                        {
+                            address: "0xc05c334533c673582616ac2bf404b6c55efa1087"
+                        }
+                    ]
+                }
+            )
         });
     });
 
@@ -58,7 +74,6 @@ describe('Construction Controller', () => {
             const response = await client.post('/construction/metadata', {
                 network_identifier: networkIdentifier,
                 options: {
-                    transactionType: 'legacy',
                     clauses: [
                         {
                             to: '0x16277a1ff38678291c41d1820957c78bb5da59ce',
@@ -74,12 +89,27 @@ describe('Construction Controller', () => {
                 ]
             });
 
-            expect(response).toHaveProperty('metadata');
-            expect(response.metadata).toHaveProperty('blockRef');
-            expect(response.metadata).toHaveProperty('chainTag');
-            expect(response.metadata).toHaveProperty('gas');
-            expect(response.metadata).toHaveProperty('nonce');
-            expect(response.metadata).toHaveProperty('gasPriceCoef');
+            expect(response).toMatchObject({
+                metadata: {
+                    transactionType: "dynamic",
+                    chainTag: 228,
+                    gas: 36000,
+                    maxFeePerGas: "10000000000000",
+                    maxPriorityFeePerGas: "0"
+                },
+                suggested_fee: [
+                    {
+                        value: "-360000000000000000",
+                        currency: {
+                            symbol: "VTHO",
+                            decimals: 18,
+                            metadata: {
+                                contractAddress: "0x0000000000000000000000000000456e65726779"
+                            }
+                        }
+                    }
+                ]
+            });
         });
     });
 
