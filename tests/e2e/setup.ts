@@ -12,7 +12,7 @@ beforeAll(async () => {
         const network = 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json';
         const thorVersion = 'master';
         // Using docker compose instead of docker-compose, change back if needed
-        await execAsync(`NETWORK=${network} THOR_VERSION=${thorVersion} docker compose up --build -d`);
+        await execAsync(`NETWORK=${network} THOR_VERSION=${thorVersion} docker compose up -d`);
         // Wait for services to be ready
         await new Promise(resolve => setTimeout(resolve, 5000));
         client = new TestClient();
