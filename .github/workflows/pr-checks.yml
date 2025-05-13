@@ -39,9 +39,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Create PM2 directory
-        run: mkdir -p /tmp/rosetta_data/
-
       - name: Build Docker images
         run: docker compose build
           
