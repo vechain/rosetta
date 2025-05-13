@@ -40,7 +40,9 @@ jobs:
         run: npm ci
 
       - name: Prepare volume dir
-        run: mkdir -p rosetta_data/logs
+        run: |
+          mkdir -p rosetta_data/logs
+          chmod -R 777 rosetta_data
 
       - name: Build Docker images
         run: docker compose build
