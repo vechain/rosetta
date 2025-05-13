@@ -17,16 +17,16 @@ beforeAll(async () => {
         await new Promise(resolve => setTimeout(resolve, 5000));
         client = new TestClient();
     } catch (error) {
-        console.error('Failed to start docker-compose services:', error);
+        console.error('Failed to start docker compose services:', error);
         throw error;
     }
 });
 
 afterAll(async () => {
     try {
-        await execAsync('docker-compose down');
+        await execAsync('docker compose down');
     } catch (error) {
-        console.error('Failed to stop docker-compose services:', error);
+        console.error('Failed to stop docker compose services:', error);
         throw error;
     }
 });
