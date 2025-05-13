@@ -14,7 +14,7 @@ beforeAll(async () => {
         await execAsync(`NETWORK=${network} THOR_VERSION=${thorVersion} docker-compose up -d`);
         // Wait for services to be ready
         await new Promise(resolve => setTimeout(resolve, 5000));
-        client = new TestClient('http://localhost:8080');
+        client = new TestClient();
     } catch (error) {
         console.error('Failed to start docker-compose services:', error);
         throw error;
@@ -22,7 +22,6 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-    // Stop docker-compose services
     try {
         await execAsync('docker-compose down');
     } catch (error) {
@@ -31,5 +30,4 @@ afterAll(async () => {
     }
 });
 
-// Export client for use in tests
 export { client };
