@@ -174,10 +174,16 @@ export class Construction extends Router {
                 let gasPrice: bigint;
                 let metadataFieldsByType;
                 const dynamicGasPrice = await this.getDynamicGasPrice();
-                if (transactionType == 'legacy' || dynamicGasPrice.baseFee == BigInt(0)) {
+                if (transactionType == 'legacy') {
                     gasPrice = BigInt(this.env.config.baseGasPrice);
                     metadataFieldsByType = {
                         gasPriceCoef: randomBytes(1).readUInt8()
+                    }
+                } else if (dynamicGasPrice.baseFee == BigInt(0)) {
+                    gasPrice = BigInt(this.env.config.initialBaseFee)
+                    metadataFieldsByType = {
+                        maxFeePerGas: gasPrice.toString(10),
+                        maxPriorityFeePerGas: 0
                     }
                 } else {
                     gasPrice = dynamicGasPrice.baseFee + dynamicGasPrice.reward;
