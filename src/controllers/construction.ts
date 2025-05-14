@@ -334,6 +334,10 @@ export class Construction extends Router {
     private async submit(ctx:Router.IRouterContext,next: () => Promise<any>){
         let rosettaTx;
         try {
+            if (!this.decodeSignedTransaction(ctx.request.body.signed_transaction)) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                return;
+            }
             rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
         } catch (error) {
             try {
@@ -397,6 +401,10 @@ export class Construction extends Router {
             let rosettaTx;
             if(ctx.request.body.signed == true){
                 try {
+                    if (!this.decodeSignedTransaction(ctx.request.body.transaction)) {
+                        ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                        return;
+                    }
                     rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
                 } catch (error) {
                     try {
@@ -408,6 +416,10 @@ export class Construction extends Router {
                 }
             } else {
                 try {
+                    if (!this.decodeUnsignedTransaction(ctx.request.body.transaction)) {
+                        ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
+                        return;
+                    }
                     rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
                 } catch (error) {
                     try {
@@ -562,6 +574,10 @@ export class Construction extends Router {
         if(this.checkCombineRequest(ctx)){
             let rosettaTx: any;
             try {
+                if (!this.decodeUnsignedTransaction(ctx.request.body.unsigned_transaction)) {
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
+                    return;
+                }
                 rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
             } catch (error) {
                 try {
@@ -600,6 +616,10 @@ export class Construction extends Router {
     private async hash(ctx:Router.IRouterContext,next: () => Promise<any>) {
         let rosettaTx;
         try {
+            if (!this.decodeSignedTransaction(ctx.request.body.signed_transaction)) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                return;
+            }
             rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
         } catch (error) {
             try {
@@ -848,53 +868,75 @@ export class Construction extends Router {
         return result;
     }
 
-    private checkParseRequest(ctx: Router.IRouterContext):boolean{
+    private validateRequestSchema(ctx: Router.IRouterContext): boolean {
         const schema = Joi.object({
-            signed:Joi.boolean().required(),
-            transaction:Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+            signed: Joi.boolean().required(),
+            transaction: Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
         });
-        const verify = schema.validate(ctx.request.body,{allowUnknown:true});
-        if(verify.error == undefined){
-            try {
-                if(ctx.request.body.signed == true){
-                    try {
-                        this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                    } catch (error) {
-                        try {
-                            this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                        } catch (error) {
-                            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
-                            return false;
-                        }
-                    }
-                } else {
-                    try {
-                        this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                    } catch (error) {
-                        try {
-                            this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                        }
-                        catch {
-                            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(17,undefined,{
-                                error:error
-                            }));
-                            return false;
-                        }
-                    }
-                }
-            } catch (error) {
-                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(17,undefined,{
-                    error:error
-                }));
-                return false;
-            }
-        } else {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(18,undefined,{
-                error:verify.error
+        const verify = schema.validate(ctx.request.body, { allowUnknown: true });
+        
+        if (verify.error) {
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx, getError(18, undefined, {
+                error: verify.error
             }));
             return false;
         }
         return true;
+    }
+
+    private decodeSignedTransaction(transaction: string): boolean {
+        try {
+            this.signedDynamicRosettaTxRlp.decode(Buffer.from(transaction.substring(2), 'hex'));
+            return true;
+        } catch {
+            try {
+                this.signedLegacyRosettaTxRlp.decode(Buffer.from(transaction.substring(2), 'hex'));
+                return true;
+            } catch {
+                return false;
+            }
+        }
+    }
+
+    private decodeUnsignedTransaction(transaction: string): boolean {
+        try {
+            this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(transaction.substring(2), 'hex'));
+            return true;
+        } catch {
+            try {
+                this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(transaction.substring(2), 'hex'));
+                return true;
+            } catch {
+                return false;
+            }
+        }
+    }
+
+    private checkParseRequest(ctx: Router.IRouterContext): boolean {
+        if (!this.validateRequestSchema(ctx)) {
+            return false;
+        }
+
+        const { signed, transaction } = ctx.request.body;
+
+        try {
+            const isValid = signed 
+                ? this.decodeSignedTransaction(transaction)
+                : this.decodeUnsignedTransaction(transaction);
+
+            if (!isValid) {
+                const errorCode = signed ? 12 : 17;
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx, getError(errorCode));
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx, getError(17, undefined, {
+                error
+            }));
+            return false;
+        }
     }
 
     private checkCombineRequest(ctx: Router.IRouterContext):boolean{
@@ -921,15 +963,9 @@ export class Construction extends Router {
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
         if(verify.error == undefined){
-            try {
-                this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
-            } catch (error) {
-                try {
-                    this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
-                } catch (error) {
-                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
-                    return false;
-                }
+            if (!this.decodeUnsignedTransaction(ctx.request.body.unsigned_transaction)) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
+                return false;
             }
             return true;
         } else {
