@@ -180,10 +180,12 @@ export class Construction extends Router {
                         gasPriceCoef: randomBytes(1).readUInt8()
                     }
                 } else if (dynamicGasPrice.baseFee == BigInt(0)) {
+                    // Case where we are building a dynamic fee transaction but the base fee is 0
+                    // This happens when the node is catching up with the chain block-wise
                     gasPrice = BigInt(this.env.config.initialBaseFee)
                     metadataFieldsByType = {
                         maxFeePerGas: gasPrice.toString(10),
-                        maxPriorityFeePerGas: 0
+                        maxPriorityFeePerGas: "0"
                     }
                 } else {
                     gasPrice = dynamicGasPrice.baseFee + dynamicGasPrice.reward;
