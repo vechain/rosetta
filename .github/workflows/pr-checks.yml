@@ -1,8 +1,8 @@
 name: PR Checks
 
 on:
-  push:
-    branches: [ feat/galactica ]
+  pull_request:
+    branches: [ master ]
 
 jobs:
   lint:
