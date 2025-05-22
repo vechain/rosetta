@@ -33,8 +33,9 @@ export class Mempool extends Router {
         );
     }
 
-    private async getTransactions(origin:string):Promise<TxPoolTransaction[]> {
-        const response = await axios.get(this.connex.baseUrl + '/node/txpool?expanded=true&origin=' + origin);
+    private async getTransactions(origin?:string):Promise<TxPoolTransaction[]> {
+        const url = this.connex.baseUrl + '/node/txpool?expanded=true' + (origin ? `&origin=${origin}` : '');
+        const response = await axios.get(url);
         const transactions = response.data as TxPoolTransaction[];
 
         return transactions;
@@ -42,11 +43,11 @@ export class Mempool extends Router {
 
     private checkMetadata(ctx:Router.IRouterContext):boolean{
         const schema = Joi.object({
-            metadata:Joi.object({
-                origin:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
-            })
-        });
-        const verify = schema.validate(ctx.request.body,{allowUnknown:true});
+            metadata: Joi.object({
+                origin: Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
+            }).optional()
+        }).unknown(true);
+        const verify = schema.validate(ctx.request.body);
         if(verify.error == undefined){
             return true;
         } else {
@@ -59,7 +60,7 @@ export class Mempool extends Router {
 
     private async getTxPoolTransactions(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkMetadata(ctx)){
-            const txPool = await this.getTransactions(ctx.request.body.metadata.origin);
+            const txPool = await this.getTransactions(ctx.request.body.metadata?.origin);
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction_identifiers:txPool.map((tx) => {
                     return {
