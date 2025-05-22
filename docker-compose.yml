@@ -4,14 +4,16 @@ services:
   rosetta-server:
     build:
       context: .
+      args:
+        - THOR_VERSION=${THOR_VERSION}
     volumes:
-      - /tmp/rosetta_data/:/data
+      - ./rosetta_data/:/data
     ports:
       - "0.0.0.0:8080:8080"
       - "0.0.0.0:8669:8669"
       - "11235:11235"
       - "11235:11235/udp"
     environment:
-      - NETWORK=main
+      - NETWORK=${NETWORK}
       - MODE=online
     restart: unless-stopped 

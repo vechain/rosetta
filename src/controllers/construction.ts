@@ -24,16 +24,22 @@ export class Construction extends Router {
         this.verifyMiddleware = new RequestInfoVerifyMiddleware(this.env);
         this.post('/construction/combine',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.combine(ctx,next);}
         );
 
         this.post('/construction/derive',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.derive(ctx,next);}
         );
 
         this.post('/construction/hash',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.hash(ctx,next);}
         );
 
@@ -46,16 +52,22 @@ export class Construction extends Router {
 
         this.post('/construction/parse',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.parse(ctx,next);}
         );
 
         this.post('/construction/payloads',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.payloads(ctx,next);}
         );
 
         this.post('/construction/preprocess',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
+            async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.preprocess(ctx,next)},
         );
 
@@ -92,7 +104,7 @@ export class Construction extends Router {
         const requestVerify = this.checkPreprocessRequest(ctx);
         if(requestVerify){
             const origins = this.getTxOrigins(ctx.request.body.operations);
-            const delegator = ctx.request.body.metadata?.fee_delegator_account || undefined;
+            const delegator = ctx.request.body.metadata?.fee_delegator_account;
             const vetOpers = this.getVETOperations(ctx.request.body.operations);
             const tokensOpers = this.getTokensOperations(ctx.request.body.operations);
             if(origins.length > 1){
@@ -137,20 +149,64 @@ export class Construction extends Router {
         await next();
     }
 
+    private async getDynamicGasPrice():Promise<{
+        baseFee: bigint,
+        reward: bigint
+    }> {
+        const response = await axios.get(this.connex.baseUrl + '/fees/history?blockCount=1&newestBlock=best&rewardPercentiles=50');
+        const lastBlockFees = response.data as {
+            oldestBlock: string,
+            baseFeePerGas: string[],
+            gasUsedRatio: number[],
+            reward: string[]
+        };
+
+        return {
+            baseFee: BigInt(lastBlockFees.baseFeePerGas[0]),
+            reward: BigInt(lastBlockFees.reward[0])
+        }
+    }
+
     private async metadata(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkOptions(ctx)){
             try {
-                let gas = await this.estimaterGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]),'','');
+                const transactionType = ctx.request.body.options.transactionType;
+                let gasPrice: bigint;
+                let metadataFieldsByType;
+                const dynamicGasPrice = await this.getDynamicGasPrice();
+                if (transactionType == 'legacy') {
+                    gasPrice = BigInt(this.env.config.baseGasPrice);
+                    metadataFieldsByType = {
+                        gasPriceCoef: randomBytes(1).readUInt8()
+                    }
+                } else if (dynamicGasPrice.baseFee == BigInt(0)) {
+                    // Case where we are building a dynamic fee transaction but the base fee is 0
+                    // This happens when the node is catching up with the chain block-wise
+                    gasPrice = BigInt(this.env.config.initialBaseFee)
+                    metadataFieldsByType = {
+                        maxFeePerGas: gasPrice.toString(10),
+                        maxPriorityFeePerGas: "0"
+                    }
+                } else {
+                    gasPrice = dynamicGasPrice.baseFee + dynamicGasPrice.reward;
+                    metadataFieldsByType = {
+                        maxFeePerGas: gasPrice.toString(10),
+                        maxPriorityFeePerGas: dynamicGasPrice.reward.toString(10)
+                    }
+                }
+                let gas = await this.estimateGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]));
                 gas = Math.ceil(gas * 1.2);
-                const fee = this.gasToVTHO(gas,this.env.config.baseGasPrice);
+                const fee = this.gasToVTHO(gas,gasPrice);
                 const blockRef = this.connex.blockRef;
                 const chainTag = this.env.config.chainTag;
                 const response = {
                     metadata:{
+                        transactionType: ctx.request.body.options.transactionType,
                         blockRef,
                         chainTag,
                         gas,
-                        nonce:'0x' + randomBytes(8).toString('hex')
+                        nonce:'0x' + randomBytes(8).toString('hex'),
+                        ...metadataFieldsByType
                     },
                     suggested_fee:[{
                         value:(fee * BigInt(-1)).toString(10),
@@ -169,7 +225,7 @@ export class Construction extends Router {
     private async payloads(ctx:Router.IRouterContext,next:() => Promise<any>){
         if(this.checkOptions(ctx) && this.checkPublickeys(ctx) && this.checkMetadata(ctx)){
             let txOrigin;
-            const txDelegator = ctx.request.body.metadata.fee_delegator_account || undefined;
+            const txDelegator = ctx.request.body.metadata.fee_delegator_account;
             if(ctx.request.body.public_keys.length > 2){
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(8));
                 return;
@@ -209,16 +265,35 @@ export class Construction extends Router {
 
             const clauses = this.convertOperationsToClauses(ctx.request.body.operations);
 
-            const vechainTxBody:VeTransaction.Body = {
-                chainTag:ctx.request.body.metadata.chainTag,
+            let vechainTxBody
+            const commonBody = {
+                chainTag:ctx.request.body.metadata.chainTag as number,
                 blockRef: ctx.request.body.metadata.blockRef as string,
                 expiration:this.env.config.expiration as number,
                 clauses:clauses,
                 gas:ctx.request.body.metadata.gas,
                 nonce: ctx.request.body.metadata.nonce || '0x' + randomBytes(8).toString('hex'),
-                gasPriceCoef:0,
                 dependsOn:null
             }
+
+            let encoder;
+            if(ctx.request.body.metadata.transactionType == 'legacy'){
+                vechainTxBody = {
+                    ...commonBody,
+                    type:VeTransaction.Type.Legacy,
+                    gasPriceCoef:ctx.request.body.metadata.gasPriceCoef as number,
+                } as VeTransaction.LegacyBody
+                encoder = this.unsignedLegacyRosettaTxRlp;
+            } else {
+                vechainTxBody = {
+                    ...commonBody,
+                    type:VeTransaction.Type.DynamicFee,
+                    maxFeePerGas:ctx.request.body.metadata.maxFeePerGas as string,
+                    maxPriorityFeePerGas:ctx.request.body.metadata.maxPriorityFeePerGas as string,
+                } as VeTransaction.DynamicFeeBody
+                encoder = this.unsignedDynamicRosettaTxRlp;
+            }
+
             if(CheckSchema.isAddress(txDelegator)){
                 vechainTxBody.reserved = {
                     features:1
@@ -228,16 +303,11 @@ export class Construction extends Router {
             const vechainTx = new VeTransaction(vechainTxBody);
             const originSignHash = vechainTx.signingHash().toString('hex');
             const rosettaTx = {
-                chainTag:vechainTxBody.chainTag,
-                blockRef:vechainTxBody.blockRef,
-                expiration:vechainTxBody.expiration,
-                clauses:vechainTxBody.clauses,
-                gas:vechainTxBody.gas,
-                nonce:vechainTxBody.nonce,
                 origin:txOrigin,
-                delegator:txDelegator || undefined
+                delegator: txDelegator,
+                ...vechainTxBody
             }
-            const rosettaTxRaw = this.unsignedRosettaTransactionRlp.encode(rosettaTx);
+            const rosettaTxRaw = encoder.encode(rosettaTx);
             const response = {
                 unsigned_transaction:'0x' + rosettaTxRaw.toString('hex'),
                 payloads:[
@@ -264,20 +334,45 @@ export class Construction extends Router {
     private async submit(ctx:Router.IRouterContext,next: () => Promise<any>){
         let rosettaTx;
         try {
-            rosettaTx = this.signedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
+            if (!this.decodeSignedTransaction(ctx.request.body.signed_transaction)) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                return;
+            }
+            rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
         } catch (error) {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
-            return;
+            try {
+                rosettaTx = this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
+            } catch (error) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                return;
+            }
         }
-        let vechainTxBody:VeTransaction.Body = {
+
+        let vechainTxBody;
+        const commonBody = {
             chainTag:rosettaTx.chainTag,
             blockRef:rosettaTx.blockRef,
             expiration:rosettaTx.expiration,
             clauses:rosettaTx.clauses,
-            gasPriceCoef:0,
             gas:rosettaTx.gas,
             dependsOn:null,
             nonce:rosettaTx.nonce
+        }
+        // Legacy transaction
+        if (rosettaTx.gasPriceCoef !== undefined) {
+            vechainTxBody = {
+                ...commonBody,
+                type:VeTransaction.Type.Legacy,
+                gasPriceCoef: rosettaTx.gasPriceCoef
+            } as VeTransaction.LegacyBody
+        } else {
+            // Dynamic fee transaction
+            vechainTxBody = {
+                ...commonBody,
+                type:VeTransaction.Type.DynamicFee,
+                maxFeePerGas: rosettaTx.maxFeePerGas,
+                maxPriorityFeePerGas: rosettaTx.maxPriorityFeePerGas
+            } as VeTransaction.DynamicFeeBody
         }
         if(CheckSchema.isAddress(rosettaTx.delegator)){
             vechainTxBody.reserved = {features:1};
@@ -305,9 +400,35 @@ export class Construction extends Router {
         if(this.checkParseRequest(ctx)){
             let rosettaTx;
             if(ctx.request.body.signed == true){
-                rosettaTx = this.signedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                try {
+                    if (!this.decodeSignedTransaction(ctx.request.body.transaction)) {
+                        ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                        return;
+                    }
+                    rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                } catch (error) {
+                    try {
+                        rosettaTx = this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                    } catch (error) {
+                        ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                        return;
+                    }
+                }
             } else {
-                rosettaTx = this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                try {
+                    if (!this.decodeUnsignedTransaction(ctx.request.body.transaction)) {
+                        ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
+                        return;
+                    }
+                    rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                } catch (error) {
+                    try {
+                        rosettaTx = this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                    } catch (error) {
+                        ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
+                        return;
+                    }
+                }
             }
             const txOrigin = rosettaTx.origin as string;
             const delegator = rosettaTx.delegator as string
@@ -379,8 +500,19 @@ export class Construction extends Router {
                 }
             }
 
+            const dynamicGasPrice = await this.getDynamicGasPrice();
+            let gasPrice: bigint;
+            // If the base fee is 0, it is a legacy transaction
+            if (dynamicGasPrice.baseFee == BigInt(0)) {
+                gasPrice = BigInt(this.env.config.baseGasPrice);
+            } else {
+                // If the base fee is not 0, it is a dynamic fee transaction
+                gasPrice = dynamicGasPrice.baseFee + dynamicGasPrice.reward;
+            }
+            const amountValue = this.gasToVTHO(rosettaTx.gas,gasPrice);
+
             if(CheckSchema.isAddress(delegator)){
-                const delegatinOp:Operation = {
+                const delegationOp:Operation = {
                     operation_identifier:{
                         index:0,
                         network_index:rosettaTx.clauses.length
@@ -390,11 +522,11 @@ export class Construction extends Router {
                         address:delegator
                     },
                     amount:{
-                        value:(this.gasToVTHO(rosettaTx.gas,this.env.config.baseGasPrice) * BigInt(-1)).toString(10),
+                        value:(amountValue * BigInt(-1)).toString(10),
                         currency:VTHOCurrency
                     }
                 }
-                operations.push(delegatinOp)
+                operations.push(delegationOp)
             } else {
                 const feeOp:Operation = {
                     operation_identifier:{
@@ -406,7 +538,7 @@ export class Construction extends Router {
                         address:txOrigin
                     },
                     amount:{
-                        value:(this.gasToVTHO(rosettaTx.gas,this.env.config.baseGasPrice) * BigInt(-1)).toString(10),
+                        value:(amountValue * BigInt(-1)).toString(10),
                         currency:VTHOCurrency
                     }
                 }
@@ -440,54 +572,101 @@ export class Construction extends Router {
 
     private async combine(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkCombineRequest(ctx)){
-            let rosettaTx = this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
+            let rosettaTx: any;
+            try {
+                if (!this.decodeUnsignedTransaction(ctx.request.body.unsigned_transaction)) {
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
+                    return;
+                }
+                rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
+            } catch (error) {
+                try {
+                    rosettaTx = this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
+                } catch (error) {
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
+                    return;
+                }
+            }
             const originPayload = (ctx.request.body.signatures as Array<any>).find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.origin || '').toLowerCase()});
             const delegatorPayload = (ctx.request.body.signatures as Array<any>).find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.delegator || '').toLowerCase()});
             if(delegatorPayload != undefined){
                 rosettaTx.signature = Buffer.concat([
-                    Buffer.from(originPayload.hex_bytes,'hex'),
-                    Buffer.from(delegatorPayload.hex_bytes,'hex')
+                    Uint8Array.from(Buffer.from(originPayload.hex_bytes,'hex')),
+                    Uint8Array.from(Buffer.from(delegatorPayload.hex_bytes,'hex'))
                 ]);
             } else {
                 rosettaTx.signature = Buffer.from(originPayload.hex_bytes,'hex');
             }
-            const encode = this.signedRosettaTransactionRlp.encode(rosettaTx);
-            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{signed_transaction:'0x' + encode.toString('hex')});
+            let encoded;
+            try {
+                encoded = this.signedDynamicRosettaTxRlp.encode(rosettaTx);
+            } catch (error) {
+                try {
+                    encoded = this.signedLegacyRosettaTxRlp.encode(rosettaTx);
+                } catch (error) {
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                    return;
+                }
+            }
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{signed_transaction:'0x' + encoded.toString('hex')});
         }
         await next();
     }
 
     private async hash(ctx:Router.IRouterContext,next: () => Promise<any>) {
+        let rosettaTx;
         try {
-            const rosettaTx = this.signedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
-            let vechainTxBody:VeTransaction.Body = {
-                chainTag:rosettaTx.chainTag,
-                blockRef:rosettaTx.blockRef,
-                expiration:rosettaTx.expiration,
-                clauses:rosettaTx.clauses,
-                gasPriceCoef:0,
-                gas:rosettaTx.gas,
-                dependsOn:null,
-                nonce:rosettaTx.nonce
+            if (!this.decodeSignedTransaction(ctx.request.body.signed_transaction)) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                return;
             }
-            if(CheckSchema.isAddress(rosettaTx.delegator)){
-                vechainTxBody.reserved = {features:1};
-            }
-            const vechainTx = new VeTransaction(vechainTxBody);
-            vechainTx.signature = rosettaTx.signature;
-
-            const reOri = vechainTx.origin;
-            const reDel = vechainTx.delegator;
-
-            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
-                transaction_identifier:{
-                    hash:vechainTx.id
-                }
-            });
+            rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
         } catch (error) {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
-            return;
+            try {
+                rosettaTx = this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
+            } catch (error) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                return;
+            }
         }
+
+        const commonBody = {
+            chainTag:rosettaTx.chainTag,
+            blockRef:rosettaTx.blockRef,
+            expiration:rosettaTx.expiration,
+            clauses:rosettaTx.clauses,
+            gas:rosettaTx.gas,
+            dependsOn:null,
+            nonce:rosettaTx.nonce
+        }
+
+        let vechainTxBody;
+        if(rosettaTx.gasPriceCoef != undefined){    
+            vechainTxBody = {
+                ...commonBody,
+                type:VeTransaction.Type.Legacy,
+                gasPriceCoef:rosettaTx.gasPriceCoef
+            } as VeTransaction.LegacyBody;
+        } else {
+            vechainTxBody = {
+                ...commonBody,
+                type:VeTransaction.Type.DynamicFee,
+                maxFeePerGas:rosettaTx.maxFeePerGas,
+                maxPriorityFeePerGas:rosettaTx.maxPriorityFeePerGas
+            } as VeTransaction.DynamicFeeBody;
+        }
+        if(CheckSchema.isAddress(rosettaTx.delegator)){
+            vechainTxBody.reserved = {features:1};
+        }
+        const vechainTx = new VeTransaction(vechainTxBody);
+        vechainTx.signature = rosettaTx.signature;
+
+        ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
+            transaction_identifier:{
+                hash:vechainTx.id
+            }
+        });
+
         await next();
     }
 
@@ -543,23 +722,8 @@ export class Construction extends Router {
         return result;
     }
 
-    private getTxDelegators(operations:Array<any>):string[] {
-        const result = new Array<string>();
-        const originMap = new Map<string,undefined>();
-        const opers = operations.filter(oper => {return oper.type == OperationType.FeeDelegation});
-
-        for(const oper of opers){
-            originMap.set(oper.account.address,undefined);
-        }
-
-        for(const addr of originMap.keys()){
-            result.push(addr.toLowerCase());
-        }
-        return result;
-    }
-
     private getVETOperations(operations:Array<any>):Array<{value:string,to:string}> {
-        let result = new Array<{value:'',to:''}>;
+        const result = new Array<{value:'',to:''}>;
         const opers = operations.filter( oper => {
             return oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer;});
         if(opers.length > 0){
@@ -571,7 +735,10 @@ export class Construction extends Router {
     }
 
     private getTokensOperations(operations:Array<any>):{registered:Array<{token:string,value:string,to:string}>,unregistered:Array<string>} {
-        let result ={registered:new Array(),unregistered:new Array()};
+        const result: { registered: {token:string,value:string,to:string}[]; unregistered: string[] } = {
+            registered: [],
+            unregistered: []
+        }; 
         for(const oper of operations){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.amount.currency?.metadata?.contractAddress != undefined){
                 const tokenAddr = oper.amount.currency.metadata.contractAddress as string;
@@ -607,13 +774,20 @@ export class Construction extends Router {
     }
 
     private checkOptions(ctx:Router.IRouterContext):boolean{
+        if (!ctx.request.body.options) {
+            ctx.request.body.options = {};
+        }
+        if (!ctx.request.body.options.transactionType) {
+            ctx.request.body.options.transactionType = 'dynamic';
+        }
         const schema = Joi.object({
             options:Joi.object({
+                transactionType: Joi.string().valid('legacy', 'dynamic').default('dynamic'),
                 clauses:Joi.array().items(Joi.object({
                     to:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                     value:Joi.string().allow('').required(),
                     data:Joi.string().allow('').required()
-                })).min(1).required()
+                })).min(1)
             })
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
@@ -627,20 +801,7 @@ export class Construction extends Router {
         }
     }
 
-    private async estimateGas(clauses:VeTransaction.Clause[],txOrigin:string,delegator?:string):Promise<number> {
-        let result = 21000;
-        try {
-            const outputs = await this.connex.thor.explain(clauses).caller(txOrigin).gasPayer(delegator || txOrigin).execute();
-            for(const output of outputs){
-                result = result + (output.gasUsed != 0 ? output.gasUsed : 5000);
-            }
-        } catch (error) {
-            throw new Error('estimateGas error ' + error);
-        }
-        return result;
-    }
-
-    private async estimaterGasLocal(clauses:VeTransaction.Clause[],txOrigin:string,delegator?:string):Promise<number> {
+    private async estimateGasLocal(clauses:VeTransaction.Clause[]):Promise<number> {
         let result = 20000;
         for(const clause of clauses){
             if(clause.to?.toLocaleLowerCase() == VTHOCurrency.metadata.contractAddress.toLocaleLowerCase()) {
@@ -656,10 +817,26 @@ export class Construction extends Router {
     private checkMetadata(ctx:Router.IRouterContext):boolean{
         const schema = Joi.object({
             metadata:Joi.object({
+                transactionType: Joi.string().valid('legacy', 'dynamic').default('dynamic'),
                 blockRef:Joi.string().lowercase().length(18).regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
                 nonce:Joi.string().lowercase().length(18).regex(/^(0x)?[0-9a-f]+$/).optional(),
                 chainTag:Joi.number().valid(this.env.config.chainTag).required(),
                 gas:Joi.number().min(21000).required(),
+                gasPriceCoef: Joi.when('transactionType', {
+                    is: 'legacy',
+                    then: Joi.number().min(0).max(255).required(),
+                    otherwise: Joi.forbidden()
+                }),
+                maxFeePerGas: Joi.when('transactionType', {
+                    is: 'dynamic',
+                    then: Joi.number().min(this.env.config.initialBaseFee as number).required(),
+                    otherwise: Joi.forbidden()
+                }),
+                maxPriorityFeePerGas: Joi.when('transactionType', {
+                    is: 'dynamic',
+                    then: Joi.number().min(0).required(),
+                    otherwise: Joi.forbidden()
+                }),
                 fee_delegator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
             })
         });
@@ -675,7 +852,7 @@ export class Construction extends Router {
     }
 
     private convertOperationsToClauses(operations:Array<any>):VeTransaction.Clause[]{
-        let result = new Array<VeTransaction.Clause>();
+        const result = new Array<VeTransaction.Clause>();
         const sorted = operations.sort((l,r) => {return l.operation_identifier.index - r.operation_identifier.index;});
         for(const oper of sorted){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer){
@@ -691,29 +868,72 @@ export class Construction extends Router {
         return result;
     }
 
-    private checkParseRequest(ctx: Router.IRouterContext):boolean{
+    private validateRequestSchema(ctx: Router.IRouterContext): boolean {
         const schema = Joi.object({
-            signed:Joi.boolean().required(),
-            transaction:Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
+            signed: Joi.boolean().required(),
+            transaction: Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
         });
-        const verify = schema.validate(ctx.request.body,{allowUnknown:true});
-        if(verify.error == undefined){
+        const verify = schema.validate(ctx.request.body, { allowUnknown: true });
+        
+        if (verify.error) {
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx, getError(18, undefined, {
+                error: verify.error
+            }));
+            return false;
+        }
+        return true;
+    }
+
+    private decodeSignedTransaction(transaction: string): boolean {
+        try {
+            this.signedDynamicRosettaTxRlp.decode(Buffer.from(transaction.substring(2), 'hex'));
+            return true;
+        } catch {
             try {
-                if(ctx.request.body.signed == true){
-                    this.signedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                } else {
-                    this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                }
-            } catch (error) {
-                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(17,undefined,{
-                    error:error
-                }));
+                this.signedLegacyRosettaTxRlp.decode(Buffer.from(transaction.substring(2), 'hex'));
+                return true;
+            } catch {
                 return false;
             }
+        }
+    }
+
+    private decodeUnsignedTransaction(transaction: string): boolean {
+        try {
+            this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(transaction.substring(2), 'hex'));
             return true;
-        } else {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(18,undefined,{
-                error:verify.error
+        } catch {
+            try {
+                this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(transaction.substring(2), 'hex'));
+                return true;
+            } catch {
+                return false;
+            }
+        }
+    }
+
+    private checkParseRequest(ctx: Router.IRouterContext): boolean {
+        if (!this.validateRequestSchema(ctx)) {
+            return false;
+        }
+
+        const { signed, transaction } = ctx.request.body;
+
+        try {
+            const isValid = signed 
+                ? this.decodeSignedTransaction(transaction)
+                : this.decodeUnsignedTransaction(transaction);
+
+            if (!isValid) {
+                const errorCode = signed ? 12 : 17;
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx, getError(errorCode));
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx, getError(17, undefined, {
+                error
             }));
             return false;
         }
@@ -743,9 +963,7 @@ export class Construction extends Router {
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
         if(verify.error == undefined){
-            try {
-                this.unsignedRosettaTransactionRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
-            } catch (error) {
+            if (!this.decodeUnsignedTransaction(ctx.request.body.unsigned_transaction)) {
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
                 return false;
             }
@@ -765,18 +983,18 @@ export class Construction extends Router {
         return ethers.utils.computeAddress(publickey).toLowerCase();
     }
 
-    private gasToVTHO(gas:number,baseGasPrice:number):bigint {
-        const c = BigInt(10**VTHOCurrency.decimals) / BigInt(baseGasPrice);
-        return BigInt(gas) * BigInt(10**VTHOCurrency.decimals) / c;
+    private gasToVTHO(gas:number, gasPrice:bigint):bigint {
+        return BigInt(gas) * gasPrice;
     }
     
 
     private env:any;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private tokenList:Array<Currency> = new Array();
-    private readonly unsignedRosettaTransactionRlp = new RLP({
-        name:'tx',
+    private tokenList:Array<Currency> = [];
+
+    private readonly commonRosettaTxRlpProfile: RLP.Profile = {
+        name:'rosetta tx',
         kind:[
             {name:'chainTag',kind:new RLP.NumericKind(1)},
             {name:'blockRef',kind:new RLP.CompactFixedBlobKind(8)},
@@ -793,10 +1011,27 @@ export class Construction extends Router {
             {name:'origin',kind:new RLP.NullableFixedBlobKind(20)},
             {name:'delegator',kind:new RLP.NullableFixedBlobKind(20)}
         ]
+    };
+    private readonly unsignedLegacyRosettaTxRlp = new RLP({
+        ...this.commonRosettaTxRlpProfile,
+        kind: [...this.commonRosettaTxRlpProfile.kind as Array<any>, { name: 'gasPriceCoef', kind: new RLP.NumericKind(1) }]
     });
 
-    private readonly signedRosettaTransactionRlp = new RLP({
+    private readonly unsignedDynamicRosettaTxRlp = new RLP({
+        ...this.commonRosettaTxRlpProfile,
+        kind: [...this.commonRosettaTxRlpProfile.kind as Array<any>, 
+            {name:'maxFeePerGas',kind:new RLP.NumericKind(32)},
+            {name:'maxPriorityFeePerGas',kind:new RLP.NumericKind(32)},
+        ]
+    });
+
+    private readonly signedLegacyRosettaTxRlp = new RLP({
         name: 'tx',
-        kind: [...this.unsignedRosettaTransactionRlp.profile.kind as Array<any>, { name: 'signature', kind: new RLP.BufferKind() }],
+        kind: [...this.unsignedLegacyRosettaTxRlp.profile.kind as Array<any>, { name: 'signature', kind: new RLP.BufferKind() }],
+    });
+
+    private readonly signedDynamicRosettaTxRlp = new RLP({
+        ...this.unsignedDynamicRosettaTxRlp.profile,
+        kind: [...this.unsignedDynamicRosettaTxRlp.profile.kind as Array<any>, { name: 'signature', kind: new RLP.BufferKind() }],
     });
 }

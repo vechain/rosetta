@@ -26,12 +26,12 @@ export class VIP180Token {
         return Number(call.decoded[0]);
     }
 
-    public async totalSupply():Promise<BigInt>{
+    public async totalSupply():Promise<bigint>{
         const call = await this.contract.call('totalSupply');
         return BigInt(call.decoded[0]);
     }
 
-    public async balanceOf(owner:string,revision?:string):Promise<BigInt>{
+    public async balanceOf(owner:string,revision?:string):Promise<bigint>{
         const balanceOfAbi = (VIP180Token.contractAbi as Array<any>).find( i => {return i.name == 'balanceOf';})
         const fun = new abi.Function(balanceOfAbi);
         const data = fun.encode(owner);
@@ -50,7 +50,7 @@ export class VIP180Token {
         return BigInt(0);
     }
 
-    public async allowance(owner:string,spender:string):Promise<BigInt>{
+    public async allowance(owner:string,spender:string):Promise<bigint>{
         const call = await this.contract.call('allowance',owner,spender);
         return BigInt(call.decoded[0]);
     }
@@ -352,7 +352,7 @@ export class VIP180Token {
     ]`); 
 
     public static filterEvents(events:Connex.VM.Event[],address:string,eventName:string):Connex.VM.Event[] {
-        let result = Array<Connex.VM.Event>();
+        const result = Array<Connex.VM.Event>();
         const eventAbi = new abi.Event((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == eventName;}));
         for(const ev of events){
             if(ev.address.toLowerCase() == address.toLowerCase() && (ev.topics[0] || '').toLowerCase() == eventAbi.signature.toLowerCase()){

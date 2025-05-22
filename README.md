@@ -223,7 +223,7 @@ Create a VIP191 payload, add `FeeDelegation` operation to operations, `account` 
 
 - Step 2: Call /construction/preprocess
 
-When calling /construction/preprocess use VIP191 payloads, the api will return options and two required_public_keys, the first is transaction origin's public key,the second is fee-dalegation payer's public key.
+When calling /construction/preprocess use VIP191 payloads, the api will return options and two required_public_keys, the first is transaction origin's public key,the second is fee delegation payer's public key.
 ``` json
   {
     "options": {
@@ -379,7 +379,7 @@ The api will return `unsigned_transaction` and `payloads`.
 }
 ```
 
-- Step 5: Sign with transaction orgin and fee-delegation payer private keys and call `/construction/combine`
+- Step 5: Sign with transaction orgin and fee delegation payer private keys and call `/construction/combine`
 
 ```json
 {

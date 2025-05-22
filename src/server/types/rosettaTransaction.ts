@@ -4,7 +4,7 @@ import { CheckSchema } from "../../common/checkSchema";
 export class RosettaTransaction{
 
     public static encode(tx:RosettaTransactionStruct):Buffer{
-        let rlp = new RLP(RosettaTransactionStruct.rlpProfile);
+        const rlp = new RLP(RosettaTransactionStruct.rlpProfile);
         if(tx.delegator || (CheckSchema.isAddress(tx.delegator))){
             tx.delegator = "0x";
         }
@@ -13,8 +13,8 @@ export class RosettaTransaction{
     }
 
     public static decode(raw:Buffer,):RosettaTransactionStruct{
-        let rlp = new RLP(RosettaTransactionStruct.rlpProfile);
-        let rosettaTx = rlp.decode(raw);
+        const rlp = new RLP(RosettaTransactionStruct.rlpProfile);
+        const rosettaTx = rlp.decode(raw);
         if((rosettaTx.delegator as string).toLocaleLowerCase() == "0x"){
             rosettaTx.delegator = undefined;
         }

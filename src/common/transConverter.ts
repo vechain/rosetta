@@ -14,11 +14,11 @@ export class TransactionConverter {
     }
 
     public async parseRosettaTransacion(txid:string):Promise<Transaction>{
-        let result:Transaction = {transaction_identifier:{hash:''},operations:new Array()};
+        const result:Transaction = {transaction_identifier:{hash:''},operations:[]};
         const txRece = (await this.connex.thor.transaction(txid).getReceipt());
         if(txRece != undefined){
             result.transaction_identifier = {hash:txid};
-            for(var index = 0; index < txRece.outputs.length; index++) {
+            for(let index = 0; index < txRece.outputs.length; index++) {
                 const opers = this.parseRosettaOperations(index,txRece);
                 result.operations = result.operations.concat(opers);
             }
@@ -27,7 +27,7 @@ export class TransactionConverter {
             } else {
                 result.operations.push(this.feeOperation(txRece));
             }
-            for(var index = 0; index < result.operations.length; index++ ){
+            for(let index = 0; index < result.operations.length; index++ ){
                 result.operations[index].operation_identifier.index = index;
                 result.operations[index].status = txRece.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
             }
@@ -36,10 +36,10 @@ export class TransactionConverter {
     }
 
     private parseRosettaOperations(clauseIndex:number,rece:Connex.Thor.Transaction.Receipt):Array<Operation> {
-        let result = new Array<Operation>();
+        const result = new Array<Operation>();
         if(rece.outputs.length > 0 && rece.outputs[clauseIndex].transfers.length > 0) {
             for(const trans of rece.outputs[clauseIndex].transfers){
-                let sendOper:Operation = {
+                const sendOper:Operation = {
                     operation_identifier:{
                         index:0,
                         network_index:clauseIndex
@@ -54,7 +54,7 @@ export class TransactionConverter {
                         currency:VETCurrency
                     }
                 }
-                let recpOper:Operation = {
+                const recpOper:Operation = {
                     operation_identifier:{
                         index:0,
                         network_index:clauseIndex
@@ -80,7 +80,7 @@ export class TransactionConverter {
                     const transEvents = VIP180Token.filterEvents([ev],targetToken.metadata.contractAddress,'Transfer');
                     if(transEvents.length == 1){
                         const transEvet = transEvents[0];
-                        let sendOper:Operation = {
+                        const sendOper:Operation = {
                             operation_identifier:{
                                 index:0,
                                 network_index:clauseIndex
@@ -99,7 +99,7 @@ export class TransactionConverter {
                                 }
                             }
                         }
-                        let recpOper:Operation = {
+                        const recpOper:Operation = {
                             operation_identifier:{
                                 index:0,
                                 network_index:clauseIndex
@@ -165,5 +165,5 @@ export class TransactionConverter {
 
     private env:any;
     private connex:ConnexPro;
-    private tokenList:Array<Currency> = new Array();
+    private tokenList:Array<Currency> = [];
 }

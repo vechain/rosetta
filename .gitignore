@@ -5,4 +5,5 @@ log/
 *.patch
 .vscode/
 rosetta/bin/
+rosetta_data/
 cli-data/

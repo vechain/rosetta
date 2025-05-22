@@ -177,7 +177,7 @@ export class Account extends Router {
     }
 
     private async getAccountBalance(account:string,blockid:string):Promise<Array<Amount>>{
-        let result = new Array<Amount>();
+        const result = new Array<Amount>();
         const url = this.connex.baseUrl + `/accounts/${account}`;
         const response = await Axios({url:url,method:'Get',responseType:'json',params:{revision:blockid}});
         result.push({

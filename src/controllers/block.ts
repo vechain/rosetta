@@ -52,8 +52,8 @@ export class Block extends Router {
                 if(block.number == 0){
                     parent = (await this.connex.thor.block(0).get())!;
                 }
-                let trans = new Array<Transaction>();
-                let other_trans = new Array<{hash:string}>();
+                const trans = new Array<Transaction>();
+                const other_trans = new Array<{hash:string}>();
                 for(const txid of block.transactions){
                     const rosettaTx = await this.transConverter.parseRosettaTransacion(txid);
                     if(rosettaTx.operations.length > 0){
