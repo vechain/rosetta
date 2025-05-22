@@ -1,29 +1,10 @@
+import axios from 'axios';
 import Router from "koa-router";
+import { TxPoolTransaction } from '../common/types/transaction';
 import { RequestInfoVerifyMiddleware } from '../middlewares/requestInfoVerifyMiddleware';
 import ConnexPro from '../utils/connexPro';
-import axios from 'axios';
 
-type Transaction = {
-    id: string,
-    type: number,
-    chainTag: number,
-    blockRef: string,
-    expiration: number,
-    clauses: {
-        to: string,
-        value: string,
-        data: string,
-    }[],
-    gas: number,
-    maxFeePerGas: string,
-    maxPriorityFeePerGas: string,
-    origin: string,
-    delegator: string,
-    nonce: string,
-    dependsOn: string,
-    size: number,
-    meta: string
-}
+
 export class Mempool extends Router {
     private readonly env:any;
     private readonly connex:ConnexPro;
@@ -49,9 +30,9 @@ export class Mempool extends Router {
         );
     }
 
-    private async getTransactions(origin:string):Promise<Transaction[]> {
+    private async getTransactions(origin:string):Promise<TxPoolTransaction[]> {
         const response = await axios.get(this.connex.baseUrl + '/node/txpool?expanded=true&origin=' + origin);
-        const transactions = response.data as Transaction[];
+        const transactions = response.data as TxPoolTransaction[];
 
         return transactions;
     }
