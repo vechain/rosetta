@@ -74,7 +74,7 @@ export class Mempool extends Router {
 
     private async getTxPoolTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.verifyMiddleware.checkTransactionIdentifier(ctx)){
-            const txPool = await this.getTransactions(ctx.request.body.transaction_identifier.hash);
+            const txPool = await this.getTransactions();
             const tx = txPool.find((tx) => {
                 return tx.id == ctx.request.body.transaction_identifier.hash;
             });
