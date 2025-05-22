@@ -13,7 +13,7 @@ export class TransactionConverter {
         this.tokenList = this.env.config.tokenlist;
     }
 
-    public async parseRosettaTransacion(txid:string):Promise<Transaction>{
+    public async parseRosettaTransaction(txid:string):Promise<Transaction>{
         const result:Transaction = {transaction_identifier:{hash:''},operations:[]};
         const txRece = (await this.connex.thor.transaction(txid).getReceipt());
         if(txRece != undefined){

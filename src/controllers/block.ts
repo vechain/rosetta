@@ -55,7 +55,7 @@ export class Block extends Router {
                 const trans = new Array<Transaction>();
                 const other_trans = new Array<{hash:string}>();
                 for(const txid of block.transactions){
-                    const rosettaTx = await this.transConverter.parseRosettaTransacion(txid);
+                    const rosettaTx = await this.transConverter.parseRosettaTransaction(txid);
                     if(rosettaTx.operations.length > 0){
                         trans.push(rosettaTx);
                     } else {
@@ -118,7 +118,7 @@ export class Block extends Router {
             if(block != null){
                 const txRece = (await this.connex.thor.transaction(txid).getReceipt());
                     if(txRece != null && txRece.meta.blockID.toLowerCase() == block.id.toLowerCase()){
-                    const rosettaTx = await this.transConverter.parseRosettaTransacion(txid);
+                    const rosettaTx = await this.transConverter.parseRosettaTransaction(txid);
                     const response:{transaction:Transaction} = {
                         transaction:rosettaTx
                     }

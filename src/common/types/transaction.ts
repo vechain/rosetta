@@ -21,12 +21,12 @@ export type TxPoolTransaction = {
         data: string,
     }[],
     gas: number,
-    maxFeePerGas: string,
-    maxPriorityFeePerGas: string,
+    maxFeePerGas?: string,
+    maxPriorityFeePerGas?: string,
+    gasPriceCoef?: number,
     origin: string,
     delegator: string,
     nonce: string,
     dependsOn: string,
-    size: number,
-    meta: string
+    size: number
 }

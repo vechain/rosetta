@@ -1,6 +1,9 @@
 import axios from 'axios';
+import Joi from 'joi';
 import Router from "koa-router";
+import { getError } from '../common/errors';
 import { TxPoolTransaction } from '../common/types/transaction';
+import { ConvertJSONResponseMiddleware } from '../middlewares/convertJSONResponseMiddleware';
 import { RequestInfoVerifyMiddleware } from '../middlewares/requestInfoVerifyMiddleware';
 import ConnexPro from '../utils/connexPro';
 
@@ -37,10 +40,35 @@ export class Mempool extends Router {
         return transactions;
     }
 
+    private checkMetadata(ctx:Router.IRouterContext):boolean{
+        const schema = Joi.object({
+            metadata:Joi.object({
+                origin:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
+            })
+        });
+        const verify = schema.validate(ctx.request.body,{allowUnknown:true});
+        if(verify.error == undefined){
+            return true;
+        } else {
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(16,undefined,{
+                error:verify.error
+            }));
+            return false;
+        }
+    }
+
     private async getTxPoolTransactions(ctx:Router.IRouterContext,next: () => Promise<any>){
-        const txPool = await this.getTransactions(ctx.request.body.metadata.origin);
-        ctx.body = txPool;
-        //TODO: modify data to match the response schema
+        if(this.checkMetadata(ctx)){
+            const txPool = await this.getTransactions(ctx.request.body.metadata.origin);
+            ctx.body = txPool;
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
+                transaction_identifiers:txPool.map((tx) => {
+                    return {
+                        hash:tx.id
+                    }
+                })
+            });
+        }
         await next();
     }
 
