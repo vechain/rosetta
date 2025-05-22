@@ -38,14 +38,14 @@ export class Mempool extends Router {
     }
 
     private async getTxPoolTransactions(ctx:Router.IRouterContext,next: () => Promise<any>){
-        const txPool = await this.getTransactions(ctx.request.body.origin);
+        const txPool = await this.getTransactions(ctx.request.body.metadata.origin);
         ctx.body = txPool;
         //TODO: modify data to match the response schema
         await next();
     }
 
     private async getTxPoolTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
-        const txPool = await this.getTransactions(ctx.request.body.origin);
+        const txPool = await this.getTransactions(ctx.request.body.metadata.origin);
         ctx.body = txPool;
         //TODO: implement the logic by id
         await next();
