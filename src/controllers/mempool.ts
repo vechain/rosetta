@@ -33,10 +33,12 @@ export class Mempool extends Router {
         );
     }
 
-    private async getTransactions(origin?:string):Promise<TxPoolTransaction[]> {
-        const url = this.connex.baseUrl + '/node/txpool?expanded=true' + (origin ? `&origin=${origin}` : '');
+    private async getTransactions(origin?:string, expanded: boolean = false):Promise<TxPoolTransaction[] | string[]> {
+        const url = this.connex.baseUrl + '/node/txpool' + 
+            (expanded ? '?expanded=true' : '') + 
+            (origin ? `${expanded ? '&' : '?'}origin=${origin}` : '');
         const response = await axios.get(url);
-        const transactions = response.data as TxPoolTransaction[];
+        const transactions = expanded ? response.data as TxPoolTransaction[] : response.data as string[];
 
         return transactions;
     }
@@ -60,11 +62,11 @@ export class Mempool extends Router {
 
     private async getTxPoolTransactions(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkMetadata(ctx)){
-            const txPool = await this.getTransactions(ctx.request.body.metadata?.origin);
+            const txPool = await this.getTransactions(ctx.request.body.metadata?.origin) as string[];
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction_identifiers:txPool.map((tx) => {
                     return {
-                        hash:tx.id
+                        hash:tx
                     }
                 })
             });
@@ -74,7 +76,7 @@ export class Mempool extends Router {
 
     private async getTxPoolTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.verifyMiddleware.checkTransactionIdentifier(ctx)){
-            const txPool = await this.getTransactions();
+            const txPool = await this.getTransactions(undefined,true) as TxPoolTransaction[];
             const tx = txPool.find((tx) => {
                 return tx.id == ctx.request.body.transaction_identifier.hash;
             });

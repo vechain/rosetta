@@ -90,8 +90,8 @@ export class RequestInfoVerifyMiddleware{
             transaction_identifier:Joi.object({
                 hash:Joi.string().lowercase().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/)
             })
-        });
-        const verify = schema.validate(ctx.request.body,{allowUnknown:true});
+        }).unknown(true);
+        const verify = schema.validate(ctx.request.body);
         if(verify.error == undefined){
             return true;
         } else {
