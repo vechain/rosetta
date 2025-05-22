@@ -83,6 +83,7 @@ export class Mempool extends Router {
                     error: 'Transaction not found in mempool'
                 }));
             }
+            //TODO: clause parsing into operations
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction:tx
             });
