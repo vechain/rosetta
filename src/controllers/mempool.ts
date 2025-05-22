@@ -60,7 +60,6 @@ export class Mempool extends Router {
     private async getTxPoolTransactions(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkMetadata(ctx)){
             const txPool = await this.getTransactions(ctx.request.body.metadata.origin);
-            ctx.body = txPool;
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction_identifiers:txPool.map((tx) => {
                     return {
@@ -73,9 +72,20 @@ export class Mempool extends Router {
     }
 
     private async getTxPoolTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
-        const txPool = await this.getTransactions(ctx.request.body.metadata.origin);
-        ctx.body = txPool;
-        //TODO: implement the logic by id
+        if(this.verifyMiddleware.checkTransactionIdentifier(ctx)){
+            const txPool = await this.getTransactions(ctx.request.body.transaction_identifier.hash);
+            const tx = txPool.find((tx) => {
+                return tx.id == ctx.request.body.transaction_identifier.hash;
+            });
+            if(tx == undefined){
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(25,undefined,{
+                    error: 'Transaction not found in mempool'
+                }));
+            }
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
+                transaction:tx
+            });
+        }
         await next();
     }
 }

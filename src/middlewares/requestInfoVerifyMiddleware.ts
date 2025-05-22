@@ -1,3 +1,5 @@
+import Joi from 'joi';
+import Router from 'koa-router';
 import { CheckSchema } from '../common/checkSchema';
 import { getError } from '../common/errors';
 import { ConvertJSONResponseMiddleware } from './convertJSONResponseMiddleware';
@@ -81,6 +83,23 @@ export class RequestInfoVerifyMiddleware{
             return;
         }
         await next();
+    }
+
+    public checkTransactionIdentifier(ctx:Router.IRouterContext):boolean{
+        const schema = Joi.object({
+            transaction_identifier:Joi.object({
+                hash:Joi.string().lowercase().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/)
+            })
+        });
+        const verify = schema.validate(ctx.request.body,{allowUnknown:true});
+        if(verify.error == undefined){
+            return true;
+        } else {
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(25,undefined,{
+                error:verify.error
+            }));
+            return false;
+        }
     }
 
 

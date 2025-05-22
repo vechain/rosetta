@@ -1,4 +1,3 @@
-import Joi from "joi";
 import Router from "koa-router";
 import { Transaction as VeTransaction } from "thor-devkit";
 import { VETCurrency, VTHOCurrency } from "..";
@@ -28,7 +27,7 @@ export class Search extends Router {
     }
 
     private async transactions(ctx:Router.IRouterContext,next: () => Promise<any>){
-        if(this.checkTxsRequest(ctx)){
+        if(this.verifyMiddleware.checkTransactionIdentifier(ctx)){
             const txid = ctx.request.body.transaction_identifier.hash as string;
             const tx = await this.connex.thor.transaction(txid).get();
             const txRecp = await this.connex.thor.transaction(txid).getReceipt();
@@ -58,23 +57,6 @@ export class Search extends Router {
             }
         }
         await next();
-    }
-
-    private checkTxsRequest(ctx: Router.IRouterContext):boolean{
-        const schema = Joi.object({
-            transaction_identifier:Joi.object({
-                hash:Joi.string().lowercase().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/).required()
-            }).required()
-        }).required();
-        const verify = schema.validate(ctx.request.body,{allowUnknown:true});
-        if(verify.error == undefined){
-            return true;
-        } else {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(25,undefined,{
-                error:verify.error
-            }));
-            return false;
-        }
     }
 
     private convertClausesToOperations(tx:Connex.Thor.Transaction,txrecp?:Connex.Thor.Transaction.Receipt|null):Operation[] {
