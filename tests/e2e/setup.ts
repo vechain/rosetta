@@ -5,6 +5,11 @@ import { TestClient } from './utils/testClient';
 
 const execAsync = promisify(exec);
 
+const galacticaDevnetNetworkIdentifier = {
+    blockchain: 'vechainthor',
+    network: 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json'
+};
+
 let client: TestClient;
 
 const waitForBaseFee = async (retries = 30, delay = 1000): Promise<void> => {
@@ -23,12 +28,9 @@ const waitForBaseFee = async (retries = 30, delay = 1000): Promise<void> => {
 };
 
 beforeAll(async () => {
-    // Start docker compose services with Galactica devnet configuration
     try {
-        const network = 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json';
-        const thorVersion = 'master';
-        // Using docker compose instead of docker-compose, change back if needed
-        await execAsync(`NETWORK=${network} THOR_VERSION=${thorVersion} docker compose up -d`);
+        // Start docker compose services with Galactica devnet configuration
+        await execAsync(`NETWORK=${galacticaDevnetNetworkIdentifier.network} THOR_VERSION=master docker compose up -d`);
         
         // Wait for services to be ready and baseFee to be available
         await Promise.all([
@@ -52,4 +54,4 @@ afterAll(async () => {
     }
 });
 
-export { client };
+export { client, galacticaDevnetNetworkIdentifier };
