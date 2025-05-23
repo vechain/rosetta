@@ -57,5 +57,5 @@ export class Search extends Router {
     private env:any;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private transConverter:TransactionConverter;
+    private readonly transConverter:TransactionConverter;
 }

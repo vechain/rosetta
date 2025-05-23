@@ -35,9 +35,12 @@ export class Mempool extends Router {
     }
 
     private async getTransactions(origin?:string, expanded: boolean = false):Promise<Connex.Thor.Transaction[] | string[]> {
-        const url = this.connex.baseUrl + '/node/txpool' + 
-            (expanded ? '?expanded=true' : '') + 
-            (origin ? `${expanded ? '&' : '?'}origin=${origin}` : '');
+        const baseUrl = this.connex.baseUrl + '/node/txpool';
+        const expandedParam = expanded ? '?expanded=true' : '';
+        const originParam = expanded ? '&' : '?';
+        const originQuery = origin ? `${originParam}origin=${origin}` : '';
+        const url = `${baseUrl}${expandedParam}${originQuery}`;
+        
         const response = await axios.get(url);
         const transactions = expanded ? response.data as Connex.Thor.Transaction[] : response.data as string[];
 

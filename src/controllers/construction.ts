@@ -976,7 +976,7 @@ export class Construction extends Router {
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
     private tokenList:Array<Currency> = [];
-    private transConverter:TransactionConverter;
+    private readonly transConverter:TransactionConverter;
 
     private readonly commonRosettaTxRlpProfile: RLP.Profile = {
         name:'rosetta tx',
