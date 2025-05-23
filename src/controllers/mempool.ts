@@ -2,6 +2,7 @@ import axios from 'axios';
 import Joi from 'joi';
 import Router from "koa-router";
 import { getError } from '../common/errors';
+import { TransactionConverter } from '../common/transConverter';
 import { ConvertJSONResponseMiddleware } from '../middlewares/convertJSONResponseMiddleware';
 import { RequestInfoVerifyMiddleware } from '../middlewares/requestInfoVerifyMiddleware';
 import ConnexPro from '../utils/connexPro';
@@ -11,13 +12,14 @@ export class Mempool extends Router {
     private readonly env:any;
     private readonly connex:ConnexPro;
     private readonly verifyMiddleware:RequestInfoVerifyMiddleware;
-
+    private readonly transConverter:TransactionConverter;
 
     constructor(env:any){
         super();
         this.env = env;
         this.connex = this.env.connex;
         this.verifyMiddleware = new RequestInfoVerifyMiddleware(this.env);
+        this.transConverter = new TransactionConverter(this.env);
         this.post('/mempool',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
@@ -83,11 +85,16 @@ export class Mempool extends Router {
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(25,undefined,{
                     error: 'Transaction not found in mempool'
                 }));
+            } else {
+                ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
+                    transaction: {
+                        transaction_identifier: {
+                            hash: tx.id
+                        },
+                        operations: this.transConverter.convertClausesToOperations(tx)
+                    }
+                });
             }
-            //TODO: clause parsing into operations
-            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
-                transaction:tx
-            });
         }
         await next();
     }

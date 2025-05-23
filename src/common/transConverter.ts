@@ -1,7 +1,9 @@
+import { Transaction as VeTransaction } from "thor-devkit";
 import { VETCurrency, VTHOCurrency } from "..";
 import { Transaction } from "../common/types/transaction";
 import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
+import { CheckSchema } from './checkSchema';
 import { Currency } from "./types/currency";
 import { Operation, OperationStatus, OperationType } from "./types/operation";
 
@@ -33,6 +35,125 @@ export class TransactionConverter {
             }
         }
         return result;
+    }
+
+    public convertClausesToOperations(tx:Connex.Thor.Transaction,txrecp?:Connex.Thor.Transaction.Receipt|null):Operation[] {
+        let operations = new Array<Operation>();
+        const origin = tx.origin;
+        const delegator = tx.delegator;
+        for(let index = 0; index < tx.clauses.length; index++){
+           const clause = tx.clauses[index] as VeTransaction.Clause;
+           if(clause.value == 0 || clause.value == ''){
+               const token = this.tokenList.find( t => {return t.metadata.contractAddress == clause.to;})!;
+               if(token == undefined || clause.data.substring(10) != '0xa9059cbb'){
+                   continue;
+               }
+               const decode = VIP180Token.decodeCallData(clause.data,'transfer');
+               const sendOp:Operation = {
+                   operation_identifier:{
+                       index:0,
+                       network_index:index
+                   },
+                   type:OperationType.Transfer,
+                   account:{
+                       address:origin
+                   },
+                   amount:{
+                       value:(BigInt(decode._amount) * BigInt(-1)).toString(10),
+                       currency:token
+                   }
+               }
+               const receiptOp:Operation = {
+                   operation_identifier:{
+                       index:0,
+                       network_index:index
+                   },
+                   type:OperationType.Transfer,
+                   account:{
+                       address:decode._to as string
+                   },
+                   amount:{
+                       value:BigInt(decode._amount).toString(10),
+                       currency:token
+                   }
+               }
+
+               operations = operations.concat([sendOp,receiptOp]);
+           } else {
+               const sendOp:Operation = {
+                   operation_identifier:{
+                       index:0,
+                       network_index:index
+                   },
+                   type:OperationType.Transfer,
+                   account:{
+                       address:origin
+                   },
+                   amount:{
+                       value:(BigInt(clause.value) * BigInt(-1)).toString(10),
+                       currency:VETCurrency
+                   }
+               }
+               const receiptOp:Operation = {
+                   operation_identifier:{
+                       index:0,
+                       network_index:index
+                   },
+                   type:OperationType.Transfer,
+                   account:{
+                       address:clause.to as string,
+                   },
+                   amount:{
+                       value:BigInt(clause.value).toString(10),
+                       currency:VETCurrency
+                   }
+               }
+               operations = operations.concat([sendOp,receiptOp]);
+           }
+       }
+       
+       if(CheckSchema.isAddress(delegator)){
+           const payOp:Operation = {
+               operation_identifier:{
+                   index:0,
+                   network_index:0
+               },
+               type:OperationType.FeeDelegation,
+               account:{
+                   address:delegator!
+               },
+               amount:{
+                   value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10),
+                   currency:VTHOCurrency
+               }
+           }
+           operations.push(payOp);
+       }else {
+           const payOp:Operation = {
+               operation_identifier:{
+                   index:0,
+                   network_index:0
+               },
+               type:OperationType.Fee,
+               account:{
+                   address:origin
+               },
+               amount:{
+                   value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10),
+                   currency:VTHOCurrency
+               }
+           }
+           operations.push(payOp);
+       }
+
+       if(txrecp != undefined && txrecp != null){
+           for(const oper of operations){
+               oper.status = txrecp.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
+           }
+           const payOp = operations.find( op => {return op.type == OperationType.Fee || op.type == OperationType.FeeDelegation;})!;
+           payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10);
+       }
+       return operations;
     }
 
     private parseRosettaOperations(clauseIndex:number,rece:Connex.Thor.Transaction.Receipt):Array<Operation> {
