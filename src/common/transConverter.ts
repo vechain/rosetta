@@ -5,6 +5,7 @@ import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
 import { CheckSchema } from './checkSchema';
 import { Currency } from "./types/currency";
+import { OperationIdentifier } from "./types/identifiers";
 import { Operation, OperationStatus, OperationType } from "./types/operation";
 
 export class TransactionConverter {
@@ -37,123 +38,136 @@ export class TransactionConverter {
         return result;
     }
 
-    public convertClausesToOperations(tx:Connex.Thor.Transaction,txrecp?:Connex.Thor.Transaction.Receipt|null):Operation[] {
-        let operations = new Array<Operation>();
+    private createOperationIdentifier(index: number, networkIndex: number): OperationIdentifier {
+        return {
+            index,
+            network_index: networkIndex
+        };
+    }
+
+    private createCallOperation(origin: string, clause: VeTransaction.Clause, index: number): Operation {
+        return {
+            operation_identifier: this.createOperationIdentifier(0, index),
+            type: OperationType.Call,
+            account: {
+                address: origin
+            },
+            amount: {
+                value: '0',
+                currency: VETCurrency
+            },
+            metadata: {
+                data: clause.data,
+                to: clause.to
+            }
+        };
+    }
+
+    private createTransferOperations(origin: string, clause: VeTransaction.Clause, index: number, token: Currency): Operation[] {
+        const decode = VIP180Token.decodeCallData(clause.data, 'transfer');
+        const sendOp: Operation = {
+            operation_identifier: this.createOperationIdentifier(0, index),
+            type: OperationType.Transfer,
+            account: {
+                address: origin
+            },
+            amount: {
+                value: (BigInt(decode._amount) * BigInt(-1)).toString(10),
+                currency: token
+            }
+        };
+        const receiptOp: Operation = {
+            operation_identifier: this.createOperationIdentifier(0, index),
+            type: OperationType.Transfer,
+            account: {
+                address: decode._to as string
+            },
+            amount: {
+                value: BigInt(decode._amount).toString(10),
+                currency: token
+            }
+        };
+        return [sendOp, receiptOp];
+    }
+
+    private createVETTransferOperations(origin: string, clause: VeTransaction.Clause, index: number): Operation[] {
+        const sendOp: Operation = {
+            operation_identifier: this.createOperationIdentifier(0, index),
+            type: OperationType.Transfer,
+            account: {
+                address: origin
+            },
+            amount: {
+                value: (BigInt(clause.value) * BigInt(-1)).toString(10),
+                currency: VETCurrency
+            }
+        };
+        const receiptOp: Operation = {
+            operation_identifier: this.createOperationIdentifier(0, index),
+            type: OperationType.Transfer,
+            account: {
+                address: clause.to as string,
+            },
+            amount: {
+                value: BigInt(clause.value).toString(10),
+                currency: VETCurrency
+            }
+        };
+        return [sendOp, receiptOp];
+    }
+
+    private createFeeOperation(tx: Connex.Thor.Transaction, delegator: string | null | undefined, origin: string): Operation {
+        const isDelegation = CheckSchema.isAddress(delegator);
+        return {
+            operation_identifier: this.createOperationIdentifier(0, 0),
+            type: isDelegation ? OperationType.FeeDelegation : OperationType.Fee,
+            account: {
+                address: isDelegation ? delegator! : origin
+            },
+            amount: {
+                value: (BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice) * BigInt(-1)).toString(10),
+                currency: VTHOCurrency
+            }
+        };
+    }
+
+    private async processClause(clause: VeTransaction.Clause, index: number, origin: string): Promise<Operation[]> {
+        if (clause.value == 0 || clause.value == '') {
+            const token = this.tokenList.find(t => t.metadata.contractAddress == clause.to);
+            if (token == undefined || clause.data.substring(10) != '0xa9059cbb') {
+                const code = await this.connex.driver.getCode(clause.to as string, this.connex.thor.status.head.id);
+                if (code && code.code !== '0x') {
+                    return [this.createCallOperation(origin, clause, index)];
+                }
+                return [];
+            }
+            return this.createTransferOperations(origin, clause, index, token);
+        }
+        return this.createVETTransferOperations(origin, clause, index);
+    }
+
+    public async convertClausesToOperations(tx: Connex.Thor.Transaction, txrecp?: Connex.Thor.Transaction.Receipt | null): Promise<Operation[]> {
+        let operations: Operation[] = [];
         const origin = tx.origin;
         const delegator = tx.delegator;
-        for(let index = 0; index < tx.clauses.length; index++){
-           const clause = tx.clauses[index] as VeTransaction.Clause;
-           if(clause.value == 0 || clause.value == ''){
-               const token = this.tokenList.find( t => {return t.metadata.contractAddress == clause.to;})!;
-               if(token == undefined || clause.data.substring(10) != '0xa9059cbb'){
-                   continue;
-               }
-               const decode = VIP180Token.decodeCallData(clause.data,'transfer');
-               const sendOp:Operation = {
-                   operation_identifier:{
-                       index:0,
-                       network_index:index
-                   },
-                   type:OperationType.Transfer,
-                   account:{
-                       address:origin
-                   },
-                   amount:{
-                       value:(BigInt(decode._amount) * BigInt(-1)).toString(10),
-                       currency:token
-                   }
-               }
-               const receiptOp:Operation = {
-                   operation_identifier:{
-                       index:0,
-                       network_index:index
-                   },
-                   type:OperationType.Transfer,
-                   account:{
-                       address:decode._to as string
-                   },
-                   amount:{
-                       value:BigInt(decode._amount).toString(10),
-                       currency:token
-                   }
-               }
 
-               operations = operations.concat([sendOp,receiptOp]);
-           } else {
-               const sendOp:Operation = {
-                   operation_identifier:{
-                       index:0,
-                       network_index:index
-                   },
-                   type:OperationType.Transfer,
-                   account:{
-                       address:origin
-                   },
-                   amount:{
-                       value:(BigInt(clause.value) * BigInt(-1)).toString(10),
-                       currency:VETCurrency
-                   }
-               }
-               const receiptOp:Operation = {
-                   operation_identifier:{
-                       index:0,
-                       network_index:index
-                   },
-                   type:OperationType.Transfer,
-                   account:{
-                       address:clause.to as string,
-                   },
-                   amount:{
-                       value:BigInt(clause.value).toString(10),
-                       currency:VETCurrency
-                   }
-               }
-               operations = operations.concat([sendOp,receiptOp]);
-           }
-       }
-       
-       if(CheckSchema.isAddress(delegator)){
-           const payOp:Operation = {
-               operation_identifier:{
-                   index:0,
-                   network_index:0
-               },
-               type:OperationType.FeeDelegation,
-               account:{
-                   address:delegator!
-               },
-               amount:{
-                   value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10),
-                   currency:VTHOCurrency
-               }
-           }
-           operations.push(payOp);
-       }else {
-           const payOp:Operation = {
-               operation_identifier:{
-                   index:0,
-                   network_index:0
-               },
-               type:OperationType.Fee,
-               account:{
-                   address:origin
-               },
-               amount:{
-                   value:(BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10),
-                   currency:VTHOCurrency
-               }
-           }
-           operations.push(payOp);
-       }
+        for (let index = 0; index < tx.clauses.length; index++) {
+            const clause = tx.clauses[index] as VeTransaction.Clause;
+            const clauseOperations = await this.processClause(clause, index, origin);
+            operations = operations.concat(clauseOperations);
+        }
 
-       if(txrecp != undefined && txrecp != null){
-           for(const oper of operations){
-               oper.status = txrecp.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
-           }
-           const payOp = operations.find( op => {return op.type == OperationType.Fee || op.type == OperationType.FeeDelegation;})!;
-           payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice)*BigInt(-1)).toString(10);
-       }
-       return operations;
+        operations.push(this.createFeeOperation(tx, delegator, origin));
+
+        if (txrecp) {
+            for (const oper of operations) {
+                oper.status = txrecp.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
+            }
+            const payOp = operations.find(op => op.type == OperationType.Fee || op.type == OperationType.FeeDelegation)!;
+            payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice) * BigInt(-1)).toString(10);
+        }
+
+        return operations;
     }
 
     private parseRosettaOperations(clauseIndex:number,rece:Connex.Thor.Transaction.Receipt):Array<Operation> {

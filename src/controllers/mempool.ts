@@ -86,12 +86,13 @@ export class Mempool extends Router {
                     error: 'Transaction not found in mempool'
                 }));
             } else {
+                const operations = await this.transConverter.convertClausesToOperations(tx);
                 ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                     transaction: {
                         transaction_identifier: {
                             hash: tx.id
                         },
-                        operations: this.transConverter.convertClausesToOperations(tx)
+                        operations
                     }
                 });
             }
