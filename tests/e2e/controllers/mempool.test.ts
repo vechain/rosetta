@@ -1,3 +1,4 @@
+import { TransactionIdentifier } from '../../../src/common/types/identifiers';
 import { client, galacticaDevnetNetworkIdentifier } from '../setup';
 
 describe('Mempool Controller', () => {
@@ -9,6 +10,9 @@ describe('Mempool Controller', () => {
 
             expect(response).toHaveProperty('transaction_identifiers');
             expect(response.transaction_identifiers).toBeInstanceOf(Array);
+            response.transaction_identifiers.forEach((tx: TransactionIdentifier) => {
+                expect(tx.hash).toMatch(/^0x[0-9a-f]{64}$/);
+            });
         });
     });
 
