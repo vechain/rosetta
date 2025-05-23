@@ -2,7 +2,6 @@ import axios from 'axios';
 import Joi from 'joi';
 import Router from "koa-router";
 import { getError } from '../common/errors';
-import { TxPoolTransaction } from '../common/types/transaction';
 import { ConvertJSONResponseMiddleware } from '../middlewares/convertJSONResponseMiddleware';
 import { RequestInfoVerifyMiddleware } from '../middlewares/requestInfoVerifyMiddleware';
 import ConnexPro from '../utils/connexPro';
@@ -33,12 +32,12 @@ export class Mempool extends Router {
         );
     }
 
-    private async getTransactions(origin?:string, expanded: boolean = false):Promise<TxPoolTransaction[] | string[]> {
+    private async getTransactions(origin?:string, expanded: boolean = false):Promise<Connex.Thor.Transaction[] | string[]> {
         const url = this.connex.baseUrl + '/node/txpool' + 
             (expanded ? '?expanded=true' : '') + 
             (origin ? `${expanded ? '&' : '?'}origin=${origin}` : '');
         const response = await axios.get(url);
-        const transactions = expanded ? response.data as TxPoolTransaction[] : response.data as string[];
+        const transactions = expanded ? response.data as Connex.Thor.Transaction[] : response.data as string[];
 
         return transactions;
     }
@@ -76,7 +75,7 @@ export class Mempool extends Router {
 
     private async getTxPoolTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.verifyMiddleware.checkTransactionIdentifier(ctx)){
-            const txPool = await this.getTransactions(undefined,true) as TxPoolTransaction[];
+            const txPool = await this.getTransactions(undefined,true) as Connex.Thor.Transaction[];
             const tx = txPool.find((tx) => {
                 return tx.id == ctx.request.body.transaction_identifier.hash;
             });

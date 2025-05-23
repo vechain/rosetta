@@ -8,25 +8,3 @@ export type Transaction = {
     related_transactions?:Array<RelatedTransaction>,
     metadata?:any
 }
-
-export type TxPoolTransaction = {
-    id: string,
-    type: number,
-    chainTag: number,
-    blockRef: string,
-    expiration: number,
-    clauses: {
-        to: string,
-        value: string,
-        data: string,
-    }[],
-    gas: number,
-    maxFeePerGas?: string,
-    maxPriorityFeePerGas?: string,
-    gasPriceCoef?: number,
-    origin: string,
-    delegator: string,
-    nonce: string,
-    dependsOn: string,
-    size: number
-}
