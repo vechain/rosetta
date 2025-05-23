@@ -27,8 +27,8 @@
   },
   "homepage": "https://github.com/vechain/rosetta#readme",
   "dependencies": {
-    "@vechain/connex-driver": "^2.0.10",
-    "@vechain/connex-framework": "^2.0.10",
+    "@vechain/connex-driver": "^2.2.1",
+    "@vechain/connex-framework": "^2.2.1",
     "axios": "^0.27.2",
     "ethers": "^5.7.2",
     "group-array": "^0.3.4",

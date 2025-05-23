@@ -153,17 +153,10 @@ export class Construction extends Router {
         baseFee: bigint,
         reward: bigint
     }> {
-        const response = await axios.get(this.connex.baseUrl + '/fees/history?blockCount=1&newestBlock=best&rewardPercentiles=50');
-        const lastBlockFees = response.data as {
-            oldestBlock: string,
-            baseFeePerGas: string[],
-            gasUsedRatio: number[],
-            reward: string[]
-        };
-
+        const response = await this.connex.thor.fees.history().rewardPercentiles([50]).get();
         return {
-            baseFee: BigInt(lastBlockFees.baseFeePerGas[0]),
-            reward: BigInt(lastBlockFees.reward[0])
+            baseFee: BigInt(response.baseFeePerGas[0]),
+            reward: BigInt(response.reward?.[0][0] ?? '0')
         }
     }
 
