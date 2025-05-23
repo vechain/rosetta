@@ -116,8 +116,28 @@ export class TransactionConverter {
         return [sendOp, receiptOp];
     }
 
-    private createFeeOperation(tx: Connex.Thor.Transaction, delegator: string | null | undefined, origin: string): Operation {
+    public async getDynamicGasPrice(): Promise<{
+        baseFee: bigint,
+        reward: bigint
+    }> {
+        const response = await this.connex.thor.fees.history().rewardPercentiles([50]).get();
+        return {
+            baseFee: BigInt(response.baseFeePerGas[0]),
+            reward: BigInt(response.reward?.[0][0] ?? '0')
+        }
+    }
+
+    private async calculateGasPrice(tx: Connex.Thor.Transaction): Promise<bigint> {
+        if (tx.type === 81) {
+            const { baseFee, reward } = await this.getDynamicGasPrice();
+            return baseFee + reward;
+        }
+        return BigInt(this.env.config.baseGasPrice);
+    }
+
+    private async createFeeOperation(tx: Connex.Thor.Transaction, delegator: string | null | undefined, origin: string): Promise<Operation> {
         const isDelegation = CheckSchema.isAddress(delegator);
+        const gasPrice = await this.calculateGasPrice(tx);
         return {
             operation_identifier: this.createOperationIdentifier(0, 0),
             type: isDelegation ? OperationType.FeeDelegation : OperationType.Fee,
@@ -125,7 +145,7 @@ export class TransactionConverter {
                 address: isDelegation ? delegator! : origin
             },
             amount: {
-                value: (BigInt(tx.gas) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice) * BigInt(-1)).toString(10),
+                value: (BigInt(tx.gas) * BigInt(10**18) / gasPrice * BigInt(-1)).toString(10),
                 currency: VTHOCurrency
             }
         };
@@ -157,14 +177,15 @@ export class TransactionConverter {
             operations = operations.concat(clauseOperations);
         }
 
-        operations.push(this.createFeeOperation(tx, delegator, origin));
+        operations.push(await this.createFeeOperation(tx, delegator, origin));
 
         if (txrecp) {
             for (const oper of operations) {
                 oper.status = txrecp.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
             }
             const payOp = operations.find(op => op.type == OperationType.Fee || op.type == OperationType.FeeDelegation)!;
-            payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / BigInt(this.env.config.baseGasPrice) * BigInt(-1)).toString(10);
+            const gasPrice = await this.calculateGasPrice(tx);
+            payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / gasPrice * BigInt(-1)).toString(10);
         }
 
         return operations;

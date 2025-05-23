@@ -7,6 +7,7 @@ import { RLP, Transaction as VeTransaction } from "thor-devkit";
 import { VETCurrency, VTHOCurrency } from "..";
 import { CheckSchema } from "../common/checkSchema";
 import { getError } from "../common/errors";
+import { TransactionConverter } from "../common/transConverter";
 import { Currency } from "../common/types/currency";
 import { Operation, OperationType } from "../common/types/operation";
 import { CurveType, SignatureType } from "../common/types/signature";
@@ -22,6 +23,7 @@ export class Construction extends Router {
         this.connex = this.env.connex;
         this.tokenList = this.env.config.tokenlist;
         this.verifyMiddleware = new RequestInfoVerifyMiddleware(this.env);
+        this.transConverter = new TransactionConverter(this.env);
         this.post('/construction/combine',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
@@ -149,24 +151,13 @@ export class Construction extends Router {
         await next();
     }
 
-    private async getDynamicGasPrice():Promise<{
-        baseFee: bigint,
-        reward: bigint
-    }> {
-        const response = await this.connex.thor.fees.history().rewardPercentiles([50]).get();
-        return {
-            baseFee: BigInt(response.baseFeePerGas[0]),
-            reward: BigInt(response.reward?.[0][0] ?? '0')
-        }
-    }
-
     private async metadata(ctx:Router.IRouterContext,next: () => Promise<any>){
         if(this.checkOptions(ctx)){
             try {
                 const transactionType = ctx.request.body.options.transactionType;
                 let gasPrice: bigint;
                 let metadataFieldsByType;
-                const dynamicGasPrice = await this.getDynamicGasPrice();
+                const dynamicGasPrice = await this.transConverter.getDynamicGasPrice();
                 if (transactionType == 'legacy') {
                     gasPrice = BigInt(this.env.config.baseGasPrice);
                     metadataFieldsByType = {
@@ -493,7 +484,7 @@ export class Construction extends Router {
                 }
             }
 
-            const dynamicGasPrice = await this.getDynamicGasPrice();
+            const dynamicGasPrice = await this.transConverter.getDynamicGasPrice();
             let gasPrice: bigint;
             // If the base fee is 0, it is a legacy transaction
             if (dynamicGasPrice.baseFee == BigInt(0)) {
@@ -985,6 +976,7 @@ export class Construction extends Router {
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
     private tokenList:Array<Currency> = [];
+    private transConverter:TransactionConverter;
 
     private readonly commonRosettaTxRlpProfile: RLP.Profile = {
         name:'rosetta tx',
