@@ -8,4 +8,5 @@ module.exports = {
     setupFilesAfterEnv: ['./tests/e2e/setup.ts'],
     testTimeout: 30000, // 30 seconds timeout for e2e tests
     verbose: true,
+    maxWorkers: 1, // Execute tests sequentially
 }; 

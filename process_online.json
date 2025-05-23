@@ -2,7 +2,7 @@
     "apps": [
       {
         "name": "VeChainThor Node",
-        "cmd": "/usr/src/app/thor --api-addr 0.0.0.0:8669 --data-dir /data --config-dir /data/config --network $NETWORK --disable-pruner",
+        "cmd": "/usr/src/app/thor --api-addr 0.0.0.0:8669 --data-dir /data --config-dir /data/config --network $NETWORK --disable-pruner --api-enable-txpool",
         "autorestart":true,
         "out_file":"/data/logs/thornode.log",
         "error_file":"/data/logs/thornode_error.log"

@@ -119,8 +119,8 @@ POST | /events/blocks | Yes | [INDEXER] Get a range of BlockEvents | online
 
 Method| Endpoint | Implemented | Description | Mode
 ---------|----------|---------|---------|---------
-POST | /mempool | No | Get All Mempool Transactions
-POST | /mempool/transaction | No | Get a Mempool Transaction
+POST | /mempool | Yes | Get All Pool Transactions from the Node
+POST | /mempool/transaction | Yes | Get a Pool Transaction from the Node
 
 ### Network
 

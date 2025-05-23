@@ -1,15 +1,11 @@
-import { client } from '../setup';
+import { client, galacticaDevnetNetworkIdentifier } from '../setup';
 
 describe('Construction Controller', () => {
-    const networkIdentifier = {
-        blockchain: 'vechainthor',
-        network: 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json'
-    };
 
     describe('POST /construction/preprocess', () => {
         it('should preprocess valid transaction', async () => {
             const response = await client.post('/construction/preprocess', {
-                network_identifier: networkIdentifier,
+                network_identifier: galacticaDevnetNetworkIdentifier,
                 operations: [
                     {
                         operation_identifier: {
@@ -72,7 +68,7 @@ describe('Construction Controller', () => {
     describe('POST /construction/metadata', () => {
         it('should return transaction metadata', async () => {
             const response = await client.post('/construction/metadata', {
-                network_identifier: networkIdentifier,
+                network_identifier: galacticaDevnetNetworkIdentifier,
                 options: {
                     clauses: [
                         {
@@ -116,7 +112,7 @@ describe('Construction Controller', () => {
     describe('POST /construction/payloads', () => {
         it('should return signing payloads', async () => {
             const response = await client.post('/construction/payloads', {
-                network_identifier: networkIdentifier,
+                network_identifier: galacticaDevnetNetworkIdentifier,
                 operations: [
                     {
                         operation_identifier: {
@@ -215,7 +211,7 @@ describe('Construction Controller', () => {
     describe('POST /construction/combine', () => {
         it('should combine signatures', async () => {
             const response = await client.post('/construction/combine', {
-                network_identifier: networkIdentifier,
+                network_identifier: galacticaDevnetNetworkIdentifier,
                 unsigned_transaction: '0xf84a81e486039791786ecd81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce82271080828ca08869f045ffc9f2c1af94c05c334533c673582616ac2bf404b6c55efa10878081cb',
                 signatures: [
                     {
@@ -243,7 +239,7 @@ describe('Construction Controller', () => {
     describe('POST /construction/parse', () => {
         it('should parse unsigned transaction', async () => {
             const response = await client.post('/construction/parse', {
-                network_identifier: networkIdentifier,
+                network_identifier: galacticaDevnetNetworkIdentifier,
                 signed: false,
                 transaction: '0xf85081e486039791786ecd81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce82271080828ca088e6e47234f992efad94c05c334533c673582616ac2bf404b6c55efa1087808609184e72a00080'
             });
@@ -312,7 +308,7 @@ describe('Construction Controller', () => {
 
         it('should parse signed transaction', async () => {
             const response = await client.post('/construction/parse', {
-                network_identifier: networkIdentifier,
+                network_identifier: galacticaDevnetNetworkIdentifier,
                 signed: true,
                 transaction: '0xf88d81e486039791786ecd81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce82271080828ca08869f045ffc9f2c1af94c05c334533c673582616ac2bf404b6c55efa10878081cbb8414ad82781abf5866020c9bf6a7b07f94ba4bb9e95ac1ca3c858ded24c08b6856213589bac265f656a87da255b855cfab9a96020d450593df2481015188ae7927000'
             });
@@ -326,7 +322,7 @@ describe('Construction Controller', () => {
     describe('POST /construction/hash', () => {
         it('should return transaction hash', async () => {
             const response = await client.post('/construction/hash', {
-                network_identifier: networkIdentifier,
+                network_identifier: galacticaDevnetNetworkIdentifier,
                 signed_transaction: '0xf88d81e486039791786ecd81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce82271080828ca08869f045ffc9f2c1af94c05c334533c673582616ac2bf404b6c55efa10878081cbb8414ad82781abf5866020c9bf6a7b07f94ba4bb9e95ac1ca3c858ded24c08b6856213589bac265f656a87da255b855cfab9a96020d450593df2481015188ae7927000'
             });
 
@@ -338,7 +334,7 @@ describe('Construction Controller', () => {
     describe('POST /construction/submit', () => {
         it('should submit transaction', async () => {
             const response = await client.post('/construction/submit', {
-                network_identifier: networkIdentifier,
+                network_identifier: galacticaDevnetNetworkIdentifier,
                 signed_transaction: '0xf88d81e486039791786ecd81b4dad99416277a1ff38678291c41d1820957c78bb5da59ce82271080828ca08869f045ffc9f2c1af94c05c334533c673582616ac2bf404b6c55efa10878081cbb8414ad82781abf5866020c9bf6a7b07f94ba4bb9e95ac1ca3c858ded24c08b6856213589bac265f656a87da255b855cfab9a96020d450593df2481015188ae7927000'
             });
 
