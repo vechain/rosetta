@@ -120,10 +120,18 @@ export class TransactionConverter {
         baseFee: bigint,
         reward: bigint
     }> {
-        const response = await this.connex.thor.fees.history().rewardPercentiles([50]).get();
-        return {
-            baseFee: BigInt(response.baseFeePerGas[0]),
-            reward: BigInt(response.reward?.[0][0] ?? '0')
+        try {
+            const response = await this.connex.thor.fees.history().rewardPercentiles([50]).get();
+            return {
+                baseFee: BigInt(response.baseFeePerGas[0]),
+                reward: BigInt(response.reward?.[0][0] ?? '0')
+            }
+        } catch (error) {
+            console.warn('Error getting dynamic gas price, network catching up:', error);
+            return {
+                baseFee: BigInt(0),
+                reward: BigInt(0)
+            }
         }
     }
 

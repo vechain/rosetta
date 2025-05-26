@@ -157,25 +157,27 @@ export class Construction extends Router {
                 const transactionType = ctx.request.body.options.transactionType;
                 let gasPrice: bigint;
                 let metadataFieldsByType;
-                const dynamicGasPrice = await this.transConverter.getDynamicGasPrice();
                 if (transactionType == 'legacy') {
                     gasPrice = BigInt(this.env.config.baseGasPrice);
                     metadataFieldsByType = {
                         gasPriceCoef: randomBytes(1).readUInt8()
                     }
-                } else if (dynamicGasPrice.baseFee == BigInt(0)) {
-                    // Case where we are building a dynamic fee transaction but the base fee is 0
-                    // This happens when the node is catching up with the chain block-wise
-                    gasPrice = BigInt(this.env.config.initialBaseFee)
-                    metadataFieldsByType = {
-                        maxFeePerGas: gasPrice.toString(10),
-                        maxPriorityFeePerGas: "0"
-                    }
                 } else {
-                    gasPrice = dynamicGasPrice.baseFee + dynamicGasPrice.reward;
-                    metadataFieldsByType = {
-                        maxFeePerGas: gasPrice.toString(10),
-                        maxPriorityFeePerGas: dynamicGasPrice.reward.toString(10)
+                    const dynamicGasPrice = await this.transConverter.getDynamicGasPrice();
+                    if (dynamicGasPrice.baseFee == BigInt(0)) {
+                        // Case where we are building a dynamic fee transaction but the base fee is 0
+                        // This happens when the node is catching up with the chain block-wise
+                        gasPrice = BigInt(this.env.config.initialBaseFee)
+                        metadataFieldsByType = {
+                            maxFeePerGas: gasPrice.toString(10),
+                            maxPriorityFeePerGas: "0"
+                        }
+                    } else {
+                        gasPrice = dynamicGasPrice.baseFee + dynamicGasPrice.reward;
+                        metadataFieldsByType = {
+                            maxFeePerGas: gasPrice.toString(10),
+                            maxPriorityFeePerGas: dynamicGasPrice.reward.toString(10)
+                        }
                     }
                 }
                 let gas = await this.estimateGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]));
