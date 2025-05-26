@@ -150,6 +150,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
             const key = elliptic.keyFromPrivate(privateKey, 'hex');
             const msgHash = Buffer.from(payloadsResponse.payloads[0].hex_bytes, 'hex');
             const signature = key.sign(msgHash);
+            const signatureHex = signature.r.toString('hex') + signature.s.toString('hex') + (signature.recoveryParam ? '01' : '00');
 
             const response = await client.post('/construction/combine', {
                 network_identifier: networkIdentifier,
@@ -162,7 +163,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
                             curve_type: "secp256k1"
                         },
                         signature_type: "ecdsa_recovery",
-                        hex_bytes: signature.r.toString('hex') + signature.s.toString('hex') + (signature.recoveryParam ? '01' : '00')
+                        hex_bytes: signatureHex
                     }
                 ]
             });
