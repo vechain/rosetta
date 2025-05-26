@@ -3,7 +3,7 @@ import { client, networkIdentifier } from '../setup';
 
 const elliptic = new ec('secp256k1');
 
-describe('Construction Controller Solo Network', () => {
+describe('Construction and Mempool Controller Solo Network', () => {
     let metadataResponse: any;
     let payloadsResponse: any;
     let combineResponse: any;
@@ -175,8 +175,8 @@ describe('Construction Controller Solo Network', () => {
         });
     });
 
-    describe('POST /construction/submit', () => {
-        it('should submit transaction for solo network', async () => {
+    describe('POST /construction/submit and mempool endpoints', () => {
+        it('should submit transaction and verify it in mempool for solo network', async () => {
             const response = await client.post('/construction/submit', {
                 network_identifier: networkIdentifier,
                 signed_transaction: combineResponse.signed_transaction
@@ -187,6 +187,28 @@ describe('Construction Controller Solo Network', () => {
                     hash: expect.stringMatching(/^0x[a-fA-F0-9]{64}$/)
                 }
             });
+
+            const mempoolResponse = await client.post('/mempool', {
+                network_identifier: networkIdentifier
+            });
+
+            expect(mempoolResponse).toHaveProperty('transaction_identifiers');
+            expect(mempoolResponse.transaction_identifiers).toBeInstanceOf(Array);
+            expect(mempoolResponse.transaction_identifiers.length).toBeGreaterThan(0);
+            
+            const txInMempool = mempoolResponse.transaction_identifiers.some(
+                (tx: { hash: string }) => tx.hash === response.transaction_identifier.hash
+            );
+            expect(txInMempool).toBe(true);
+
+            const mempoolTxResponse = await client.post('/mempool/transaction', {
+                network_identifier: networkIdentifier,
+                transaction_identifier: response.transaction_identifier
+            });
+
+            expect(mempoolTxResponse).toHaveProperty('transaction');
+            expect(mempoolTxResponse.transaction).toHaveProperty('transaction_identifier');
+            expect(mempoolTxResponse.transaction.transaction_identifier.hash).toBe(response.transaction_identifier.hash);
         });
     });
 }); 
