@@ -19,7 +19,7 @@ const networkConfigs = {
 };
 
 // Select network configuration based on environment variable
-const selectedNetwork = (process.env.TEST_NETWORK || 'galactica_devnet') as NetworkType;
+const selectedNetwork = (process.env.TEST_NETWORK ?? 'galactica_devnet') as NetworkType;
 const networkIdentifier = networkConfigs[selectedNetwork];
 
 let client: TestClient;
