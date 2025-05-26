@@ -3,7 +3,7 @@ import { client, networkIdentifier } from '../setup';
 
 const elliptic = new ec('secp256k1');
 
-describe('Construction Controller (Solo Network)', () => {
+describe('Construction Controller Solo Network', () => {
     let metadataResponse: any;
     let payloadsResponse: any;
     let combineResponse: any;
