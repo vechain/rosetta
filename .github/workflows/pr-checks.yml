@@ -24,9 +24,13 @@ jobs:
 
   e2e-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-network: [galactica_devnet, solo]
     env:
-      NETWORK: 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json'
-      THOR_VERSION: 'master'
+      NETWORK: ${{ matrix.test-network == 'solo' && 'solo' || 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json' }}
+      TEST_NETWORK: ${{ matrix.test-network }}
+      MODE: online
     steps:
       - uses: actions/checkout@v4
       
@@ -48,4 +52,4 @@ jobs:
         run: docker compose build
           
       - name: Run e2e tests
-        run: npm run test:e2e
+        run: npm run test:e2e:${{ matrix.test-network }}
