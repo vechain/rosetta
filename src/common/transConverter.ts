@@ -127,7 +127,7 @@ export class TransactionConverter {
                 reward: BigInt(response.reward?.[0][0] ?? '0')
             }
         } catch (error) {
-            console.warn('Error getting dynamic gas price, network catching up:', error);
+            console.warn('Network catching up, returning 0 baseFee and reward:', error);
             return {
                 baseFee: BigInt(0),
                 reward: BigInt(0)
