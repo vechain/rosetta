@@ -7,6 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf ./dist && tsc -p ./",
     "serve": "rm -rf ./dist && tsc -p ./ && node ./dist/app/index.js",
+    "start:solo": "MODE=solo docker-compose up --build",
     "start:main": "NETWORK=main MODE=online docker-compose up --build",
     "start:test": "NETWORK=test MODE=online docker-compose up --build",
     "start:galactica:devnet": "NETWORK=https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json MODE=online THOR_VERSION=master MODE=online docker-compose up --build",

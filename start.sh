@@ -9,6 +9,9 @@ cd /usr/src/app/rosetta
 if [ "$MODE" = "online" ]; then
   echo "Mode is online"
   exec pm2-runtime ./process_online.json
+elif [ "$MODE" = "solo" ]; then
+  echo "Mode is solo"
+  exec pm2-runtime ./process_online_solo.json
 else
   echo "Mode is offline"
   exec pm2-runtime ./process_offline.json
