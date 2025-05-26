@@ -1,12 +1,23 @@
 module.exports = {
+    preset: 'ts-jest',
     testEnvironment: 'node',
-    testMatch: ['**/tests/e2e/**/*.test.ts'],
+    testMatch: [
+        process.env.TEST_NETWORK === 'solo' 
+            ? '**/tests/e2e/**/*.solo.test.ts'
+            : process.env.TEST_NETWORK === 'galactica_devnet'
+                ? '**/tests/e2e/**/*.galactica_devnet.test.ts'
+                : []
+    ],
+    testPathIgnorePatterns: [
+        '/node_modules/'
+    ],
     transform: {
-        '^.+\\.ts$': 'ts-jest',
+        '^.+\\.ts$': ['ts-jest', {
+            tsconfig: 'tsconfig.json'
+        }]
     },
-    moduleFileExtensions: ['ts', 'js', 'json'],
-    setupFilesAfterEnv: ['./tests/e2e/setup.ts'],
-    testTimeout: 30000, // 30 seconds timeout for e2e tests
+    setupFilesAfterEnv: ['<rootDir>/tests/e2e/setup.ts'],
+    testTimeout: 300000, // 5 minutes timeout for e2e tests
     verbose: true,
     maxWorkers: 1, // Execute tests sequentially
 }; 
