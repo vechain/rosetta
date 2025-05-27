@@ -11,8 +11,8 @@ export class Search extends Router {
         super();
         this.env = env;
         this.connex = this.env.connex;
-        this.transConverter = new TransactionConverter(this.env);
         this.verifyMiddleware = new RequestInfoVerifyMiddleware(this.env);
+        this.transConverter = new TransactionConverter(this.env);
         this.post('/search/transactions',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
