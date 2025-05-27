@@ -120,10 +120,21 @@ export class TransactionConverter {
         baseFee: bigint,
         reward: bigint
     }> {
-        const response = await this.connex.thor.fees.history().rewardPercentiles([50]).get();
-        return {
-            baseFee: BigInt(response.baseFeePerGas[0]),
-            reward: BigInt(response.reward?.[0][0] ?? '0')
+        try {
+            const response = await this.connex.thor.fees.history().rewardPercentiles([50]).get();
+            return {
+                baseFee: BigInt(response.baseFeePerGas[0]),
+                reward: BigInt(response.reward?.[0][0] ?? '0')
+            }
+        } catch (error) {
+            // Since the node might be catching up with the chain, the actual last block - the backtrace limit
+            // might be greater than the last block within the Rosetta Thor node, so we return 0 baseFee and reward
+            // since we allow the user to build dynamic fee transactions also in this case
+            console.warn('Network catching up, returning 0 baseFee and reward:', error);
+            return {
+                baseFee: BigInt(0),
+                reward: BigInt(0)
+            }
         }
     }
 

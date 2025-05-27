@@ -15,5 +15,5 @@ services:
       - "11235:11235/udp"
     environment:
       - NETWORK=${NETWORK}
-      - MODE=online
+      - MODE=${MODE}
     restart: unless-stopped 

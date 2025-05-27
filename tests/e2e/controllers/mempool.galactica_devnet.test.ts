@@ -1,11 +1,11 @@
 import { TransactionIdentifier } from '../../../src/common/types/identifiers';
-import { client, galacticaDevnetNetworkIdentifier } from '../setup';
+import { client, networkIdentifier } from '../setup';
 
-describe('Mempool Controller', () => {
+describe('Mempool Controller Galactica Devnet', () => {
     describe('POST /mempool', () => {
         it('should return a list of pending transactions', async () => {
             const response = await client.post('/mempool', {
-                network_identifier: galacticaDevnetNetworkIdentifier
+                network_identifier: networkIdentifier
             });
 
             expect(response).toHaveProperty('transaction_identifiers');
@@ -19,7 +19,7 @@ describe('Mempool Controller', () => {
     describe('POST /mempool/transaction', () => {
         it('should return transaction details for a specific transaction', async () => {
             const mempoolResponse = await client.post('/mempool', {
-                network_identifier: galacticaDevnetNetworkIdentifier
+                network_identifier: networkIdentifier
             });
 
             expect(mempoolResponse.transaction_identifiers).toBeInstanceOf(Array);
@@ -27,7 +27,7 @@ describe('Mempool Controller', () => {
             
             const txHash = mempoolResponse.transaction_identifiers[0].hash;
             const response = await client.post('/mempool/transaction', {
-                network_identifier: galacticaDevnetNetworkIdentifier,
+                network_identifier: networkIdentifier,
                 transaction_identifier: {
                     hash: txHash
                 }
@@ -44,7 +44,7 @@ describe('Mempool Controller', () => {
             let error: Error | undefined;
             try {
                 await client.post('/mempool/transaction', {
-                    network_identifier: galacticaDevnetNetworkIdentifier,
+                    network_identifier: networkIdentifier,
                     transaction_identifier: {
                         hash: '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
                     }

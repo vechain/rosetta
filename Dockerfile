@@ -18,6 +18,7 @@ RUN npm install --ignore-scripts && \
     npm rebuild @pzzh/solc
 
 COPY process_online.json ./
+COPY process_online_solo.json ./
 COPY process_offline.json ./
 COPY tsconfig.json ./
 COPY src/ ./src/
@@ -50,6 +51,7 @@ COPY --from=node-builder /usr/src/app/rosetta/dist ./rosetta/dist
 COPY --from=node-builder /usr/src/app/rosetta/start.sh ./
 COPY --from=node-builder /usr/src/app/rosetta/package*.json ./rosetta/
 COPY --from=node-builder /usr/src/app/rosetta/process_online.json ./rosetta/
+COPY --from=node-builder /usr/src/app/rosetta/process_online_solo.json ./rosetta/
 COPY --from=node-builder /usr/src/app/rosetta/process_offline.json ./rosetta/
 COPY --from=node-builder /usr/src/app/rosetta/node_modules ./rosetta/node_modules
 COPY --from=node-builder /usr/src/app/rosetta/config ./rosetta/config
