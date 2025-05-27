@@ -3,30 +3,131 @@ import { client, networkIdentifier } from '../setup';
 
 const elliptic = new ec('secp256k1');
 
+const createClause = () => ({
+    to: "0x16277a1ff38678291c41d1820957c78bb5da59ce",
+    value: "10000",
+    data: "0x"
+});
+
+const createOperations = () => [
+    {
+        operation_identifier: {
+            index: 0,
+            network_index: 0
+        },
+        type: "Transfer",
+        status: "None",
+        account: {
+            address: "0x16277a1ff38678291c41d1820957c78bb5da59ce"
+        },
+        amount: {
+            value: "10000",
+            currency: {
+                symbol: "VET",
+                decimals: 18
+            },
+            metadata: {}
+        }
+    },
+    {
+        operation_identifier: {
+            index: 0,
+            network_index: 1
+        },
+        type: "Transfer",
+        status: "None",
+        account: {
+            address: "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+        },
+        amount: {
+            value: "-10000",
+            currency: {
+                symbol: "VET",
+                decimals: 18
+            },
+            metadata: {}
+        }
+    },
+    {
+        operation_identifier: {
+            index: 0,
+            network_index: 2
+        },
+        type: "FeeDelegation",
+        status: "None",
+        account: {
+            address: "0x4251630dc820e90a5a6d14d79cac7acb93917983"
+        },
+        amount: {
+            value: "-210000000000000000",
+            currency: {
+                symbol: "VTHO",
+                decimals: 18,
+                metadata: {
+                    contractAddress: "0x0000000000000000000000000000456E65726779"
+                }
+            },
+            metadata: {}
+        }
+    }
+];
+
+const createPublicKey = () => ({
+    hex_bytes: "03e32e5960781ce0b43d8c2952eeea4b95e286b1bb5f8c1f0c9f09983ba7141d2f",
+    curve_type: "secp256k1"
+});
+
+const createRequiredPublicKey = () => ({
+    address: "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+});
+
+const signPayload = (payload: any) => {
+    const privateKey = '99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be829c4fd36';
+    const key = elliptic.keyFromPrivate(privateKey, 'hex');
+    const msgHash = Buffer.from(payload.hex_bytes, 'hex');
+    const signature = key.sign(msgHash);
+    return signature.r.toString('hex') + signature.s.toString('hex') + (signature.recoveryParam ? '01' : '00');
+};
+
+const verifyMempoolTransaction = async (txHash: string) => {
+    const mempoolResponse = await client.post('/mempool', {
+        network_identifier: networkIdentifier
+    });
+
+    expect(mempoolResponse).toHaveProperty('transaction_identifiers');
+    expect(mempoolResponse.transaction_identifiers).toBeInstanceOf(Array);
+    expect(mempoolResponse.transaction_identifiers.length).toBeGreaterThan(0);
+    
+    const txInMempool = mempoolResponse.transaction_identifiers.some(
+        (tx: { hash: string }) => tx.hash === txHash
+    );
+    expect(txInMempool).toBe(true);
+
+    const mempoolTxResponse = await client.post('/mempool/transaction', {
+        network_identifier: networkIdentifier,
+        transaction_identifier: { hash: txHash }
+    });
+
+    expect(mempoolTxResponse).toHaveProperty('transaction');
+    expect(mempoolTxResponse.transaction).toHaveProperty('transaction_identifier');
+    expect(mempoolTxResponse.transaction.transaction_identifier.hash).toBe(txHash);
+};
+
 describe('Construction and Mempool Controller Solo Network', () => {
     describe('Legacy Transactions', () => {
         let legacyMetadataResponse: any;
         let legacyPayloadsResponse: any;
         let legacyCombineResponse: any;
+
         describe('POST /construction/metadata', () => {
             it('should return transaction metadata for solo network', async () => {
                 const response = await client.post('/construction/metadata', {
                     network_identifier: networkIdentifier,
                     options: {
                         transactionType: "legacy",
-                        clauses: [
-                            {
-                                to: "0x16277a1ff38678291c41d1820957c78bb5da59ce",
-                                value: "10000",
-                                data: "0x"
-                            }
-                        ]
+                        clauses: [createClause()]
                     },
-                    required_public_keys: [
-                        {
-                            address: "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
-                        }
-                    ]
+                    required_public_keys: [createRequiredPublicKey()]
                 });
 
                 expect(response).toMatchObject({
@@ -59,75 +160,9 @@ describe('Construction and Mempool Controller Solo Network', () => {
             it('should return signing payloads for solo network', async () => {
                 const response = await client.post('/construction/payloads', {
                     network_identifier: networkIdentifier,
-                    operations: [
-                        {
-                            operation_identifier: {
-                                index: 0,
-                                network_index: 0
-                            },
-                            type: "Transfer",
-                            status: "None",
-                            account: {
-                                address: "0x16277a1ff38678291c41d1820957c78bb5da59ce"
-                            },
-                            amount: {
-                                value: "10000",
-                                currency: {
-                                    symbol: "VET",
-                                    decimals: 18
-                                },
-                                metadata: {}
-                            }
-                        },
-                        {
-                            operation_identifier: {
-                                index: 0,
-                                network_index: 1
-                            },
-                            type: "Transfer",
-                            status: "None",
-                            account: {
-                                address: "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
-                            },
-                            amount: {
-                                value: "-10000",
-                                currency: {
-                                    symbol: "VET",
-                                    decimals: 18
-                                },
-                                metadata: {}
-                            }
-                        },
-                        {
-                            operation_identifier: {
-                                index: 0,
-                                network_index: 2
-                            },
-                            type: "FeeDelegation",
-                            status: "None",
-                            account: {
-                                address: "0x4251630dc820e90a5a6d14d79cac7acb93917983"
-                            },
-                            amount: {
-                                value: "-210000000000000000",
-                                currency: {
-                                    symbol: "VTHO",
-                                    decimals: 18,
-                                    metadata: {
-                                        contractAddress: "0x0000000000000000000000000000456E65726779"
-                                    }
-                                },
-                                metadata: {}
-                            }
-                        }
-                    ],
+                    operations: createOperations(),
                     metadata: legacyMetadataResponse.metadata,
-                    public_keys: [
-                        {
-                            hex_bytes: "03e32e5960781ce0b43d8c2952eeea4b95e286b1bb5f8c1f0c9f09983ba7141d2f",
-                            curve_type: "secp256k1"
-                        }
-                    ]
+                    public_keys: [createPublicKey()]
                 });
 
                 expect(response).toMatchObject({
@@ -147,11 +182,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
 
         describe('POST /construction/combine', () => {
             it('should combine signatures for solo network', async () => {
-                const privateKey = '99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be829c4fd36';
-                const key = elliptic.keyFromPrivate(privateKey, 'hex');
-                const msgHash = Buffer.from(legacyPayloadsResponse.payloads[0].hex_bytes, 'hex');
-                const signature = key.sign(msgHash);
-                const signatureHex = signature.r.toString('hex') + signature.s.toString('hex') + (signature.recoveryParam ? '01' : '00');
+                const signatureHex = signPayload(legacyPayloadsResponse.payloads[0]);
 
                 const response = await client.post('/construction/combine', {
                     network_identifier: networkIdentifier,
@@ -159,10 +190,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
                     signatures: [
                         {
                             signing_payload: legacyPayloadsResponse.payloads[0],
-                            public_key: {
-                                hex_bytes: "03e32e5960781ce0b43d8c2952eeea4b95e286b1bb5f8c1f0c9f09983ba7141d2f",
-                                curve_type: "secp256k1"
-                            },
+                            public_key: createPublicKey(),
                             signature_type: "ecdsa_recovery",
                             hex_bytes: signatureHex
                         }
@@ -190,27 +218,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
                     }
                 });
 
-                const mempoolResponse = await client.post('/mempool', {
-                    network_identifier: networkIdentifier
-                });
-
-                expect(mempoolResponse).toHaveProperty('transaction_identifiers');
-                expect(mempoolResponse.transaction_identifiers).toBeInstanceOf(Array);
-                expect(mempoolResponse.transaction_identifiers.length).toBeGreaterThan(0);
-                
-                const txInMempool = mempoolResponse.transaction_identifiers.some(
-                    (tx: { hash: string }) => tx.hash === response.transaction_identifier.hash
-                );
-                expect(txInMempool).toBe(true);
-
-                const mempoolTxResponse = await client.post('/mempool/transaction', {
-                    network_identifier: networkIdentifier,
-                    transaction_identifier: response.transaction_identifier
-                });
-
-                expect(mempoolTxResponse).toHaveProperty('transaction');
-                expect(mempoolTxResponse.transaction).toHaveProperty('transaction_identifier');
-                expect(mempoolTxResponse.transaction.transaction_identifier.hash).toBe(response.transaction_identifier.hash);
+                await verifyMempoolTransaction(response.transaction_identifier.hash);
             });
         });
     });
@@ -225,19 +233,10 @@ describe('Construction and Mempool Controller Solo Network', () => {
                 const response = await client.post('/construction/metadata', {
                     network_identifier: networkIdentifier,
                     options: {
-                        clauses: [
-                            {
-                                to: "0x16277a1ff38678291c41d1820957c78bb5da59ce",
-                                value: "10000",
-                                data: "0x"
-                            }
-                        ]
+                        transactionType: "dynamic",
+                        clauses: [createClause()]
                     },
-                    required_public_keys: [
-                        {
-                            address: "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
-                        }
-                    ]
+                    required_public_keys: [createRequiredPublicKey()]
                 });
 
                 expect(response).toMatchObject({
@@ -271,72 +270,9 @@ describe('Construction and Mempool Controller Solo Network', () => {
             it('should return signing payloads for dynamic transaction', async () => {
                 const response = await client.post('/construction/payloads', {
                     network_identifier: networkIdentifier,
-                    operations: [
-                        {
-                            operation_identifier: {
-                                index: 0,
-                                network_index: 0
-                            },
-                            type: "Transfer",
-                            status: "None",
-                            account: {
-                                address: "0x16277a1ff38678291c41d1820957c78bb5da59ce"
-                            },
-                            amount: {
-                                value: "10000",
-                                currency: {
-                                    symbol: "VET",
-                                    decimals: 18
-                                },
-                                metadata: {}
-                            }
-                        },
-                        {
-                            operation_identifier: {
-                                index: 0,
-                                network_index: 1
-                            },
-                            type: "Transfer",
-                            status: "None",
-                            account: {
-                                address: "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
-                            },
-                            amount: {
-                                value: "-10000",
-                                currency: {
-                                    symbol: "VET",
-                                    decimals: 18
-                                },
-                                metadata: {}
-                            }
-                        },
-                        {
-                            operation_identifier: {
-                                index: 0,
-                                network_index: 2
-                            },
-                            type: "FeeDelegation",
-                            status: "None",
-                            account: {
-                                address: "0x4251630dc820e90a5a6d14d79cac7acb93917983"
-                            },
-                            amount: {
-                                value: "-210000000000000000",
-                                currency: {
-                                    symbol: "VTHO",
-                                    decimals: 18,
-                                },
-                                metadata: {}
-                            }
-                        }
-                    ],
+                    operations: createOperations(),
                     metadata: dynamicMetadataResponse.metadata,
-                    public_keys: [
-                        {
-                            hex_bytes: "03e32e5960781ce0b43d8c2952eeea4b95e286b1bb5f8c1f0c9f09983ba7141d2f",
-                            curve_type: "secp256k1"
-                        }
-                    ]
+                    public_keys: [createPublicKey()]
                 });
 
                 expect(response).toMatchObject({
@@ -356,11 +292,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
 
         describe('POST /construction/combine', () => {
             it('should combine signatures for dynamic transaction', async () => {
-                const privateKey = '99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be829c4fd36';
-                const key = elliptic.keyFromPrivate(privateKey, 'hex');
-                const msgHash = Buffer.from(dynamicPayloadsResponse.payloads[0].hex_bytes, 'hex');
-                const signature = key.sign(msgHash);
-                const signatureHex = signature.r.toString('hex') + signature.s.toString('hex') + (signature.recoveryParam ? '01' : '00');
+                const signatureHex = signPayload(dynamicPayloadsResponse.payloads[0]);
 
                 const response = await client.post('/construction/combine', {
                     network_identifier: networkIdentifier,
@@ -368,10 +300,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
                     signatures: [
                         {
                             signing_payload: dynamicPayloadsResponse.payloads[0],
-                            public_key: {
-                                hex_bytes: "03e32e5960781ce0b43d8c2952eeea4b95e286b1bb5f8c1f0c9f09983ba7141d2f",
-                                curve_type: "secp256k1"
-                            },
+                            public_key: createPublicKey(),
                             signature_type: "ecdsa_recovery",
                             hex_bytes: signatureHex
                         }
@@ -399,27 +328,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
                     }
                 });
 
-                const mempoolResponse = await client.post('/mempool', {
-                    network_identifier: networkIdentifier
-                });
-
-                expect(mempoolResponse).toHaveProperty('transaction_identifiers');
-                expect(mempoolResponse.transaction_identifiers).toBeInstanceOf(Array);
-                expect(mempoolResponse.transaction_identifiers.length).toBeGreaterThan(0);
-                
-                const txInMempool = mempoolResponse.transaction_identifiers.some(
-                    (tx: { hash: string }) => tx.hash === response.transaction_identifier.hash
-                );
-                expect(txInMempool).toBe(true);
-
-                const mempoolTxResponse = await client.post('/mempool/transaction', {
-                    network_identifier: networkIdentifier,
-                    transaction_identifier: response.transaction_identifier
-                });
-
-                expect(mempoolTxResponse).toHaveProperty('transaction');
-                expect(mempoolTxResponse.transaction).toHaveProperty('transaction_identifier');
-                expect(mempoolTxResponse.transaction.transaction_identifier.hash).toBe(response.transaction_identifier.hash);
+                await verifyMempoolTransaction(response.transaction_identifier.hash);
             });
         });
     });
