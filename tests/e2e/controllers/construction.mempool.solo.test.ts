@@ -3,9 +3,24 @@ import { client, networkIdentifier } from '../setup';
 
 const elliptic = new ec('secp256k1');
 
+const RECIPIENT_ADDRESS = "0x16277a1ff38678291c41d1820957c78bb5da59ce";
+const SENDER_ADDRESS = "0xf077b491b355e64048ce21e3a6fc4751eeea77fa";
+const DELEGATOR_ADDRESS = "0x4251630dc820e90a5a6d14d79cac7acb93917983";
+const VTHO_CONTRACT_ADDRESS = "0x0000000000000000000000000000456e65726779";
+
+const TRANSFER_AMOUNT = "10000";
+const FEE_AMOUNT = "-210000000000000000";
+const GAS_AMOUNT = "36000";
+const GAS_FEE = "-360000000000000000";
+
+const PUBLIC_KEY_HEX = "03e32e5960781ce0b43d8c2952eeea4b95e286b1bb5f8c1f0c9f09983ba7141d2f";
+const PRIVATE_KEY_HEX = '99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be829c4fd36';
+
+const CHAIN_TAG = 246;
+
 const createClause = () => ({
-    to: "0x16277a1ff38678291c41d1820957c78bb5da59ce",
-    value: "10000",
+    to: RECIPIENT_ADDRESS,
+    value: TRANSFER_AMOUNT,
     data: "0x"
 });
 
@@ -18,10 +33,10 @@ const createOperations = () => [
         type: "Transfer",
         status: "None",
         account: {
-            address: "0x16277a1ff38678291c41d1820957c78bb5da59ce"
+            address: RECIPIENT_ADDRESS
         },
         amount: {
-            value: "10000",
+            value: TRANSFER_AMOUNT,
             currency: {
                 symbol: "VET",
                 decimals: 18
@@ -37,10 +52,10 @@ const createOperations = () => [
         type: "Transfer",
         status: "None",
         account: {
-            address: "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+            address: SENDER_ADDRESS
         },
         amount: {
-            value: "-10000",
+            value: `-${TRANSFER_AMOUNT}`,
             currency: {
                 symbol: "VET",
                 decimals: 18
@@ -56,15 +71,15 @@ const createOperations = () => [
         type: "FeeDelegation",
         status: "None",
         account: {
-            address: "0x4251630dc820e90a5a6d14d79cac7acb93917983"
+            address: DELEGATOR_ADDRESS
         },
         amount: {
-            value: "-210000000000000000",
+            value: FEE_AMOUNT,
             currency: {
                 symbol: "VTHO",
                 decimals: 18,
                 metadata: {
-                    contractAddress: "0x0000000000000000000000000000456E65726779"
+                    contractAddress: VTHO_CONTRACT_ADDRESS
                 }
             },
             metadata: {}
@@ -73,17 +88,16 @@ const createOperations = () => [
 ];
 
 const createPublicKey = () => ({
-    hex_bytes: "03e32e5960781ce0b43d8c2952eeea4b95e286b1bb5f8c1f0c9f09983ba7141d2f",
+    hex_bytes: PUBLIC_KEY_HEX,
     curve_type: "secp256k1"
 });
 
 const createRequiredPublicKey = () => ({
-    address: "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+    address: SENDER_ADDRESS
 });
 
 const signPayload = (payload: any) => {
-    const privateKey = '99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be829c4fd36';
-    const key = elliptic.keyFromPrivate(privateKey, 'hex');
+    const key = elliptic.keyFromPrivate(PRIVATE_KEY_HEX, 'hex');
     const msgHash = Buffer.from(payload.hex_bytes, 'hex');
     const signature = key.sign(msgHash);
     return signature.r.toString('hex') + signature.s.toString('hex') + (signature.recoveryParam ? '01' : '00');
@@ -133,19 +147,19 @@ describe('Construction and Mempool Controller Solo Network', () => {
                 expect(response).toMatchObject({
                     metadata: {
                         transactionType: "legacy",
-                        chainTag: 246,
+                        chainTag: CHAIN_TAG,
                         blockRef: expect.any(String),
-                        gas: 36000,
+                        gas: parseInt(GAS_AMOUNT),
                         gasPriceCoef: expect.any(Number)
                     },
                     suggested_fee: [
                         {
-                            value: "-360000000000000000",
+                            value: GAS_FEE,
                             currency: {
                                 symbol: "VTHO",
                                 decimals: 18,
                                 metadata: {
-                                    contractAddress: "0x0000000000000000000000000000456e65726779"
+                                    contractAddress: VTHO_CONTRACT_ADDRESS
                                 }
                             }
                         }
@@ -241,20 +255,20 @@ describe('Construction and Mempool Controller Solo Network', () => {
                 expect(response).toMatchObject({
                     metadata: {
                         transactionType: "dynamic",
-                        chainTag: 246,
+                        chainTag: CHAIN_TAG,
                         blockRef: expect.any(String),
-                        gas: 36000,
+                        gas: parseInt(GAS_AMOUNT),
                         maxFeePerGas: "10000000000000",
                         maxPriorityFeePerGas: "0"
                     },
                     suggested_fee: [
                         {
-                            value: "-360000000000000000",
+                            value: GAS_FEE,
                             currency: {
                                 symbol: "VTHO",
                                 decimals: 18,
                                 metadata: {
-                                    contractAddress: "0x0000000000000000000000000000456e65726779"
+                                    contractAddress: VTHO_CONTRACT_ADDRESS
                                 }
                             }
                         }
