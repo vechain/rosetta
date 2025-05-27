@@ -100,7 +100,10 @@ const signPayload = (payload: any) => {
     const key = elliptic.keyFromPrivate(PRIVATE_KEY_HEX, 'hex');
     const msgHash = Buffer.from(payload.hex_bytes, 'hex');
     const signature = key.sign(msgHash);
-    return signature.r.toString('hex') + signature.s.toString('hex') + (signature.recoveryParam ? '01' : '00');
+    const r = signature.r.toString('hex').padStart(64, '0');
+    const s = signature.s.toString('hex').padStart(64, '0');
+    const v = signature.recoveryParam ? '01' : '00';
+    return r + s + v;
 };
 
 const verifyMempoolTransaction = async (txHash: string) => {
