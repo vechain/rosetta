@@ -233,7 +233,6 @@ describe('Construction and Mempool Controller Solo Network', () => {
                 const response = await client.post('/construction/metadata', {
                     network_identifier: networkIdentifier,
                     options: {
-                        transactionType: "dynamic",
                         clauses: [createClause()]
                     },
                     required_public_keys: [createRequiredPublicKey()]
