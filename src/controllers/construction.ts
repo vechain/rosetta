@@ -318,20 +318,9 @@ export class Construction extends Router {
     }
 
     private async submit(ctx:Router.IRouterContext,next: () => Promise<any>){
-        let rosettaTx;
-        try {
-            if (!this.decodeSignedTransaction(ctx.request.body.signed_transaction)) {
-                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
-                return;
-            }
-            rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
-        } catch (error) {
-            try {
-                rosettaTx = this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
-            } catch (error) {
-                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
-                return;
-            }
+        const rosettaTx = this.decodeSignedRosettaTransaction(ctx.request.body.signed_transaction, ctx);
+        if (!rosettaTx) {
+            return;
         }
 
         let vechainTxBody;
@@ -600,20 +589,9 @@ export class Construction extends Router {
     }
 
     private async hash(ctx:Router.IRouterContext,next: () => Promise<any>) {
-        let rosettaTx;
-        try {
-            if (!this.decodeSignedTransaction(ctx.request.body.signed_transaction)) {
-                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
-                return;
-            }
-            rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
-        } catch (error) {
-            try {
-                rosettaTx = this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.signed_transaction.substring(2),'hex'));
-            } catch (error) {
-                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
-                return;
-            }
+        const rosettaTx = this.decodeSignedRosettaTransaction(ctx.request.body.signed_transaction, ctx);
+        if (!rosettaTx) {
+            return;
         }
 
         const commonBody = {
@@ -1021,4 +999,21 @@ export class Construction extends Router {
         ...this.unsignedDynamicRosettaTxRlp.profile,
         kind: [...this.unsignedDynamicRosettaTxRlp.profile.kind as Array<any>, { name: 'signature', kind: new RLP.BufferKind() }],
     });
+
+    private decodeSignedRosettaTransaction(signedTx: string, ctx: Router.IRouterContext): any {
+        try {
+            if (!this.decodeSignedTransaction(signedTx)) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                return null;
+            }
+            return this.signedDynamicRosettaTxRlp.decode(Buffer.from(signedTx.substring(2), 'hex'));
+        } catch (error) {
+            try {
+                return this.signedLegacyRosettaTxRlp.decode(Buffer.from(signedTx.substring(2), 'hex'));
+            } catch (error) {
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
+                return null;
+            }
+        }
+    }
 }

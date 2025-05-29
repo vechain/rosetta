@@ -59,6 +59,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
     try {
+        const { stdout, stderr } = await execAsync('docker compose logs');
+        console.log(stdout);
+        console.warn(stderr);
         await execAsync('docker compose down');
     } catch (error) {
         console.error('Failed to stop docker compose services:', error);
