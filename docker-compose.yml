@@ -5,6 +5,7 @@ services:
     build:
       context: .
       args:
+        - THOR_REPO=${THOR_REPO}
         - THOR_VERSION=${THOR_VERSION}
     volumes:
       - ./rosetta_data/:/data
