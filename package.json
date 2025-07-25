@@ -10,12 +10,9 @@
     "start:solo": "NETWORK=solo MODE=online docker-compose up --build",
     "start:main": "NETWORK=main MODE=online docker-compose up --build",
     "start:test": "NETWORK=test MODE=online docker-compose up --build",
-    "start:galactica:devnet": "NETWORK=https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json MODE=online THOR_VERSION=master MODE=online docker-compose up --build",
     "stop": "docker-compose down",
     "test:e2e:solo": "TEST_NETWORK=solo jest",
     "test:e2e:solo:watch": "TEST_NETWORK=solo jest --watch",
-    "test:e2e:galactica_devnet": "TEST_NETWORK=galactica_devnet jest",
-    "test:e2e:galactica_devnet:watch": "TEST_NETWORK=galactica_devnet jest --watch",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix"
   },

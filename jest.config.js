@@ -4,9 +4,7 @@ module.exports = {
     testMatch: [
         process.env.TEST_NETWORK === 'solo' 
             ? '**/tests/e2e/**/*.solo.test.ts'
-            : process.env.TEST_NETWORK === 'galactica_devnet'
-                ? '**/tests/e2e/**/*.galactica_devnet.test.ts'
-                : []
+            : []
     ],
     testPathIgnorePatterns: [
         '/node_modules/'
