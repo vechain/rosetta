@@ -65,7 +65,7 @@ class ApiServer {
     private initConfig(){
         this.env.config = config;
         this.env.config.mode = (process.env['MODE'] || 'online') as string;
-        this.env.config.network = (process.env['NETWORK'] || 'main') as string;
+        this.env.config.network = (process.env['NETWORK'] || 'custom') as string;
         this.env.config.nodeApi = (process.env['NODEURL'] || '') as string;
         this.env.config.serviceName = 'VeChain Rosetta API';
         this.env.logger = new Logger(this.env);

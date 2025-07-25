@@ -1,8 +1,8 @@
 {
     "apps": [
       {
-        "name": "VeChainThor Node",
-        "cmd": "/usr/src/app/thor --api-addr 0.0.0.0:8669 --data-dir /data --config-dir /data/config --network $NETWORK --disable-pruner --api-enable-txpool",
+        "name": "VeChainThor Solo Node",
+        "cmd": "/usr/src/app/thor solo --on-demand --api-addr=0.0.0.0:8669 --api-cors=* --gas-limit=10000000000000  --api-enable-txpool --api-call-gas-limit=10000000000000 --txpool-limit=100000000000 --txpool-limit-per-account=256 --cache=1024 --data-dir=/data --verbosity=9 --persist --block-interval=1",
         "autorestart":true,
         "out_file":"/data/logs/thornode.log",
         "error_file":"/data/logs/thornode_error.log"

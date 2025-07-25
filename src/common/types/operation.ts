@@ -17,7 +17,8 @@ export enum OperationType {
     None = 'None',
     Transfer = 'Transfer',
     Fee = 'Fee',
-    FeeDelegation = 'FeeDelegation'
+    FeeDelegation = 'FeeDelegation',
+    Call = 'Call'
 }
 
 export enum OperationStatus {

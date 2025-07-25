@@ -5,9 +5,22 @@ import { TestClient } from './utils/testClient';
 
 const execAsync = promisify(exec);
 
+type NetworkType = 'solo'; // To be extended if more networks are added
+
+const networkConfigs = {
+    solo: {
+        blockchain: 'vechainthor',
+        network: 'solo'
+    }
+};
+
+// Select network configuration based on environment variable
+const selectedNetwork = (process.env.TEST_NETWORK ?? 'solo') as NetworkType;
+const networkIdentifier = networkConfigs[selectedNetwork];
+
 let client: TestClient;
 
-const waitForBaseFee = async (retries = 30, delay = 1000): Promise<void> => {
+const waitForBaseFee = async (retries = 100, delay = 1000): Promise<void> => {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await axios.get('http://127.0.0.1:8669/blocks/best');
@@ -23,12 +36,9 @@ const waitForBaseFee = async (retries = 30, delay = 1000): Promise<void> => {
 };
 
 beforeAll(async () => {
-    // Start docker compose services with Galactica devnet configuration
     try {
-        const network = 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json';
-        const thorVersion = 'master';
-        // Using docker compose instead of docker-compose, change back if needed
-        await execAsync(`NETWORK=${network} THOR_VERSION=${thorVersion} docker compose up -d`);
+        // Start docker compose services with selected network configuration
+        await execAsync(`NETWORK=${networkIdentifier.network} MODE=online docker compose up -d`);
         
         // Wait for services to be ready and baseFee to be available
         await Promise.all([
@@ -45,6 +55,9 @@ beforeAll(async () => {
 
 afterAll(async () => {
     try {
+        const { stdout, stderr } = await execAsync('docker compose logs');
+        console.log(stdout);
+        console.warn(stderr);
         await execAsync('docker compose down');
     } catch (error) {
         console.error('Failed to stop docker compose services:', error);
@@ -52,4 +65,4 @@ afterAll(async () => {
     }
 });
 
-export { client };
+export { client, networkIdentifier };
