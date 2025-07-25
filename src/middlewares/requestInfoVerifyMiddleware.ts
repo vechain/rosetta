@@ -1,8 +1,8 @@
-import * as Router from 'koa-router';
-import * as Joi from 'joi';
-import { ConvertJSONResponeMiddleware } from './convertJSONResponeMiddleware';
+import Joi from 'joi';
+import Router from 'koa-router';
 import { CheckSchema } from '../common/checkSchema';
 import { getError } from '../common/errors';
+import { ConvertJSONResponseMiddleware } from './convertJSONResponseMiddleware';
 
 
 export class RequestInfoVerifyMiddleware{
@@ -13,7 +13,7 @@ export class RequestInfoVerifyMiddleware{
     public async checkNetwork(ctx:any,next:()=>Promise<any>){
         const check = CheckSchema.checkNetworkIdentifier(ctx.request.body.network_identifier);
         if(check.result == false){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(22,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(22,undefined,{
                 error:check.error
             }));
             return;
@@ -24,7 +24,7 @@ export class RequestInfoVerifyMiddleware{
     public async checkModeNetwork(ctx:any,next:()=>Promise<any>){
         if(this.env.config.mode == 'online'){
             if(ctx.request.body.network_identifier.network != this.env.config.network){
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(22,undefined,{
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(22,undefined,{
                     error:`The request network is ${ctx.request.body.network_identifier.network},node network is ${this.env.config.network}`
                 }));
                 return;
@@ -36,7 +36,7 @@ export class RequestInfoVerifyMiddleware{
     public async checkAccount(ctx:any,next:()=>Promise<any>){
         const check = CheckSchema.checkAccountIdentifier(ctx.request.body.account_identifier);
         if(check.result == false){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(23,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(23,undefined,{
                 error:check.error
             }));
             return;
@@ -47,7 +47,7 @@ export class RequestInfoVerifyMiddleware{
     public async checkBlock(ctx:any,next:()=>Promise<any>){
         const check = CheckSchema.checkBlockIdentifier(ctx.request.body.block_identifier);
         if(check.result == false){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(24,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(24,undefined,{
                 error:check.error
             }));
             return;
@@ -58,7 +58,7 @@ export class RequestInfoVerifyMiddleware{
     public async checkTransaction(ctx:any,next:()=>Promise<any>){
         const check = CheckSchema.checkTransactionIdentifier(ctx.request.body.transaction_identifier);
         if(check.result == false){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(25,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(25,undefined,{
                 error:check.error
             }));
             return;
@@ -69,7 +69,7 @@ export class RequestInfoVerifyMiddleware{
     public async checkSignedTransaction(ctx:any,next:()=>Promise<any>){
         const check = CheckSchema.checkSignedTransaction(ctx.request.body.signed_transaction);
         if(check.result == false){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(12,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12,undefined,{
                 error:check.error
             }));
             return;
@@ -79,10 +79,27 @@ export class RequestInfoVerifyMiddleware{
 
     public async checkRunMode(ctx:any,next:()=>Promise<any>){
         if(this.env.config.mode == 'offline'){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(26)); 
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(26)); 
             return;
         }
         await next();
+    }
+
+    public checkTransactionIdentifier(ctx:Router.IRouterContext):boolean{
+        const schema = Joi.object({
+            transaction_identifier:Joi.object({
+                hash:Joi.string().lowercase().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/)
+            })
+        }).unknown(true);
+        const verify = schema.validate(ctx.request.body);
+        if(verify.error == undefined){
+            return true;
+        } else {
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(25,undefined,{
+                error:verify.error
+            }));
+            return false;
+        }
     }
 
 

@@ -4,7 +4,7 @@ import { VTHOCurrency } from "..";
 import { Errors, getError } from "../common/errors";
 import { Allow, ExemptionType } from "../common/types/allow";
 import { OperationStatus, OperationType } from "../common/types/operation";
-import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
+import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
 
@@ -31,7 +31,7 @@ export class Network extends Router {
     }
 
     private async list(ctx:Router.IRouterContext,next: () => Promise<any>){
-        ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+        ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
             network_identifiers:[{
                 blockchain:'vechainthor',
                 network:this.env.config.network
@@ -40,7 +40,7 @@ export class Network extends Router {
         await next();
     }
 
-    private async option(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async option(ctx:Router.IRouterContext,_: () => Promise<any>){
         const versions = {
             rosetta_version:this.env.config.rosetta_version,
             node_version:this.env.config.node_version
@@ -52,16 +52,16 @@ export class Network extends Router {
                 {status:OperationStatus.Reverted,successful:false}
             ],
             operation_types:[OperationType.None,OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation],
-            errors:new Array(),
+            errors:[],
             historical_balance_lookup:true,
-            call_methods:new Array(),
+            call_methods:[],
             balance_exemptions:[{currency: VTHOCurrency, exemption_type: ExemptionType.dynamic}],
             mempool_coins:false
         }
         for(const key of Errors.keys()){
             allow.errors.push(Errors.get(key)!);
         }
-        ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+        ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
             version:versions,
             allow:allow
         });
@@ -90,15 +90,15 @@ export class Network extends Router {
                     stage:'block sync',
                     synced:process == 1 ? true:false
                 },
-                peers:new Array()
+                peers:[] as {peer_id:string}[]
             };
             
             for(const peer of peers){
                 response.peers.push({peer_id:peer.peerID});
             }
-            ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
         } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{
                 error:error
             }))
             return;
@@ -108,7 +108,7 @@ export class Network extends Router {
     }
 
     private async getPeers():Promise<Array<{peerID:string,bestBlockID:string}>>{
-        let result = new Array<{peerID:string,bestBlockID:string}>();
+        const result = new Array<{peerID:string,bestBlockID:string}>();
         try {
             const url = this.env.config.nodeApi + '/node/network/peers';
             const response = await Axios({url:url,method:'Get',responseType:'json'});

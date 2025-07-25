@@ -1,10 +1,10 @@
 import Joi from "joi";
 import Router from "koa-router";
+import { getError } from "../common/errors";
 import { BlockIdentifier } from "../common/types/identifiers";
-import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
+import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
-import { getError } from "../common/errors";
 
 export class Events extends Router {
     constructor(env:any){
@@ -27,7 +27,7 @@ export class Events extends Router {
 
             const bestBlockNum = this.connex.thor.status.head.number;
             if(bestBlockNum < offset){
-                ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+                ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                     max_sequence:bestBlockNum,
                     events:[]
                 })
@@ -49,7 +49,7 @@ export class Events extends Router {
                         break;
                     }
                 }
-                ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,{
+                ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                     max_sequence:bestBlockNum,
                     events:events
                 })
@@ -67,7 +67,7 @@ export class Events extends Router {
         if(verify.error == undefined){
             return true;
         } else {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(21));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(21));
             return false;
         }
     }

@@ -1,10 +1,9 @@
-import path from "path";
 import Axios from "axios";
-import { Logger } from "./utils/logger";
 import Koa from 'koa';
-import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
 import bodyParser from "koa-bodyparser";
 import Router from "koa-router";
+import path from "path";
+import { Currency } from "./common/types/currency";
 import { Account } from "./controllers/account";
 import { Block } from "./controllers/block";
 import { Call } from "./controllers/call";
@@ -13,12 +12,14 @@ import { Events } from "./controllers/events";
 import { Mempool } from "./controllers/mempool";
 import { Network } from "./controllers/network";
 import { Search } from "./controllers/search";
+import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
 import ConnexPro from "./utils/connexPro";
-import { Currency } from "./common/types/currency";
+import { Logger } from "./utils/logger";
 
 process.setMaxListeners(50);
 
 const configPath = path.join(__dirname, "../config/config.json");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const config = require(configPath);
 
 
@@ -64,7 +65,7 @@ class ApiServer {
     private initConfig(){
         this.env.config = config;
         this.env.config.mode = (process.env['MODE'] || 'online') as string;
-        this.env.config.network = (process.env['NETWORK'] || 'main') as string;
+        this.env.config.network = (process.env['NETWORK'] || 'custom') as string;
         this.env.config.nodeApi = (process.env['NODEURL'] || '') as string;
         this.env.config.serviceName = 'VeChain Rosetta API';
         this.env.logger = new Logger(this.env);
@@ -93,11 +94,11 @@ class ApiServer {
             this.env.config.chainTag = connex.chainTag;
             this.env.connex = connex;
             if(connex.network != this.env.config.network){
-                console.error(`The node ${this.env.config.nodeApi} is not ${this.env.config.network} network.`);
+                console.error(`The node ${connex.network} is not ${this.env.config.network} network.`);
                 process.exit();
             }
         } catch (error) {
-            console.error(`Connect vechain node ${this.env.config.nodeApi} failed.`);
+            console.error(`Connect vechain node ${this.env.config.nodeApi} failed.`, error);
             process.exit();
         }
     }

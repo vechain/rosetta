@@ -1,20 +1,20 @@
 import Router from "koa-router";
+import { getError } from "../common/errors";
 import { TransactionConverter } from "../common/transConverter";
 import { BlockIdentifier } from "../common/types/identifiers";
 import { Transaction } from "../common/types/transaction";
-import { ConvertJSONResponeMiddleware } from "../middlewares/convertJSONResponeMiddleware";
+import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
-import { getError } from "../common/errors";
 
 
 export class Block extends Router {
     constructor(env:any){
         super();
         this.env = env;
-        this.connex = this.env.connex;
         this.transConverter = new TransactionConverter(this.env);
         this.verifyMiddleware = new RequestInfoVerifyMiddleware(this.env);
+        this.connex = this.env.connex;
         this.post('/block',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
@@ -41,7 +41,7 @@ export class Block extends Router {
         }
 
         if(revision == undefined){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(24,undefined));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(24,undefined));
             return;
         }
 
@@ -52,10 +52,10 @@ export class Block extends Router {
                 if(block.number == 0){
                     parent = (await this.connex.thor.block(0).get())!;
                 }
-                let trans = new Array<Transaction>();
-                let other_trans = new Array<{hash:string}>();
+                const trans = new Array<Transaction>();
+                const other_trans = new Array<{hash:string}>();
                 for(const txid of block.transactions){
-                    const rosettaTx = await this.transConverter.parseRosettaTransacion(txid);
+                    const rosettaTx = await this.transConverter.parseRosettaTransaction(txid);
                     if(rosettaTx.operations.length > 0){
                         trans.push(rosettaTx);
                     } else {
@@ -85,14 +85,14 @@ export class Block extends Router {
                     },
                     other_transactions:other_trans.length > 0 ? other_trans : undefined
                 }
-                ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+                ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
             } else {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
                     revision:revision
                 }));
             }
         } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,{error}));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{error}));
             return;
         }
         await next();
@@ -109,7 +109,7 @@ export class Block extends Router {
         const txid = ctx.request.body.transaction_identifier.hash;
 
         if(revision == undefined){
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(24,undefined));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(24,undefined));
             return;
         }
 
@@ -118,25 +118,25 @@ export class Block extends Router {
             if(block != null){
                 const txRece = (await this.connex.thor.transaction(txid).getReceipt());
                     if(txRece != null && txRece.meta.blockID.toLowerCase() == block.id.toLowerCase()){
-                    const rosettaTx = await this.transConverter.parseRosettaTransacion(txid);
+                    const rosettaTx = await this.transConverter.parseRosettaTransaction(txid);
                     const response:{transaction:Transaction} = {
                         transaction:rosettaTx
                     }
-                    ConvertJSONResponeMiddleware.BodyDataToJSONResponce(ctx,response);
+                    ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
                 } else {
-                    ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(4,undefined,{
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(4,undefined,{
                         transaction_identifier_hash:txid
                     }));
                     return;
                 }
             } else {
-                ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(3,undefined,{
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
                     block_identifier_hash:revision || ''
                 }));
                 return;
             }
         } catch (error) {
-            ConvertJSONResponeMiddleware.KnowErrorJSONResponce(ctx,getError(500,undefined,error));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,error));
             return;
         }
         await next();

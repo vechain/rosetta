@@ -4,7 +4,7 @@ export class CheckSchema {
     public static checkNetworkIdentifier(networkIdentifier:any):{result:boolean,error:any}{
         const schema = Joi.object({
             blockchain:Joi.string().valid('vechainthor').required(),
-            network:Joi.string().valid('main','test','custom').required(),
+            network:Joi.string().valid('main','test','solo','custom').required(),
             sub_network_identifier:Joi.object({
                 network:Joi.string().required()
             })
@@ -27,7 +27,7 @@ export class CheckSchema {
     public static checkBlockIdentifier(blockIdentifier:any):{result:boolean,error:any}{
         const schema = Joi.object({
             index:Joi.number().min(0),
-            hash:Joi.string().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/)
+            hash:Joi.string().lowercase().regex(/^(?:-0x|0x)?[0-9a-f]{64}$/).required()
         }).or('index','hash');
         const verify = schema.validate(blockIdentifier,{allowUnknown:true});
         return {result:verify.error == undefined,error:verify.error};
@@ -35,7 +35,7 @@ export class CheckSchema {
 
     public static checkTransactionIdentifier(transactionIdentifier:any):{result:boolean,error:any}{
         const schema = Joi.object({
-            hash:Joi.string().lowercase().length(66).regex(/^(-0x|0x)?[0-9a-f]*$/).required()
+            hash:Joi.string().lowercase().regex(/^(?:-0x|0x)?[0-9a-f]{64}$/).required()
         });
         const verify = schema.validate(transactionIdentifier,{allowUnknown:true});
         return {result:verify.error == undefined,error:verify.error};

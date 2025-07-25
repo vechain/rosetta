@@ -1,4 +1,3 @@
-import * as Router from 'koa-router';
 export class URLCodeMiddleware
 {
     public static async URLDecoder(ctx:any,next:()=>Promise<any>){
