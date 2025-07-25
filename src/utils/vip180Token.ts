@@ -3,6 +3,10 @@ import { Contract } from "myvetools";
 import { abi } from "thor-devkit";
 import ConnexPro from "./connexPro";
 
+interface AccountDataResponse {
+    hasCode: boolean;
+}
+
 export class VIP180Token {
     private readonly contract:Contract;
 
@@ -65,7 +69,8 @@ export class VIP180Token {
     public async created(revision?:string):Promise<boolean>{
         const url = this.connex.baseUrl + '/accounts/' + this.contract.address;
         const acc = await Axios({url:url,method:'Get',responseType:'json',params:{revision:revision}});
-        return acc.data.hasCode;
+        const data = acc.data as unknown as AccountDataResponse;
+        return data.hasCode;
     }
 
     public static readonly contractAbi = JSON.parse(`[
