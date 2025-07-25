@@ -8,6 +8,11 @@ import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONRespons
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
 
+interface PeerResponse {
+    peerID: string;
+    bestBlockID: string;
+}
+
 export class Network extends Router {
     constructor(env:any){
         super();
@@ -113,7 +118,8 @@ export class Network extends Router {
             const url = this.env.config.nodeApi + '/node/network/peers';
             const response = await Axios({url:url,method:'Get',responseType:'json'});
             if(response.data != undefined){
-                for(const peer of response.data){
+                const peers = response.data as unknown as PeerResponse[];
+                for(const peer of peers){
                     result.push({peerID:peer.peerID,bestBlockID:peer.bestBlockID});
                 }
             }

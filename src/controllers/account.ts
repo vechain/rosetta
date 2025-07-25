@@ -11,6 +11,11 @@ import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMid
 import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
 
+interface AccountResponse {
+    balance: string;
+    energy: string;
+}
+
 export class Account extends Router {
     constructor(env:any){
         super();
@@ -180,12 +185,13 @@ export class Account extends Router {
         const result = new Array<Amount>();
         const url = this.connex.baseUrl + `/accounts/${account}`;
         const response = await Axios({url:url,method:'Get',responseType:'json',params:{revision:blockid}});
+        const data = response.data as unknown as AccountResponse;
         result.push({
-            value:BigInt(response.data.balance).toString(10),
+            value:BigInt(data.balance).toString(10),
             currency:VETCurrency
         });
         result.push({
-            value:BigInt(response.data.energy).toString(10),
+            value:BigInt(data.energy).toString(10),
             currency:VTHOCurrency
         });
         return result;
