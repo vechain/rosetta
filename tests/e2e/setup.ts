@@ -5,13 +5,9 @@ import { TestClient } from './utils/testClient';
 
 const execAsync = promisify(exec);
 
-type NetworkType = 'galactica_devnet' | 'solo';
+type NetworkType = 'solo'; // To be extended if more networks are added
 
 const networkConfigs = {
-    galactica_devnet: {
-        blockchain: 'vechainthor',
-        network: 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json'
-    },
     solo: {
         blockchain: 'vechainthor',
         network: 'solo'
@@ -19,7 +15,7 @@ const networkConfigs = {
 };
 
 // Select network configuration based on environment variable
-const selectedNetwork = (process.env.TEST_NETWORK ?? 'galactica_devnet') as NetworkType;
+const selectedNetwork = (process.env.TEST_NETWORK ?? 'solo') as NetworkType;
 const networkIdentifier = networkConfigs[selectedNetwork];
 
 let client: TestClient;

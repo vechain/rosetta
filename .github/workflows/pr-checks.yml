@@ -27,9 +27,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-network: [galactica_devnet, solo]
+        test-network: [solo]
     env:
-      NETWORK: ${{ matrix.test-network == 'solo' && 'solo' || 'https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json' }}
+      NETWORK: ${{ matrix.test-network == 'solo' && 'solo' || '' }}
       TEST_NETWORK: ${{ matrix.test-network }}
       MODE: online
     steps:

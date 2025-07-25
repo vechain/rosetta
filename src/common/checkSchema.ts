@@ -4,7 +4,7 @@ export class CheckSchema {
     public static checkNetworkIdentifier(networkIdentifier:any):{result:boolean,error:any}{
         const schema = Joi.object({
             blockchain:Joi.string().valid('vechainthor').required(),
-            network:Joi.string().valid('main','test','solo','custom','https://raw.githubusercontent.com/vechain/thor-galactica/refs/heads/main/artifacts/galactica-genesis.json').required(),
+            network:Joi.string().valid('main','test','solo','custom').required(),
             sub_network_identifier:Joi.object({
                 network:Joi.string().required()
             })
