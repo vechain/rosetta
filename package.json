@@ -41,7 +41,6 @@
     "log4js": "^6.6.1",
     "myvetools": "^1.4.1",
     "npm": "^11.2.0",
-    "request": "^2.88.2",
     "thor-devkit": "^2.1.0"
   },
   "devDependencies": {
@@ -52,7 +51,6 @@
     "@types/koa-bodyparser": "^4.3.7",
     "@types/koa-router": "^7.4.4",
     "@types/log4js": "^2.3.5",
-    "@types/request": "^2.48.8",
     "@types/supertest": "^2.0.12",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
