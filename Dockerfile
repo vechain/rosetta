@@ -2,7 +2,7 @@
 FROM golang:1.24 AS thor-builder
 
 ARG THOR_REPO=https://github.com/vechain/thor.git
-ARG THOR_VERSION=v2.3.1
+ARG THOR_VERSION=v2.4.0
 
 WORKDIR /go/thor
 RUN git clone ${THOR_REPO} . && \
