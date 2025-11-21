@@ -27,7 +27,7 @@ export class CheckSchema {
     public static checkBlockIdentifier(blockIdentifier:any):{result:boolean,error:any}{
         const schema = Joi.object({
             index:Joi.number().min(0),
-            hash:Joi.string().lowercase().regex(/^(?:-0x|0x)?[0-9a-f]{64}$/).required()
+            hash:Joi.string().lowercase().regex(/^(?:-0x|0x)?[0-9a-f]{64}$/)
         }).or('index','hash');
         const verify = schema.validate(blockIdentifier,{allowUnknown:true});
         return {result:verify.error == undefined,error:verify.error};
