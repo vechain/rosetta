@@ -1,5 +1,5 @@
 # Build thor in a stock Go builder container
-FROM golang:1.24 AS thor-builder
+FROM golang:1.25 AS thor-builder
 
 ARG THOR_REPO=https://github.com/vechain/thor.git
 ARG THOR_VERSION=v2.4.0
