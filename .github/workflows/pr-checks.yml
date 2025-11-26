@@ -32,7 +32,7 @@ jobs:
       NETWORK: ${{ matrix.test-network == 'solo' && 'solo' || 'another-network' }}
       TEST_NETWORK: ${{ matrix.test-network }}
       MODE: online
-      THOR_VERSION: v2.3.1
+      THOR_VERSION: v2.4.0
       THOR_REPO: https://github.com/vechain/thor.git
     steps:
       - uses: actions/checkout@v4
