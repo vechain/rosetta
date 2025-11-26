@@ -26,49 +26,42 @@ export class Construction extends Router {
         this.transConverter = new TransactionConverter(this.env);
         this.post('/construction/combine',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
-            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.combine(ctx,next);}
         );
 
         this.post('/construction/derive',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
-            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.derive(ctx,next);}
         );
 
         this.post('/construction/hash',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
-            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.hash(ctx,next);}
         );
 
         this.post('/construction/metadata',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
-            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.metadata(ctx,next);}
         );
 
         this.post('/construction/parse',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
-            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.parse(ctx,next);}
         );
 
         this.post('/construction/payloads',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
-            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.payloads(ctx,next);}
         );
 
         this.post('/construction/preprocess',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
-            async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.preprocess(ctx,next)},
         );
@@ -788,17 +781,17 @@ export class Construction extends Router {
                 gas:Joi.number().min(21000).required(),
                 gasPriceCoef: Joi.when('transactionType', {
                     is: 'legacy',
-                    then: Joi.number().min(0).max(255).required(),
+                    then: Joi.number().min(0).max(255).required(), // NOSONAR
                     otherwise: Joi.forbidden()
                 }),
                 maxFeePerGas: Joi.when('transactionType', {
                     is: 'dynamic',
-                    then: Joi.number().min(this.env.config.initialBaseFee as number).required(),
+                    then: Joi.number().min(this.env.config.initialBaseFee as number).required(), // NOSONAR
                     otherwise: Joi.forbidden()
                 }),
                 maxPriorityFeePerGas: Joi.when('transactionType', {
                     is: 'dynamic',
-                    then: Joi.number().min(0).required(),
+                    then: Joi.number().min(0).required(), // NOSONAR
                     otherwise: Joi.forbidden()
                 }),
                 fee_delegator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
