@@ -1,5 +1,4 @@
 import Axios from "axios";
-import { Contract } from "myvetools";
 import { abi } from "thor-devkit";
 import ConnexPro from "./connexPro";
 
@@ -8,55 +7,65 @@ interface AccountDataResponse {
 }
 
 export class VIP180Token {
-    private readonly contract:Contract;
+    private readonly address: string;
+    private readonly connex: ConnexPro;
 
-    constructor(addr:string,connex:ConnexPro){
-        this.connex = connex ;
-        this.contract = new Contract({abi:VIP180Token.contractAbi,connex:this.connex,address:addr});
+    constructor(addr: string, connex: ConnexPro) {
+        this.connex = connex;
+        this.address = addr;
     }
 
-    public async name():Promise<string>{
-        const call = await this.contract.call('name');
-        return String(call.decoded[0]);
-    }
-
-    public async symbol():Promise<string>{
-        const call = await this.contract.call('symbol');
-        return String(call.decoded[0]);
-    }
-
-    public async decimals():Promise<number>{
-        const call = await this.contract.call('decimals');
-        return Number(call.decoded[0]);
-    }
-
-    public async totalSupply():Promise<bigint>{
-        const call = await this.contract.call('totalSupply');
-        return BigInt(call.decoded[0]);
-    }
-
-    public async balanceOf(owner:string,revision?:string):Promise<bigint>{
-        const balanceOfAbi = (VIP180Token.contractAbi as Array<any>).find( i => {return i.name == 'balanceOf';})
-        const fun = new abi.Function(balanceOfAbi);
-        const data = fun.encode(owner);
+    private async callViewFunction(fName: string, args: any[] = [], revision?: string): Promise<any> {
+        const funAbi = (VIP180Token.contractAbi as Array<any>).find(i => i.name === fName);
+        if (!funAbi) {
+            throw new Error(`Function ${fName} not found in VIP180Token ABI`);
+        }
+        const fun = new abi.Function(funAbi);
+        const data = fun.encode(...args);
         const explainArg = {
-            clauses:[{
-                to:this.contract.address,
-                value:'',
-                data:data
-            }]
+            clauses: [
+                {
+                    to: this.address,
+                    value: "0",
+                    data,
+                },
+            ],
+        };
+        const vmResult = await this.connex.driver.explain(explainArg, revision || "best");
+        if (vmResult[0]?.data && vmResult[0].data !== "0x") {
+            return fun.decode(vmResult[0].data);
         }
-        const vmResult = await this.connex.driver.explain(explainArg,revision || 'best');
-        if(vmResult[0].data != '0x'){
-            const decode = fun.decode(vmResult[0].data);
-            return BigInt(decode[0]);
-        }
-        return BigInt(0);
+        return [];
     }
 
-    public async allowance(owner:string,spender:string):Promise<bigint>{
-        const call = await this.contract.call('allowance',owner,spender);
-        return BigInt(call.decoded[0]);
+    public async name(): Promise<string> {
+        const decoded = await this.callViewFunction("name");
+        return String(decoded[0] ?? "");
+    }
+
+    public async symbol(): Promise<string> {
+        const decoded = await this.callViewFunction("symbol");
+        return String(decoded[0] ?? "");
+    }
+
+    public async decimals(): Promise<number> {
+        const decoded = await this.callViewFunction("decimals");
+        return Number(decoded[0] ?? 0);
+    }
+
+    public async totalSupply(): Promise<bigint> {
+        const decoded = await this.callViewFunction("totalSupply");
+        return decoded.length ? BigInt(decoded[0]) : BigInt(0);
+    }
+
+    public async balanceOf(owner: string, revision?: string): Promise<bigint> {
+        const decoded = await this.callViewFunction("balanceOf", [owner], revision);
+        return decoded.length ? BigInt(decoded[0]) : BigInt(0);
+    }
+
+    public async allowance(owner: string, spender: string): Promise<bigint> {
+        const decoded = await this.callViewFunction("allowance", [owner, spender]);
+        return decoded.length ? BigInt(decoded[0]) : BigInt(0);
     }
 
     public async baseInfo():Promise<{name:string,symbol:string,decimals:number}>{
@@ -67,7 +76,7 @@ export class VIP180Token {
     }
 
     public async created(revision?:string):Promise<boolean>{
-        const url = this.connex.baseUrl + '/accounts/' + this.contract.address;
+        const url = this.connex.baseUrl + '/accounts/' + this.address;
         const acc = await Axios({url:url,method:'Get',responseType:'json',params:{revision:revision}});
         const data = acc.data as unknown as AccountDataResponse;
         return data.hasCode;
@@ -376,7 +385,4 @@ export class VIP180Token {
         const funAbi = new abi.Function((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == fName;}));
         return funAbi.encode(...args);
     }
-    
-    
-    private connex:ConnexPro;
 }
