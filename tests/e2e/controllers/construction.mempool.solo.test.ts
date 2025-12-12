@@ -16,7 +16,8 @@ const GAS_FEE = "-360000000000000000";
 const PUBLIC_KEY_HEX = "03e32e5960781ce0b43d8c2952eeea4b95e286b1bb5f8c1f0c9f09983ba7141d2f";
 const PRIVATE_KEY_HEX = '99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be829c4fd36';
 
-const CHAIN_TAG = 246;
+// Valid solo chain tags: 0xf6 (246) = legacy, 0x58 (88) = Thor v2.4.1+
+const VALID_SOLO_CHAIN_TAGS = [246, 88];
 
 const createClause = () => ({
     to: RECIPIENT_ADDRESS,
@@ -150,7 +151,6 @@ describe('Construction and Mempool Controller Solo Network', () => {
                 expect(response).toMatchObject({
                     metadata: {
                         transactionType: "legacy",
-                        chainTag: CHAIN_TAG,
                         blockRef: expect.any(String),
                         gas: parseInt(GAS_AMOUNT),
                         gasPriceCoef: expect.any(Number)
@@ -168,6 +168,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
                         }
                     ]
                 });
+                expect(VALID_SOLO_CHAIN_TAGS).toContain(response.metadata.chainTag);
 
                 legacyMetadataResponse = response;
             });
@@ -258,7 +259,6 @@ describe('Construction and Mempool Controller Solo Network', () => {
                 expect(response).toMatchObject({
                     metadata: {
                         transactionType: "dynamic",
-                        chainTag: CHAIN_TAG,
                         blockRef: expect.any(String),
                         gas: parseInt(GAS_AMOUNT),
                         maxFeePerGas: "10000000000000",
@@ -277,6 +277,7 @@ describe('Construction and Mempool Controller Solo Network', () => {
                         }
                     ]
                 });
+                expect(VALID_SOLO_CHAIN_TAGS).toContain(response.metadata.chainTag);
 
                 dynamicMetadataResponse = response;
             });
