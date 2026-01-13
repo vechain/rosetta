@@ -13,8 +13,9 @@ export default class ConnexPro extends Framework
             instance._network = 'main';
         } else if(instance._chainTag == 0x27){
             instance._network = 'test';
-        } else if (instance._chainTag == 0xf6 || instance._chainTag == 0x5f){
-            // 0xf6 = legacy solo chain tag, 0x5f = Thor v2.4.1 solo chain tag
+        } else if (instance._chainTag == 0xf6 || instance._chainTag == 0x58){
+            // 0xf6 (246) = Thor v2.4.0 release builds
+            // 0x58 (88) = Thor v2.4.0+ dev builds
             instance._network = 'solo';
         }
         return instance;

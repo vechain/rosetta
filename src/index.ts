@@ -94,13 +94,41 @@ class ApiServer {
             this.env.config.chainTag = connex.chainTag;
             this.env.connex = connex;
             if(connex.network != this.env.config.network){
-                console.error(`The node ${connex.network} is not ${this.env.config.network} network.`);
+                this.logChainTagMismatch(connex.chainTag, connex.network, this.env.config.network);
                 process.exit();
             }
         } catch (error) {
             console.error(`Connect vechain node ${this.env.config.nodeApi} failed.`, error);
             process.exit();
         }
+    }
+
+    private logChainTagMismatch(actualChainTag: number, detectedNetwork: string, expectedNetwork: string) {
+        const networkChainTags: Record<string, string[]> = {
+            'main': ['0x4a (74)'],
+            'test': ['0x27 (39)'],
+            'solo': ['0xf6 (246) - Thor v2.4.0 release', '0x58 (88) - Thor v2.4.0+ dev'],
+            'custom': ['varies']
+        };
+
+        console.error('\n' + '='.repeat(80));
+        console.error('NETWORK CONFIGURATION MISMATCH');
+        console.error('='.repeat(80));
+        console.error(`Expected Network: ${expectedNetwork}`);
+        console.error(`Detected Network: ${detectedNetwork}`);
+        console.error(`Actual ChainTag:  0x${actualChainTag.toString(16)} (${actualChainTag})`);
+        console.error('-'.repeat(80));
+        console.error('Valid ChainTags for each network:');
+        Object.entries(networkChainTags).forEach(([network, tags]) => {
+            console.error(`  ${network.padEnd(10)} => ${tags.join(', ')}`);
+        });
+        console.error('-'.repeat(80));
+        console.error('Possible solutions:');
+        console.error('  1. Set NETWORK environment variable to match the connected node');
+        console.error(`     Example: NETWORK=${detectedNetwork}`);
+        console.error('  2. Connect to a different node that matches the expected network');
+        console.error('  3. Update src/utils/connexPro.ts if using a new Thor version');
+        console.error('='.repeat(80) + '\n');
     }
 
     private runService() {
