@@ -5,8 +5,9 @@ ARG THOR_REPO=https://github.com/vechain/thor.git
 ARG THOR_VERSION=v2.4.0
 
 WORKDIR /go/thor
-RUN git clone --depth 1 --branch ${THOR_VERSION} ${THOR_REPO} . && \
-    make thor
+RUN git clone ${THOR_REPO} . && \
+    git checkout ${THOR_VERSION} && \
+    make all
 
 # Node.js builder stage
 FROM node:18-alpine AS node-builder
@@ -27,7 +28,15 @@ COPY config/ ./config/
 RUN npm run build
 
 # Final stage
-FROM node:18-slim
+FROM ubuntu:24.04
+
+RUN apt-get update && \
+    apt-get --no-install-recommends install -y \
+    ca-certificates \
+    curl \
+    && curl --proto "=https" --tlsv1.2 -sSf -L https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get --no-install-recommends install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -r rosettagroup && \
     useradd -r -g rosettagroup rosettauser && \
@@ -47,6 +56,7 @@ COPY --from=node-builder /usr/src/app/rosetta/process_offline.json ./rosetta/
 COPY --from=node-builder /usr/src/app/rosetta/node_modules ./rosetta/node_modules
 COPY --from=node-builder /usr/src/app/rosetta/config ./rosetta/config
 
+WORKDIR /usr/src/app
 RUN chmod +x start.sh
 
 RUN npm install --ignore-scripts -g pm2
