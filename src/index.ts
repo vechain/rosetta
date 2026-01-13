@@ -107,7 +107,7 @@ class ApiServer {
         const networkChainTags: Record<string, string[]> = {
             'main': ['0x4a (74)'],
             'test': ['0x27 (39)'],
-            'solo': ['0xf6 (246) - legacy', '0x58 (88) - Thor v2.4.0+'],
+            'solo': ['0xf6 (246) - Thor v2.4.0 release', '0x58 (88) - Thor v2.4.0+ dev'],
             'custom': ['varies']
         };
 
