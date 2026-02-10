@@ -72,6 +72,64 @@ services:
     restart: unless-stopped
 ```
 
+## Development & Testing
+
+### Running Tests Locally
+
+The project includes end-to-end tests that verify the Rosetta API implementation:
+
+```shell
+# Install dependencies
+npm ci
+
+# Prepare data directory
+mkdir -p rosetta_data
+chmod -R 777 rosetta_data
+
+# Run e2e tests for solo network
+npm run test:e2e:solo
+```
+
+The tests will automatically:
+1. Build Docker images with the default Thor version
+2. Start a fresh solo network from genesis
+3. Run all test suites
+4. Clean up containers and volumes
+
+### Testing Against a Custom Thor Branch
+
+To test Rosetta against a specific Thor branch or version, use the `THOR_REPO` and `THOR_VERSION` build arguments:
+
+```shell
+# Test against a specific Thor branch
+THOR_REPO=https://github.com/vechain/thor.git \
+THOR_VERSION=your-branch-name \
+docker compose build --no-cache
+
+# Then run tests
+npm run test:e2e:solo
+```
+
+**Note:** Build arguments (`THOR_REPO`, `THOR_VERSION`) must be set **during** `docker compose build`, not when starting containers. They determine which Thor version gets compiled into the image.
+
+### Quick Commands
+
+```shell
+# Start services with default Thor
+npm run start:solo
+
+# Stop services
+npm run stop
+
+# View logs
+docker compose logs -f rosetta-server
+
+# Clean everything and rebuild
+docker compose down -v
+rm -rf ./rosetta_data/*
+docker compose build --no-cache
+```
+
 ## Endpoints
 
 This implementation is meant to cover [this reference](https://docs.cdp.coinbase.com/mesh/docs/api-reference).

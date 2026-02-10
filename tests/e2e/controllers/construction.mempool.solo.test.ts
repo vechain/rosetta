@@ -261,18 +261,19 @@ describe('Construction and Mempool Controller Solo Network', () => {
                     required_public_keys: [createRequiredPublicKey()]
                 });
 
+                // Validate response structure
                 expect(response).toMatchObject({
                     metadata: {
                         transactionType: "dynamic",
                         chainTag: expect.any(Number),
                         blockRef: expect.any(String),
                         gas: parseInt(GAS_AMOUNT),
-                        maxFeePerGas: "10000000000000",
-                        maxPriorityFeePerGas: "0"
+                        maxFeePerGas: expect.any(String),
+                        maxPriorityFeePerGas: expect.any(String)
                     },
                     suggested_fee: [
                         {
-                            value: GAS_FEE,
+                            value: expect.any(String),
                             currency: {
                                 symbol: "VTHO",
                                 decimals: 18,
@@ -286,6 +287,46 @@ describe('Construction and Mempool Controller Solo Network', () => {
 
                 // Verify chainTag is one of the valid solo network values
                 expect(VALID_SOLO_CHAIN_TAGS).toContain(response.metadata.chainTag);
+
+                // Validate dynamic fee values are reasonable
+                // Note: Thor's fee history API returns different values based on blockchain state
+                // (genesis vs established blocks), so we validate ranges instead of exact values
+                const metadata = response.metadata;
+                const suggestedFee = response.suggested_fee[0];
+
+                const maxFeePerGas = BigInt(metadata.maxFeePerGas);
+                const maxPriorityFeePerGas = BigInt(metadata.maxPriorityFeePerGas);
+                const gas = BigInt(metadata.gas);
+                const feeValue = BigInt(suggestedFee.value);
+
+                // maxFeePerGas should be positive
+                expect(maxFeePerGas).toBeGreaterThan(BigInt(0));
+
+                // maxPriorityFeePerGas should be non-negative
+                expect(maxPriorityFeePerGas).toBeGreaterThanOrEqual(BigInt(0));
+
+                // Priority fee should not exceed max fee
+                expect(maxPriorityFeePerGas).toBeLessThanOrEqual(maxFeePerGas);
+
+                // Fees should be within reasonable bounds
+                // Based on config initialBaseFee: 10000000000000 (10 trillion wei)
+                // Reasonable range: 1 trillion to 10 quadrillion
+                const MIN_REASONABLE_FEE = BigInt("1000000000000");      // 1 trillion
+                const MAX_REASONABLE_FEE = BigInt("10000000000000000");  // 10 quadrillion
+
+                expect(maxFeePerGas).toBeGreaterThanOrEqual(MIN_REASONABLE_FEE);
+                expect(maxFeePerGas).toBeLessThanOrEqual(MAX_REASONABLE_FEE);
+
+                // Suggested fee should be negative (represents a cost)
+                expect(feeValue).toBeLessThan(BigInt(0));
+
+                // Suggested fee should be approximately gas * maxFeePerGas
+                // Allow 10% tolerance for calculation differences
+                const expectedFee = -(gas * maxFeePerGas);
+                const tolerance = (gas * maxFeePerGas) / BigInt(10); // Use positive value for tolerance
+
+                expect(feeValue).toBeGreaterThan(expectedFee - tolerance);
+                expect(feeValue).toBeLessThan(expectedFee + tolerance);
 
                 dynamicMetadataResponse = response;
             });
