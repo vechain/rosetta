@@ -93,13 +93,11 @@ beforeAll(async () => {
     } catch (error) {
         console.error('\n❌ Failed to start docker compose services:', error);
         // Show logs on setup failure
-        try {
-            const { stdout, stderr } = await execAsync('docker compose logs');
-            console.log('\n📋 Docker logs:\n', stdout);
-            if (stderr) {
-                console.warn('\n⚠️  Docker stderr:\n', stderr);
-            }
-        } catch {}
+        const { stdout, stderr } = await execAsync('docker compose logs');
+        console.log('\n📋 Docker logs:\n', stdout);
+        if (stderr) {
+            console.warn('\n⚠️  Docker stderr:\n', stderr);
+        }
         throw error;
     }
 });
