@@ -29,7 +29,7 @@
   "dependencies": {
     "@vechain/connex-driver": "^2.2.1",
     "@vechain/connex-framework": "^2.2.1",
-    "axios": "^1.12.0",
+    "axios": "^1.13.5",
     "ethers": "^5.7.2",
     "group-array": "^0.3.4",
     "i": "^0.3.7",
