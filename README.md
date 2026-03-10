@@ -86,13 +86,13 @@ npm ci
 mkdir -p rosetta_data
 chmod -R 777 rosetta_data
 
-# Run e2e tests for solo network
-npm run test:e2e:solo
+# Run e2e tests
+npm run test:e2e:custom
 ```
 
 The tests will automatically:
 1. Build Docker images with the default Thor version
-2. Start a fresh solo network from genesis
+2. Start a fresh solo node from genesis
 3. Run all test suites
 4. Clean up containers and volumes
 
@@ -107,7 +107,7 @@ THOR_VERSION=your-branch-name \
 docker compose build --no-cache
 
 # Then run tests
-npm run test:e2e:solo
+npm run test:e2e:custom
 ```
 
 **Note:** Build arguments (`THOR_REPO`, `THOR_VERSION`) must be set **during** `docker compose build`, not when starting containers. They determine which Thor version gets compiled into the image.
@@ -116,7 +116,7 @@ npm run test:e2e:solo
 
 ```shell
 # Start services with default Thor
-npm run start:solo
+npm run start:custom
 
 # Stop services
 npm run stop

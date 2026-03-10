@@ -8,8 +8,8 @@ cd /usr/src/app/rosetta
 
 if [ "$MODE" = "online" ]; then
   echo "Mode is online"
-  if [ "$NETWORK" = "solo" ]; then
-    echo "Network is solo"
+  if [ "$NETWORK" = "solo" ] || [ "$NETWORK" = "custom" ]; then
+    echo "Network is $NETWORK"
     exec pm2-runtime ./process_online_solo.json
   else
     exec pm2-runtime ./process_online.json

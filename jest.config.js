@@ -2,7 +2,7 @@ module.exports = {
     preset: 'ts-jest',
     testEnvironment: 'node',
     testMatch: [
-        process.env.TEST_NETWORK === 'solo' 
+        (process.env.TEST_NETWORK === 'solo' || process.env.TEST_NETWORK === 'custom')
             ? '**/tests/e2e/**/*.solo.test.ts'
             : []
     ],
