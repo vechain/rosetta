@@ -27,9 +27,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-network: [solo]
+        test-network: [custom]
     env:
-      NETWORK: ${{ matrix.test-network == 'solo' && 'solo' || 'another-network' }}
+      NETWORK: ${{ matrix.test-network }}
       TEST_NETWORK: ${{ matrix.test-network }}
       MODE: online
       THOR_VERSION: v2.4.0

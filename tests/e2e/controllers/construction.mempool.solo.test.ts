@@ -19,7 +19,8 @@ const PRIVATE_KEY_HEX = '99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be
 // Solo network can have different chainTags depending on Thor version
 // 0xf6 (246) = Thor v2.4.0 release builds
 // 0x58 (88) = Thor v2.4.0+ dev builds
-const VALID_SOLO_CHAIN_TAGS = [246, 88];
+// 0x6a (106) = Thor builds with INTERSTELLAR fork (BLS12-381 precompiles change genesis)
+const VALID_SOLO_CHAIN_TAGS = [246, 88, 106];
 
 const createClause = () => ({
     to: RECIPIENT_ADDRESS,

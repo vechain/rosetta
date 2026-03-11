@@ -7,12 +7,18 @@ import { TestClient } from './utils/testClient';
 
 const execAsync = promisify(exec);
 
-type NetworkType = 'solo'; // To be extended if more networks are added
+type NetworkType = 'solo' | 'custom';
 
 const networkConfigs = {
     solo: {
         blockchain: 'vechainthor',
         network: 'solo'
+    },
+    // custom: used when the Thor genesis produces an unrecognised chain tag
+    // The Rosetta server runs thor solo internally but reports network='custom'.
+    custom: {
+        blockchain: 'vechainthor',
+        network: 'custom'
     }
 };
 
