@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "rm -rf ./dist && tsc -p ./",
-    "docker:build": "docker build --pull --rm -f 'Dockerfile' -t 'rosetta:latest' '.'",
+    "docker:build": "docker build --pull --rm -f Dockerfile -t rosetta:latest .",
     "serve": "rm -rf ./dist && tsc -p ./ && node ./dist/app/index.js",
     "start:custom": "NETWORK=custom MODE=online docker compose up --build",
     "start:main": "NETWORK=main MODE=online docker compose up --build",
