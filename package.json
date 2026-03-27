@@ -14,8 +14,8 @@
     "stop": "docker compose down",
     "test:e2e:custom": "TEST_NETWORK=custom jest",
     "test:e2e:custom:watch": "TEST_NETWORK=custom jest --watch",
-    "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix"
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix"
   },
   "repository": {
     "type": "git",
@@ -45,6 +45,8 @@
     "thor-devkit": "^2.2.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
     "@types/elliptic": "^6.4.18",
     "@types/jest": "^30.0.0",
     "@types/joi": "^17.2.3",

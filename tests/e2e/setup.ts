@@ -35,7 +35,7 @@ const waitForBaseFee = async (retries = 100, delay = 1000): Promise<void> => {
             if (response.data.baseFeePerGas !== undefined) {
                 return;
             }
-        } catch (error) {
+        } catch (_error) {
             // Continue with next attempt
         }
         await new Promise(resolve => setTimeout(resolve, delay));

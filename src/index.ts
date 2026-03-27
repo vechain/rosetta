@@ -19,7 +19,6 @@ import { Logger } from "./utils/logger";
 process.setMaxListeners(50);
 
 const configPath = path.join(__dirname, "../config/config.json");
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const config = require(configPath);
 
 
