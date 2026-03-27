@@ -934,7 +934,7 @@ export class Construction extends Router {
     }
 
     private computeAddress(publickey:string):string {
-        if(publickey.substring(2) != '0x'){
+        if (!publickey.startsWith('0x')) {
             publickey = '0x' +  publickey;
         }
         return ethers.computeAddress(publickey).toLowerCase();
