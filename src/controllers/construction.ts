@@ -937,7 +937,7 @@ export class Construction extends Router {
         if(publickey.substring(2) != '0x'){
             publickey = '0x' +  publickey;
         }
-        return ethers.utils.computeAddress(publickey).toLowerCase();
+        return ethers.computeAddress(publickey).toLowerCase();
     }
 
     private gasToVTHO(gas:number, gasPrice:bigint):bigint {
