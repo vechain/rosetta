@@ -20,7 +20,11 @@ export class TestClient {
             return response.data;
         } catch (error: any) {
             if (error.response) {
-                throw new Error(`API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+                const wrappedError = Object.assign(
+                    new Error(`API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`),
+                    { cause: error }
+                );
+                throw wrappedError;
             }
             throw error;
         }
@@ -32,7 +36,11 @@ export class TestClient {
             return response.data;
         } catch (error: any) {
             if (error.response) {
-                throw new Error(`API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+                const wrappedError = Object.assign(
+                    new Error(`API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`),
+                    { cause: error }
+                );
+                throw wrappedError;
             }
             throw error;
         }

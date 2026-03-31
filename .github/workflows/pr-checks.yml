@@ -13,7 +13,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22.18'
           cache: 'npm'
           
       - name: Install dependencies
@@ -32,7 +32,7 @@ jobs:
       NETWORK: ${{ matrix.test-network }}
       TEST_NETWORK: ${{ matrix.test-network }}
       MODE: online
-      THOR_VERSION: v2.4.0
+      THOR_VERSION: v2.4.3
       THOR_REPO: https://github.com/vechain/thor.git
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '22.18'
           cache: 'npm'
           
       - name: Install dependencies

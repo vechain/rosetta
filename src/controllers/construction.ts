@@ -374,10 +374,10 @@ export class Construction extends Router {
                         return;
                     }
                     rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                } catch (error) {
+                } catch (_error) {
                     try {
                         rosettaTx = this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                    } catch (error) {
+                    } catch (_error) {
                         ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
                         return;
                     }
@@ -389,10 +389,10 @@ export class Construction extends Router {
                         return;
                     }
                     rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                } catch (error) {
+                } catch (_error) {
                     try {
                         rosettaTx = this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
-                    } catch (error) {
+                    } catch (_error) {
                         ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
                         return;
                     }
@@ -547,10 +547,10 @@ export class Construction extends Router {
                     return;
                 }
                 rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
-            } catch (error) {
+            } catch (_error) {
                 try {
                     rosettaTx = this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
-                } catch (error) {
+                } catch (_error) {
                     ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
                     return;
                 }
@@ -568,10 +568,10 @@ export class Construction extends Router {
             let encoded;
             try {
                 encoded = this.signedDynamicRosettaTxRlp.encode(rosettaTx);
-            } catch (error) {
+            } catch (_error) {
                 try {
                     encoded = this.signedLegacyRosettaTxRlp.encode(rosettaTx);
-                } catch (error) {
+                } catch (_error) {
                     ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
                     return;
                 }
@@ -934,10 +934,10 @@ export class Construction extends Router {
     }
 
     private computeAddress(publickey:string):string {
-        if(publickey.substring(2) != '0x'){
+        if (!publickey.startsWith('0x')) {
             publickey = '0x' +  publickey;
         }
-        return ethers.utils.computeAddress(publickey).toLowerCase();
+        return ethers.computeAddress(publickey).toLowerCase();
     }
 
     private gasToVTHO(gas:number, gasPrice:bigint):bigint {
@@ -1000,10 +1000,10 @@ export class Construction extends Router {
                 return null;
             }
             return this.signedDynamicRosettaTxRlp.decode(Buffer.from(signedTx.substring(2), 'hex'));
-        } catch (error) {
+        } catch (_error) {
             try {
                 return this.signedLegacyRosettaTxRlp.decode(Buffer.from(signedTx.substring(2), 'hex'));
-            } catch (error) {
+            } catch (_error) {
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
                 return null;
             }

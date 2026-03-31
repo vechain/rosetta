@@ -1,8 +1,8 @@
 # Build thor in a stock Go builder container
-FROM golang:1.25 AS thor-builder
+FROM golang:1.26.1 AS thor-builder
 
 ARG THOR_REPO=https://github.com/vechain/thor.git
-ARG THOR_VERSION=v2.4.0
+ARG THOR_VERSION=v2.4.3
 
 WORKDIR /go/thor
 RUN git clone ${THOR_REPO} . && \
@@ -10,7 +10,7 @@ RUN git clone ${THOR_REPO} . && \
     make all
 
 # Node.js builder stage
-FROM node:18-alpine AS node-builder
+FROM node:22.18-alpine AS node-builder
 
 WORKDIR /usr/src/app/rosetta
 
@@ -24,6 +24,7 @@ COPY tsconfig.json ./
 COPY src/ ./src/
 COPY start.sh ./
 COPY config/ ./config/
+COPY typings/ ./typings/
 
 RUN npm run build
 
@@ -34,7 +35,7 @@ RUN apt-get update && \
     apt-get --no-install-recommends install -y \
     ca-certificates \
     curl \
-    && curl --proto "=https" --tlsv1.2 -sSf -L https://deb.nodesource.com/setup_18.x | bash - \
+    && curl --proto "=https" --tlsv1.2 -sSf -L https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get --no-install-recommends install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
