@@ -1,8 +1,12 @@
 # Build thor in a stock Go builder container
-FROM golang:1.26.1 AS thor-builder
+FROM golang:1.26.5 AS thor-builder
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends git build-essential linux-libc-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 ARG THOR_REPO=https://github.com/vechain/thor.git
-ARG THOR_VERSION=v2.4.3
+ARG THOR_VERSION=v2.5.0
 
 WORKDIR /go/thor
 RUN git clone ${THOR_REPO} . && \

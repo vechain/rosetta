@@ -15,7 +15,7 @@ export class VIP180Token {
         this.address = addr;
     }
 
-    private async callViewFunction(fName: string, args: any[] = [], revision?: string): Promise<any> {
+    private async callViewFunction(fName: string, args: any[] = [], revision?: string): Promise<abi.Decoded> {
         const funAbi = (VIP180Token.contractAbi as Array<any>).find(i => i.name === fName);
         if (!funAbi) {
             throw new Error(`Function ${fName} not found in VIP180Token ABI`);
@@ -35,7 +35,7 @@ export class VIP180Token {
         if (vmResult[0]?.data && vmResult[0].data !== "0x") {
             return fun.decode(vmResult[0].data);
         }
-        return [];
+        return {};
     }
 
     public async name(): Promise<string> {
@@ -55,17 +55,17 @@ export class VIP180Token {
 
     public async totalSupply(): Promise<bigint> {
         const decoded = await this.callViewFunction("totalSupply");
-        return decoded.length ? BigInt(decoded[0]) : BigInt(0);
+        return BigInt(decoded[0] ?? 0);
     }
 
     public async balanceOf(owner: string, revision?: string): Promise<bigint> {
         const decoded = await this.callViewFunction("balanceOf", [owner], revision);
-        return decoded.length ? BigInt(decoded[0]) : BigInt(0);
+        return BigInt(decoded[0] ?? 0);
     }
 
     public async allowance(owner: string, spender: string): Promise<bigint> {
         const decoded = await this.callViewFunction("allowance", [owner, spender]);
-        return decoded.length ? BigInt(decoded[0]) : BigInt(0);
+        return BigInt(decoded[0] ?? 0);
     }
 
     public async baseInfo():Promise<{name:string,symbol:string,decimals:number}>{
