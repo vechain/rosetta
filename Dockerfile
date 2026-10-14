@@ -1,8 +1,10 @@
 # Build thor in a stock Go builder container
-FROM golang:1.26.1 AS thor-builder
+FROM golang:1.26.5-alpine AS thor-builder
+
+RUN apk add --no-cache git build-base linux-headers
 
 ARG THOR_REPO=https://github.com/vechain/thor.git
-ARG THOR_VERSION=v2.4.3
+ARG THOR_VERSION=v2.5.0
 
 WORKDIR /go/thor
 RUN git clone ${THOR_REPO} . && \
