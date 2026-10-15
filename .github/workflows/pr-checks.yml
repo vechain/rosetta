@@ -35,8 +35,6 @@ jobs:
       NETWORK: ${{ matrix.test-network }}
       TEST_NETWORK: ${{ matrix.test-network }}
       MODE: online
-      THOR_VERSION: v2.4.3
-      THOR_REPO: https://github.com/vechain/thor.git
     steps:
       - uses: actions/checkout@v4
       
@@ -59,3 +57,65 @@ jobs:
           
       - name: Run e2e tests
         run: npm run test:e2e:${{ matrix.test-network }}
+  rosetta-cli:
+    runs-on: ubuntu-latest
+    env:
+      NETWORK: custom
+      MODE: online
+      CLI_CONFIG: rosetta-cli-conf/solo/rosetta_cli_config.json
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare volume dir
+        run: |
+          mkdir -p rosetta_data
+          chmod -R 777 rosetta_data
+
+      - name: Build Docker images
+        run: |
+          docker compose build
+          docker build -t rosetta-cli rosetta-cli-conf
+
+      - name: Start Rosetta with thor solo
+        run: |
+          docker compose up -d
+          for i in $(seq 1 120); do
+            if curl -sf -X POST http://localhost:8080/network/status \
+                -H 'Content-Type: application/json' \
+                -d '{"network_identifier":{"blockchain":"vechainthor","network":"custom"}}' > /dev/null; then
+              echo "Rosetta is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Rosetta did not become ready"
+          exit 1
+
+      # Construction first, so that check:data has transactions to reconcile.
+      - name: Run rosetta-cli check:construction
+        run: |
+          docker run --rm --network host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+            rosetta-cli check:construction --configuration-file "$CLI_CONFIG"
+
+      - name: Run rosetta-cli check:data
+        run: |
+          docker run --rm --network host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+            rosetta-cli check:data --configuration-file "$CLI_CONFIG"
+
+      - name: Show Docker logs
+        if: failure()
+        run: docker compose logs --tail=200
+
+      - name: Upload rosetta-cli results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rosetta-cli-results
+          path: |
+            cli-data/solo/construction_results.json
+            cli-data/solo/data_results.json
+          if-no-files-found: ignore
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v

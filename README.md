@@ -130,6 +130,31 @@ rm -rf ./rosetta_data/*
 docker compose build --no-cache
 ```
 
+### rosetta-cli Validation
+
+[rosetta-cli](https://github.com/coinbase/mesh-cli) checks the implementation against the Rosetta spec. `check:construction` builds, signs and broadcasts VET and VTHO transfers; `check:data` syncs the chain and reconciles every balance it sees. Configurations live in `rosetta-cli-conf/` (`solo`, `testnet`, `mainnet`).
+
+To run against thor solo, as CI does:
+
+```shell
+# Start Rosetta with an embedded thor solo node
+mkdir -p rosetta_data && chmod 777 rosetta_data
+NETWORK=custom MODE=online docker compose up -d --build
+
+# Build rosetta-cli for Linux (rosetta-cli-conf/bin/rosetta-cli is a macOS arm64 binary)
+docker build -t rosetta-cli rosetta-cli-conf
+
+# Run construction first, so that check:data has transactions to reconcile
+docker run --rm --network host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+  rosetta-cli check:construction --configuration-file rosetta-cli-conf/solo/rosetta_cli_config.json
+docker run --rm --network host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
+  rosetta-cli check:data --configuration-file rosetta-cli-conf/solo/rosetta_cli_config.json
+```
+
+Results are written to `cli-data/solo/`. Remove that directory before re-running against a fresh chain.
+
+**Note:** VTHO has a `dynamic` balance exemption because it accrues every block, so rosetta-cli does not reconcile VTHO balances. VTHO correctness is covered by the e2e tests in `tests/e2e/controllers/account.solo.test.ts` instead.
+
 ## Endpoints
 
 This implementation is meant to cover [this reference](https://docs.cdp.coinbase.com/mesh/docs/api-reference).

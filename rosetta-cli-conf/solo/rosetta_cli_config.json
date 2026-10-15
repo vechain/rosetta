@@ -1,0 +1,138 @@
+{
+    "network": {
+        "blockchain": "vechainthor",
+        "network": "custom"
+    },
+    "online_url": "http://localhost:8080",
+    "data_directory": "cli-data/solo",
+    "http_timeout": 300,
+    "max_retries": 5,
+    "tip_delay": 60,
+    "log_configuration": false,
+    "construction": {
+        "offline_url": "http://localhost:8080",
+        "stale_depth": 10,
+        "broadcast_limit": 5,
+        "constructor_dsl_file": "vechain.ros",
+        "prefunded_accounts": [
+            {
+                "privkey": "99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be829c4fd36",
+                "account_identifier": {
+                    "address": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+                },
+                "curve_type": "secp256k1",
+                "currency": {
+                    "symbol": "VET",
+                    "decimals": 18
+                }
+            },
+            {
+                "privkey": "99f0500549792796c14fed62011a51081dc5b5e68fe8bd8a13b86be829c4fd36",
+                "account_identifier": {
+                    "address": "0xf077b491b355e64048ce21e3a6fc4751eeea77fa"
+                },
+                "curve_type": "secp256k1",
+                "currency": {
+                    "symbol": "VTHO",
+                    "decimals": 18,
+                    "metadata": {
+                        "contractAddress": "0x0000000000000000000000000000456e65726779"
+                    }
+                }
+            },
+            {
+                "privkey": "7b067f53d350f1cf20ec13df416b7b73e88a1dc7331bc904b92108b1e76a08b1",
+                "account_identifier": {
+                    "address": "0x435933c8064b4ae76be665428e0307ef2ccfbd68"
+                },
+                "curve_type": "secp256k1",
+                "currency": {
+                    "symbol": "VET",
+                    "decimals": 18
+                }
+            },
+            {
+                "privkey": "7b067f53d350f1cf20ec13df416b7b73e88a1dc7331bc904b92108b1e76a08b1",
+                "account_identifier": {
+                    "address": "0x435933c8064b4ae76be665428e0307ef2ccfbd68"
+                },
+                "curve_type": "secp256k1",
+                "currency": {
+                    "symbol": "VTHO",
+                    "decimals": 18,
+                    "metadata": {
+                        "contractAddress": "0x0000000000000000000000000000456e65726779"
+                    }
+                }
+            },
+            {
+                "privkey": "f4a1a17039216f535d42ec23732c79943ffb45a089fbb78a14daad0dae93e991",
+                "account_identifier": {
+                    "address": "0x0f872421dc479f3c11edd89512731814d0598db5"
+                },
+                "curve_type": "secp256k1",
+                "currency": {
+                    "symbol": "VET",
+                    "decimals": 18
+                }
+            },
+            {
+                "privkey": "f4a1a17039216f535d42ec23732c79943ffb45a089fbb78a14daad0dae93e991",
+                "account_identifier": {
+                    "address": "0x0f872421dc479f3c11edd89512731814d0598db5"
+                },
+                "curve_type": "secp256k1",
+                "currency": {
+                    "symbol": "VTHO",
+                    "decimals": 18,
+                    "metadata": {
+                        "contractAddress": "0x0000000000000000000000000000456e65726779"
+                    }
+                }
+            },
+            {
+                "privkey": "35b5cc144faca7d7f220fca7ad3420090861d5231d80eb23e1013426847371c4",
+                "account_identifier": {
+                    "address": "0xf370940abdbd2583bc80bfc19d19bc216c88ccf0"
+                },
+                "curve_type": "secp256k1",
+                "currency": {
+                    "symbol": "VET",
+                    "decimals": 18
+                }
+            },
+            {
+                "privkey": "35b5cc144faca7d7f220fca7ad3420090861d5231d80eb23e1013426847371c4",
+                "account_identifier": {
+                    "address": "0xf370940abdbd2583bc80bfc19d19bc216c88ccf0"
+                },
+                "curve_type": "secp256k1",
+                "currency": {
+                    "symbol": "VTHO",
+                    "decimals": 18,
+                    "metadata": {
+                        "contractAddress": "0x0000000000000000000000000000456e65726779"
+                    }
+                }
+            }
+        ],
+        "end_conditions": {
+            "create_account": 2,
+            "transfer_vet": 3,
+            "transfer_vtho": 3
+        },
+        "results_output_file": "cli-data/solo/construction_results.json"
+    },
+    "data": {
+        "initial_balance_fetch_disabled": false,
+        "active_reconciliation_concurrency": 4,
+        "inactive_reconciliation_concurrency": 4,
+        "inactive_reconciliation_frequency": 5,
+        "log_blocks": false,
+        "log_transactions": false,
+        "end_conditions": {
+            "tip": true
+        },
+        "results_output_file": "cli-data/solo/data_results.json"
+    }
+}

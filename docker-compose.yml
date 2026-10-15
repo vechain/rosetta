@@ -2,9 +2,10 @@ services:
   rosetta-server:
     build:
       context: .
+      # Passed through only when set, so the Dockerfile defaults apply otherwise.
       args:
-        - THOR_REPO=${THOR_REPO}
-        - THOR_VERSION=${THOR_VERSION}
+        - THOR_REPO
+        - THOR_VERSION
     volumes:
       - ./rosetta_data/:/data
     ports:
