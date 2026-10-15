@@ -1,13 +1,17 @@
+import type Koa from "koa";
 import Router from "koa-router";
 import { getError } from "../common/errors";
 import { TransactionConverter } from '../common/transConverter';
+import { RequestContext } from "../common/types/context";
+import { Env } from "../common/types/env";
 import { BlockIdentifier } from "../common/types/identifiers";
+import { TransactionIdentifierRequest } from "../common/types/requests";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
 
 export class Search extends Router {
-    constructor(env:any){
+    constructor(env:Env){
         super();
         this.env = env;
         this.connex = this.env.connex;
@@ -17,13 +21,13 @@ export class Search extends Router {
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.transactions(ctx,next);}
+            async (ctx,next) => { await this.transactions(ctx as RequestContext<TransactionIdentifierRequest>,next);}
         );
     }
 
-    private async transactions(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async transactions(ctx:RequestContext<TransactionIdentifierRequest>,next:Koa.Next){
         if(this.verifyMiddleware.checkTransactionIdentifier(ctx)){
-            const txid = ctx.request.body.transaction_identifier.hash as string;
+            const txid = ctx.request.body.transaction_identifier.hash;
             const tx = await this.connex.thor.transaction(txid).get();
             const txRecp = await this.connex.thor.transaction(txid).getReceipt();
             if(tx != undefined){
@@ -31,7 +35,7 @@ export class Search extends Router {
                     index:tx.meta.blockNumber,
                     hash:tx.meta.blockID
                 }
-                const operations = this.transConverter.convertClausesToOperations(tx,txRecp);
+                const operations = await this.transConverter.convertClausesToOperations(tx,txRecp);
                 ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                     transactions:[
                         {
@@ -54,7 +58,7 @@ export class Search extends Router {
         await next();
     }
 
-    private env:any;
+    private env:Env;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
     private readonly transConverter:TransactionConverter;

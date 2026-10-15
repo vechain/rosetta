@@ -3,7 +3,7 @@ import Koa from 'koa';
 import bodyParser from "koa-bodyparser";
 import Router from "koa-router";
 import path from "path";
-import { Currency } from "./common/types/currency";
+import { Currency, TokenCurrency } from "./common/types/currency";
 import { Account } from "./controllers/account";
 import { Block } from "./controllers/block";
 import { Call } from "./controllers/call";
@@ -28,7 +28,7 @@ export const VETCurrency:Currency = {
     metadata:{}
 }
 
-export const VTHOCurrency:Currency = {
+export const VTHOCurrency:TokenCurrency = {
     symbol:'VTHO',
     decimals:18,
     metadata:{
@@ -71,7 +71,7 @@ class ApiServer {
     }
 
     private initTokenList() {
-        this.env.config.tokenlist = new Array<Currency>();
+        this.env.config.tokenlist = new Array<TokenCurrency>();
         this.env.config.tokenlist.push(VTHOCurrency);
         // const tokenListConfig = (process.env['TOKENLIST'] ||  path.join(__dirname,'../config/tokelist.json')) as string;
         // if(FileIO.existsSync(tokenListConfig)){

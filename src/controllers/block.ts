@@ -1,7 +1,11 @@
+import type Koa from "koa";
 import Router from "koa-router";
 import { getError } from "../common/errors";
 import { TransactionConverter } from "../common/transConverter";
+import { RequestContext } from "../common/types/context";
+import { Env } from "../common/types/env";
 import { BlockIdentifier } from "../common/types/identifiers";
+import { BlockRequest, BlockTransactionRequest } from "../common/types/requests";
 import { Transaction } from "../common/types/transaction";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
@@ -9,7 +13,7 @@ import ConnexPro from "../utils/connexPro";
 
 
 export class Block extends Router {
-    constructor(env:any){
+    constructor(env:Env){
         super();
         this.env = env;
         this.transConverter = new TransactionConverter(this.env);
@@ -20,7 +24,7 @@ export class Block extends Router {
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkBlock(ctx,next);},
-            async (ctx,next) => { await this.block(ctx,next)}
+            async (ctx,next) => { await this.block(ctx as RequestContext<BlockRequest>,next)}
         );
         this.post('/block/transaction',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
@@ -28,11 +32,11 @@ export class Block extends Router {
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkBlock(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkTransaction(ctx,next);},
-            async (ctx,next) => { await this.blockTransaction(ctx,next)}
+            async (ctx,next) => { await this.blockTransaction(ctx as RequestContext<BlockTransactionRequest>,next)}
         );
     }
 
-    private async block(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async block(ctx:RequestContext<BlockRequest>,next:Koa.Next){
         let revision = undefined;
         if(ctx.request.body.block_identifier?.index != undefined){
             revision = ctx.request.body.block_identifier.index;
@@ -98,7 +102,7 @@ export class Block extends Router {
         await next();
     }
 
-    private async blockTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async blockTransaction(ctx:RequestContext<BlockTransactionRequest>,next:Koa.Next){
         let revision = undefined;
         if(ctx.request.body.block_identifier?.hash != undefined){
             revision = ctx.request.body.block_identifier.hash;
@@ -131,7 +135,7 @@ export class Block extends Router {
                 }
             } else {
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
-                    block_identifier_hash:revision || ''
+                    block_identifier_hash:revision
                 }));
                 return;
             }
@@ -142,7 +146,7 @@ export class Block extends Router {
         await next();
     }
 
-    private env:any;
+    private env:Env;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
     private transConverter:TransactionConverter;

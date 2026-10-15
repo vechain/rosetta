@@ -1,20 +1,24 @@
 import axios from 'axios';
 import Joi from 'joi';
+import type Koa from 'koa';
 import Router from "koa-router";
 import { getError } from '../common/errors';
 import { TransactionConverter } from '../common/transConverter';
+import { RequestContext } from '../common/types/context';
+import { Env } from '../common/types/env';
+import { MempoolRequest, TransactionIdentifierRequest } from '../common/types/requests';
 import { ConvertJSONResponseMiddleware } from '../middlewares/convertJSONResponseMiddleware';
 import { RequestInfoVerifyMiddleware } from '../middlewares/requestInfoVerifyMiddleware';
 import ConnexPro from '../utils/connexPro';
 
 
 export class Mempool extends Router {
-    private readonly env:any;
+    private readonly env:Env;
     private readonly connex:ConnexPro;
     private readonly verifyMiddleware:RequestInfoVerifyMiddleware;
     private readonly transConverter:TransactionConverter;
 
-    constructor(env:any){
+    constructor(env:Env){
         super();
         this.env = env;
         this.connex = this.env.connex;
@@ -24,13 +28,13 @@ export class Mempool extends Router {
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.getTxPoolTransactions(ctx,next);}
+            async (ctx,next) => { await this.getTxPoolTransactions(ctx as RequestContext<MempoolRequest>,next);}
         );
         this.post('/mempool/transaction', 
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.getTxPoolTransaction(ctx,next);}
+            async (ctx,next) => { await this.getTxPoolTransaction(ctx as RequestContext<TransactionIdentifierRequest>,next);}
         );
     }
 
@@ -41,13 +45,11 @@ export class Mempool extends Router {
         const originQuery = origin ? `${originParam}origin=${origin}` : '';
         const url = `${baseUrl}${expandedParam}${originQuery}`;
         
-        const response = await axios.get(url);
-        const transactions = expanded ? response.data as Connex.Thor.Transaction[] : response.data as string[];
-
-        return transactions;
+        const response = await axios.get<Connex.Thor.Transaction[] | string[]>(url);
+        return response.data;
     }
 
-    private checkMetadata(ctx:Router.IRouterContext):boolean{
+    private checkMetadata(ctx:RequestContext<unknown>):boolean{
         const schema = Joi.object({
             metadata: Joi.object({
                 origin: Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
@@ -64,7 +66,7 @@ export class Mempool extends Router {
         }
     }
 
-    private async getTxPoolTransactions(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async getTxPoolTransactions(ctx:RequestContext<MempoolRequest>,next:Koa.Next){
         if(this.checkMetadata(ctx)){
             const txPool = await this.getTransactions(ctx.request.body.metadata?.origin) as string[];
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
@@ -78,7 +80,7 @@ export class Mempool extends Router {
         await next();
     }
 
-    private async getTxPoolTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async getTxPoolTransaction(ctx:RequestContext<TransactionIdentifierRequest>,next:Koa.Next){
         if(this.verifyMiddleware.checkTransactionIdentifier(ctx)){
             const txPool = await this.getTransactions(undefined,true) as Connex.Thor.Transaction[];
             const tx = txPool.find((tx) => {

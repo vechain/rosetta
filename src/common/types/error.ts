@@ -3,5 +3,5 @@ export type RosettaError = {
     message:string,
     description?:string,
     retriable:boolean,
-    details?:any
+    details?:unknown
 }

@@ -4,13 +4,14 @@ import { Transaction } from "../common/types/transaction";
 import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
 import { CheckSchema } from './checkSchema';
-import { Currency } from "./types/currency";
+import { TokenCurrency } from "./types/currency";
+import { Env } from "./types/env";
 import { OperationIdentifier } from "./types/identifiers";
 import { Operation, OperationStatus, OperationType } from "./types/operation";
 
 export class TransactionConverter {
 
-    public constructor(env:any){
+    public constructor(env:Env){
         this.env = env;
         this.connex = this.env.connex;
         this.tokenList = this.env.config.tokenlist;
@@ -63,7 +64,7 @@ export class TransactionConverter {
         };
     }
 
-    private createTransferOperations(origin: string, clause: VeTransaction.Clause, index: number, token: Currency): Operation[] {
+    private createTransferOperations(origin: string, clause: VeTransaction.Clause, index: number, token: TokenCurrency): Operation[] {
         const decode = VIP180Token.decodeCallData(clause.data, 'transfer');
         const sendOp: Operation = {
             operation_identifier: this.createOperationIdentifier(0, index),
@@ -72,7 +73,7 @@ export class TransactionConverter {
                 address: origin
             },
             amount: {
-                value: (BigInt(decode._amount) * BigInt(-1)).toString(10),
+                value: (BigInt(decode._amount as string) * BigInt(-1)).toString(10),
                 currency: token
             }
         };
@@ -83,7 +84,7 @@ export class TransactionConverter {
                 address: decode._to as string
             },
             amount: {
-                value: BigInt(decode._amount).toString(10),
+                value: BigInt(decode._amount as string).toString(10),
                 currency: token
             }
         };
@@ -165,9 +166,9 @@ export class TransactionConverter {
     private async processClause(clause: VeTransaction.Clause, index: number, origin: string): Promise<Operation[]> {
         if (clause.value == 0 || clause.value == '') {
             const token = this.tokenList.find(t => t.metadata.contractAddress == clause.to);
-            if (token == undefined || clause.data.substring(10) != '0xa9059cbb') {
+            if (token == undefined || clause.data.substring(0,10) != '0xa9059cbb') {
                 const code = await this.connex.driver.getCode(clause.to as string, this.connex.thor.status.head.id);
-                if (code && code.code !== '0x') {
+                if (code.code !== '0x') {
                     return [this.createCallOperation(origin, clause, index)];
                 }
                 return [];
@@ -244,7 +245,7 @@ export class TransactionConverter {
            for(const ev of rece.outputs[clauseIndex].events){
                 const targetToken = this.tokenList.find( token => { return token.metadata.contractAddress.toLowerCase() == ev.address.toLowerCase()});
                 if(targetToken != undefined){
-                    const transEvents = VIP180Token.filterEvents([ev],targetToken.metadata.contractAddress,'Transfer');
+                    const transEvents = VIP180Token.filterEvents([ev],ev.address,'Transfer');
                     if(transEvents.length == 1){
                         const transEvet = transEvents[0];
                         const sendOper:Operation = {
@@ -330,7 +331,7 @@ export class TransactionConverter {
         }
     }
 
-    private env:any;
+    private env:Env;
     private connex:ConnexPro;
-    private tokenList:Array<Currency> = [];
+    private tokenList:Array<TokenCurrency> = [];
 }

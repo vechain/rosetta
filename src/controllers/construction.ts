@@ -2,22 +2,51 @@ import axios from "axios";
 import { randomBytes } from "crypto";
 import { ethers } from "ethers";
 import Joi from "joi";
+import type Koa from "koa";
 import Router from "koa-router";
 import { RLP, Transaction as VeTransaction } from "thor-devkit";
 import { VETCurrency, VTHOCurrency } from "..";
 import { CheckSchema } from "../common/checkSchema";
 import { getError } from "../common/errors";
 import { TransactionConverter } from "../common/transConverter";
-import { Currency } from "../common/types/currency";
+import { RequestContext, ResponseContext } from "../common/types/context";
+import { TokenCurrency } from "../common/types/currency";
+import { Env } from "../common/types/env";
 import { Operation, OperationType } from "../common/types/operation";
+import {
+    ConstructionCombineRequest,
+    ConstructionDeriveRequest,
+    ConstructionMetadataRequest,
+    ConstructionOperation,
+    ConstructionParseRequest,
+    ConstructionPayloadsRequest,
+    ConstructionPreprocessRequest,
+    SignedTransactionRequest
+} from "../common/types/requests";
 import { CurveType, SignatureType } from "../common/types/signature";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
 
+/** A rosetta transaction as encoded by the RLP profiles below. */
+type RosettaTxBody = {
+    chainTag:number,
+    blockRef:string,
+    expiration:number,
+    clauses:Array<VeTransaction.Clause>,
+    gas:string|number,
+    nonce:string|null,
+    origin:string|null|undefined,
+    delegator:string|null|undefined,
+    gasPriceCoef?:number,
+    maxFeePerGas?:string|number,
+    maxPriorityFeePerGas?:string|number,
+    signature?:Buffer
+}
+
 export class Construction extends Router {
-    constructor(env:any){
+    constructor(env:Env){
         super();
         this.env = env;
         this.connex = this.env.connex;
@@ -27,54 +56,54 @@ export class Construction extends Router {
         this.post('/construction/combine',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.combine(ctx,next);}
+            async (ctx,next) => { await this.combine(ctx as RequestContext<ConstructionCombineRequest>,next);}
         );
 
         this.post('/construction/derive',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.derive(ctx,next);}
+            async (ctx,next) => { await this.derive(ctx as RequestContext<ConstructionDeriveRequest>,next);}
         );
 
         this.post('/construction/hash',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.hash(ctx,next);}
+            async (ctx,next) => { await this.hash(ctx as RequestContext<SignedTransactionRequest>,next);}
         );
 
         this.post('/construction/metadata',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.metadata(ctx,next);}
+            async (ctx,next) => { await this.metadata(ctx as RequestContext<ConstructionMetadataRequest>,next);}
         );
 
         this.post('/construction/parse',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.parse(ctx,next);}
+            async (ctx,next) => { await this.parse(ctx as RequestContext<ConstructionParseRequest>,next);}
         );
 
         this.post('/construction/payloads',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.payloads(ctx,next);}
+            async (ctx,next) => { await this.payloads(ctx as RequestContext<ConstructionPayloadsRequest>,next);}
         );
 
         this.post('/construction/preprocess',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.preprocess(ctx,next)},
+            async (ctx,next) => { await this.preprocess(ctx as RequestContext<ConstructionPreprocessRequest>,next)},
         );
 
         this.post('/construction/submit',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.submit(ctx,next);}
+            async (ctx,next) => { await this.submit(ctx as RequestContext<SignedTransactionRequest>,next);}
         );
     }
 
-    private async derive(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async derive(ctx:RequestContext<ConstructionDeriveRequest>,next:Koa.Next){
         const schema = Joi.object({
             public_key:Joi.object({
                 hex_bytes:Joi.string().lowercase().length(66).regex(/^[0-9a-f]*$/).required(),
@@ -95,8 +124,8 @@ export class Construction extends Router {
         await next();
     }
 
-    private async preprocess(ctx:Router.IRouterContext,next: () => Promise<any>){
-        const requestVerify = this.checkPreprocessRequest(ctx);
+    private async preprocess(ctx:RequestContext<ConstructionPreprocessRequest>,next:Koa.Next){
+        const requestVerify = this.checkOperations(ctx,14);
         if(requestVerify){
             const origins = this.getTxOrigins(ctx.request.body.operations);
             const delegator = ctx.request.body.metadata?.fee_delegator_account;
@@ -144,7 +173,7 @@ export class Construction extends Router {
         await next();
     }
 
-    private async metadata(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async metadata(ctx:RequestContext<ConstructionMetadataRequest>,next:Koa.Next){
         if(this.checkOptions(ctx)){
             try {
                 const transactionType = ctx.request.body.options.transactionType;
@@ -173,7 +202,14 @@ export class Construction extends Router {
                         }
                     }
                 }
-                let gas = await this.estimateGasLocal((ctx.request.body.options.clauses as VeTransaction.Clause[]));
+                const clauses = ctx.request.body.options.clauses;
+                if (clauses === undefined) {
+                    ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(15,undefined,{
+                        error:'options.clauses is required'
+                    }));
+                    return;
+                }
+                let gas = await this.estimateGasLocal(clauses);
                 gas = Math.ceil(gas * 1.2);
                 const fee = this.gasToVTHO(gas,gasPrice);
                 const blockRef = this.connex.blockRef;
@@ -201,8 +237,8 @@ export class Construction extends Router {
         await next();
     }
 
-    private async payloads(ctx:Router.IRouterContext,next:() => Promise<any>){
-        if(this.checkOptions(ctx) && this.checkPublickeys(ctx) && this.checkMetadata(ctx)){
+    private async payloads(ctx:RequestContext<ConstructionPayloadsRequest>,next:Koa.Next){
+        if(this.checkOperations(ctx,18) && this.checkOptions(ctx) && this.checkPublickeys(ctx) && this.checkMetadata(ctx)){
             let txOrigin;
             const txDelegator = ctx.request.body.metadata.fee_delegator_account;
             if(ctx.request.body.public_keys.length > 2){
@@ -310,7 +346,7 @@ export class Construction extends Router {
         await next();
     }
 
-    private async submit(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async submit(ctx:RequestContext<SignedTransactionRequest>,next:Koa.Next){
         const rosettaTx = this.decodeSignedRosettaTransaction(ctx.request.body.signed_transaction, ctx);
         if (!rosettaTx) {
             return;
@@ -350,33 +386,34 @@ export class Construction extends Router {
 
         const raw = '0x' + vechainTx.encode().toString('hex');
         try {
-            const response = await axios.post(this.connex.baseUrl + '/transactions',{raw:raw},{responseType:'json'});
+            const response = await axios.post<{id:string}>(this.connex.baseUrl + '/transactions',{raw:raw},{responseType:'json'});
             const txid = response.data.id;
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction_identifier:{
                     hash:txid
                 }
             });
-        } catch (error:any) {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(13,undefined,{status:error.response.status,error:error.response.data.trim(),raw:raw}));
+        } catch (error) {
+            const response = axios.isAxiosError<string>(error) ? error.response : undefined;
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(13,undefined,{status:response?.status,error:response?.data?.trim(),raw:raw}));
             return;
         }
         await next();
     }
 
-    private async parse(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async parse(ctx:RequestContext<ConstructionParseRequest>,next:Koa.Next){
         if(this.checkParseRequest(ctx)){
-            let rosettaTx;
+            let rosettaTx:RosettaTxBody;
             if(ctx.request.body.signed == true){
                 try {
                     if (!this.decodeSignedTransaction(ctx.request.body.transaction)) {
                         ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
                         return;
                     }
-                    rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                    rosettaTx = this.signedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex')) as RosettaTxBody;
                 } catch (_error) {
                     try {
-                        rosettaTx = this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                        rosettaTx = this.signedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex')) as RosettaTxBody;
                     } catch (_error) {
                         ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
                         return;
@@ -388,10 +425,10 @@ export class Construction extends Router {
                         ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
                         return;
                     }
-                    rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                    rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex')) as RosettaTxBody;
                 } catch (_error) {
                     try {
-                        rosettaTx = this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex'));
+                        rosettaTx = this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.transaction.substring(2),'hex')) as RosettaTxBody;
                     } catch (_error) {
                         ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
                         return;
@@ -402,7 +439,7 @@ export class Construction extends Router {
             const delegator = rosettaTx.delegator as string
             let operations = new Array<Operation>();
             for(let index = 0; index < rosettaTx.clauses.length; index++){
-                const clause = rosettaTx.clauses[index] as VeTransaction.Clause;
+                const clause = rosettaTx.clauses[index];
                 if(clause.value == 0 || clause.value == ''){
                     const decode = VIP180Token.decodeCallData(clause.data,'transfer');
                     const token = this.tokenList.find( t => {return t.metadata.contractAddress.toLowerCase() == clause.to!.toLocaleLowerCase();})!;
@@ -416,7 +453,7 @@ export class Construction extends Router {
                             address:txOrigin
                         },
                         amount:{
-                            value:(BigInt(decode._amount) * BigInt(-1)).toString(10),
+                            value:(BigInt(decode._amount as string) * BigInt(-1)).toString(10),
                             currency:token
                         }
                     }
@@ -430,7 +467,7 @@ export class Construction extends Router {
                             address:decode._to as string
                         },
                         amount:{
-                            value:BigInt(decode._amount).toString(10),
+                            value:BigInt(decode._amount as string).toString(10),
                             currency:token
                         }
                     }
@@ -538,25 +575,31 @@ export class Construction extends Router {
         await next();
     }
 
-    private async combine(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async combine(ctx:RequestContext<ConstructionCombineRequest>,next:Koa.Next){
         if(this.checkCombineRequest(ctx)){
-            let rosettaTx: any;
+            let rosettaTx: RosettaTxBody;
             try {
                 if (!this.decodeUnsignedTransaction(ctx.request.body.unsigned_transaction)) {
                     ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
                     return;
                 }
-                rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
+                rosettaTx = this.unsignedDynamicRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex')) as RosettaTxBody;
             } catch (_error) {
                 try {
-                    rosettaTx = this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex'));
+                    rosettaTx = this.unsignedLegacyRosettaTxRlp.decode(Buffer.from(ctx.request.body.unsigned_transaction.substring(2),'hex')) as RosettaTxBody;
                 } catch (_error) {
                     ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(19));
                     return;
                 }
             }
-            const originPayload = (ctx.request.body.signatures as Array<any>).find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.origin || '').toLowerCase()});
-            const delegatorPayload = (ctx.request.body.signatures as Array<any>).find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.delegator || '').toLowerCase()});
+            const originPayload = ctx.request.body.signatures.find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.origin || '').toLowerCase()});
+            const delegatorPayload = ctx.request.body.signatures.find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.delegator || '').toLowerCase()});
+            if(originPayload == undefined){
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(20,undefined,{
+                    error:'No signature found for the transaction origin'
+                }));
+                return;
+            }
             if(delegatorPayload != undefined){
                 rosettaTx.signature = Buffer.concat([
                     Uint8Array.from(Buffer.from(originPayload.hex_bytes,'hex')),
@@ -581,7 +624,7 @@ export class Construction extends Router {
         await next();
     }
 
-    private async hash(ctx:Router.IRouterContext,next: () => Promise<any>) {
+    private async hash(ctx:RequestContext<SignedTransactionRequest>,next:Koa.Next) {
         const rosettaTx = this.decodeSignedRosettaTransaction(ctx.request.body.signed_transaction, ctx);
         if (!rosettaTx) {
             return;
@@ -627,7 +670,7 @@ export class Construction extends Router {
         await next();
     }
 
-    private checkPreprocessRequest(ctx: Router.IRouterContext):boolean {
+    private checkOperations(ctx:RequestContext<{operations?:unknown}>,errorCode:number):boolean {
         const schema = Joi.array().items(Joi.object({
             operation_identifier:Joi.object({
                 index:Joi.number().min(0).required(),
@@ -652,14 +695,14 @@ export class Construction extends Router {
         if(verify.error == undefined){
             return true;
         } else {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(14,undefined,{
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(errorCode,undefined,{
                 error:verify.error
             }));
             return false;
         }
     }
 
-    private getTxOrigins(operations:Array<any>):string[] {
+    private getTxOrigins(operations:Array<ConstructionOperation>):string[] {
         const result = new Array<string>();
         const originMap = new Map<string,undefined>();
         const feeOpers = operations.filter(oper => {return oper.type == OperationType.Fee});
@@ -679,8 +722,8 @@ export class Construction extends Router {
         return result;
     }
 
-    private getVETOperations(operations:Array<any>):Array<{value:string,to:string}> {
-        const result = new Array<{value:'',to:''}>;
+    private getVETOperations(operations:Array<ConstructionOperation>):Array<{value:string,to:string}> {
+        const result = new Array<{value:string,to:string}>;
         const opers = operations.filter( oper => {
             return oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer;});
         if(opers.length > 0){
@@ -691,14 +734,14 @@ export class Construction extends Router {
         return result;
     }
 
-    private getTokensOperations(operations:Array<any>):{registered:Array<{token:string,value:string,to:string}>,unregistered:Array<string>} {
+    private getTokensOperations(operations:Array<ConstructionOperation>):{registered:Array<{token:string,value:string,to:string}>,unregistered:Array<string>} {
         const result: { registered: {token:string,value:string,to:string}[]; unregistered: string[] } = {
             registered: [],
             unregistered: []
         }; 
         for(const oper of operations){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.amount.currency?.metadata?.contractAddress != undefined){
-                const tokenAddr = oper.amount.currency.metadata.contractAddress as string;
+                const tokenAddr = oper.amount.currency.metadata.contractAddress;
                 const value = BigInt(oper.amount.value).toString(10);
                 const to = oper.account.address;
                 const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress.toLowerCase() == tokenAddr.toLowerCase();});
@@ -712,7 +755,7 @@ export class Construction extends Router {
         return result;
     }
 
-    private checkPublickeys(ctx:Router.IRouterContext):boolean {
+    private checkPublickeys(ctx:RequestContext<unknown>):boolean {
         const schema = Joi.object({
             public_keys:Joi.array().items(Joi.object({
                 hex_bytes:Joi.string().lowercase().length(66).regex(/^[0-9a-f]*$/).required(),
@@ -730,7 +773,8 @@ export class Construction extends Router {
         }
     }
 
-    private checkOptions(ctx:Router.IRouterContext):boolean{
+    // Shared by /construction/metadata and /construction/payloads; fills in defaults for options.
+    private checkOptions(ctx:RequestContext<{options?:Partial<ConstructionMetadataRequest['options']>,[key:string]:unknown}>):boolean{
         if (!ctx.request.body.options) {
             ctx.request.body.options = {};
         }
@@ -771,7 +815,7 @@ export class Construction extends Router {
         return result;
     }
 
-    private checkMetadata(ctx:Router.IRouterContext):boolean{
+    private checkMetadata(ctx:RequestContext<unknown>):boolean{
         const schema = Joi.object({
             metadata:Joi.object({
                 transactionType: Joi.string().valid('legacy', 'dynamic').default('dynamic'),
@@ -795,7 +839,7 @@ export class Construction extends Router {
                     otherwise: Joi.forbidden()
                 }),
                 fee_delegator_account:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
-            })
+            }).required()
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
         if(verify.error == undefined){
@@ -808,15 +852,16 @@ export class Construction extends Router {
         }
     }
 
-    private convertOperationsToClauses(operations:Array<any>):VeTransaction.Clause[]{
+    private convertOperationsToClauses(operations:Array<ConstructionOperation>):VeTransaction.Clause[]{
         const result = new Array<VeTransaction.Clause>();
         const sorted = operations.sort((l,r) => {return l.operation_identifier.index - r.operation_identifier.index;});
         for(const oper of sorted){
             if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.amount.currency.symbol == 'VET' && oper.type == OperationType.Transfer){
                 result.push({value:'0x' + BigInt(oper.amount.value).toString(16),to:oper.account.address,data:'0x'});
             }
-            if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && oper.amount.currency?.metadata?.contractAddress != undefined){
-                const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress == oper.amount.currency.metadata.contractAddress;});
+            const contractAddress = oper.amount.currency?.metadata?.contractAddress;
+            if(oper.amount.value != undefined && BigInt(oper.amount.value) > BigInt(0) && oper.type == OperationType.Transfer && contractAddress != undefined){
+                const tokenConf = this.tokenList.find(token => {return token.metadata.contractAddress == contractAddress;});
                 if(tokenConf != undefined){
                     result.push({value:'0',to:tokenConf.metadata.contractAddress,data:VIP180Token.encode('transfer',oper.account.address,oper.amount.value)})
                 }
@@ -825,7 +870,7 @@ export class Construction extends Router {
         return result;
     }
 
-    private validateRequestSchema(ctx: Router.IRouterContext): boolean {
+    private validateRequestSchema(ctx:RequestContext<unknown>): boolean {
         const schema = Joi.object({
             signed: Joi.boolean().required(),
             transaction: Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
@@ -869,7 +914,7 @@ export class Construction extends Router {
         }
     }
 
-    private checkParseRequest(ctx: Router.IRouterContext): boolean {
+    private checkParseRequest(ctx:RequestContext<ConstructionParseRequest>): boolean {
         if (!this.validateRequestSchema(ctx)) {
             return false;
         }
@@ -896,7 +941,7 @@ export class Construction extends Router {
         }
     }
 
-    private checkCombineRequest(ctx: Router.IRouterContext):boolean{
+    private checkCombineRequest(ctx:RequestContext<ConstructionCombineRequest>):boolean{
         const schema = Joi.object({
             unsigned_transaction:Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/).required(),
             signatures:Joi.array().items(Joi.object({
@@ -940,15 +985,15 @@ export class Construction extends Router {
         return ethers.computeAddress(publickey).toLowerCase();
     }
 
-    private gasToVTHO(gas:number, gasPrice:bigint):bigint {
+    private gasToVTHO(gas:string|number, gasPrice:bigint):bigint {
         return BigInt(gas) * gasPrice;
     }
     
 
-    private env:any;
+    private env:Env;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private tokenList:Array<Currency> = [];
+    private tokenList:Array<TokenCurrency> = [];
     private readonly transConverter:TransactionConverter;
 
     private readonly commonRosettaTxRlpProfile: RLP.Profile = {
@@ -972,12 +1017,12 @@ export class Construction extends Router {
     };
     private readonly unsignedLegacyRosettaTxRlp = new RLP({
         ...this.commonRosettaTxRlpProfile,
-        kind: [...this.commonRosettaTxRlpProfile.kind as Array<any>, { name: 'gasPriceCoef', kind: new RLP.NumericKind(1) }]
+        kind: [...this.commonRosettaTxRlpProfile.kind as RLP.Profile[], { name: 'gasPriceCoef', kind: new RLP.NumericKind(1) }]
     });
 
     private readonly unsignedDynamicRosettaTxRlp = new RLP({
         ...this.commonRosettaTxRlpProfile,
-        kind: [...this.commonRosettaTxRlpProfile.kind as Array<any>, 
+        kind: [...this.commonRosettaTxRlpProfile.kind as RLP.Profile[], 
             {name:'maxFeePerGas',kind:new RLP.NumericKind(32)},
             {name:'maxPriorityFeePerGas',kind:new RLP.NumericKind(32)},
         ]
@@ -985,24 +1030,24 @@ export class Construction extends Router {
 
     private readonly signedLegacyRosettaTxRlp = new RLP({
         name: 'tx',
-        kind: [...this.unsignedLegacyRosettaTxRlp.profile.kind as Array<any>, { name: 'signature', kind: new RLP.BufferKind() }],
+        kind: [...this.unsignedLegacyRosettaTxRlp.profile.kind as RLP.Profile[], { name: 'signature', kind: new RLP.BufferKind() }],
     });
 
     private readonly signedDynamicRosettaTxRlp = new RLP({
         ...this.unsignedDynamicRosettaTxRlp.profile,
-        kind: [...this.unsignedDynamicRosettaTxRlp.profile.kind as Array<any>, { name: 'signature', kind: new RLP.BufferKind() }],
+        kind: [...this.unsignedDynamicRosettaTxRlp.profile.kind as RLP.Profile[], { name: 'signature', kind: new RLP.BufferKind() }],
     });
 
-    private decodeSignedRosettaTransaction(signedTx: string, ctx: Router.IRouterContext): any {
+    private decodeSignedRosettaTransaction(signedTx: string, ctx:ResponseContext): RosettaTxBody | null {
         try {
             if (!this.decodeSignedTransaction(signedTx)) {
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
                 return null;
             }
-            return this.signedDynamicRosettaTxRlp.decode(Buffer.from(signedTx.substring(2), 'hex'));
+            return this.signedDynamicRosettaTxRlp.decode(Buffer.from(signedTx.substring(2), 'hex')) as RosettaTxBody;
         } catch (_error) {
             try {
-                return this.signedLegacyRosettaTxRlp.decode(Buffer.from(signedTx.substring(2), 'hex'));
+                return this.signedLegacyRosettaTxRlp.decode(Buffer.from(signedTx.substring(2), 'hex')) as RosettaTxBody;
             } catch (_error) {
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12));
                 return null;
