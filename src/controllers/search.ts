@@ -28,24 +28,19 @@ export class Search extends Router {
     private async transactions(ctx:RequestContext<TransactionIdentifierRequest>,next:Koa.Next){
         if(this.verifyMiddleware.checkTransactionIdentifier(ctx)){
             const txid = ctx.request.body.transaction_identifier.hash;
-            const tx = await this.connex.thor.transaction(txid).get();
             const txRecp = await this.connex.thor.transaction(txid).getReceipt();
-            if(tx != undefined){
+            if(txRecp != undefined){
                 const block_identifier:BlockIdentifier = {
-                    index:tx.meta.blockNumber,
-                    hash:tx.meta.blockID
+                    index:txRecp.meta.blockNumber,
+                    hash:txRecp.meta.blockID
                 }
-                const operations = await this.transConverter.convertClausesToOperations(tx,txRecp);
+                // Same receipt-based operations as /block and /block/transaction.
+                const transaction = await this.transConverter.parseRosettaTransaction(txid);
                 ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                     transactions:[
                         {
                             block_identifier:block_identifier,
-                            transaction:{
-                                transaction_identifier:{
-                                    hash:txid
-                                }
-                            },
-                            operations:operations
+                            transaction:transaction
                         }
                     ],
                     total_count:1

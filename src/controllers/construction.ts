@@ -23,7 +23,7 @@ import {
     ConstructionPreprocessRequest,
     SignedTransactionRequest
 } from "../common/types/requests";
-import { CurveType, SignatureType } from "../common/types/signature";
+import { CurveType, Signature, SignatureType, SigningPayload } from "../common/types/signature";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
@@ -113,7 +113,8 @@ export class Construction extends Router {
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
         if(verify.error == undefined){
             const account = this.computeAddress(ctx.request.body.public_key.hex_bytes as string);
-            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{address:account});
+            // `address` is deprecated by `account_identifier` (Rosetta 1.4.4); both are returned, as rosetta-sdk-go does.
+            ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{address:account,account_identifier:{address:account}});
         } else {
             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(5,undefined,{
                 public_key:ctx.request.body.public_key,
@@ -325,21 +326,11 @@ export class Construction extends Router {
             const rosettaTxRaw = encoder.encode(rosettaTx);
             const response = {
                 unsigned_transaction:'0x' + rosettaTxRaw.toString('hex'),
-                payloads:[
-                    {
-                        address:txOrigin,
-                        hex_bytes:originSignHash,
-                        signature_type:SignatureType.ecdsa_recovery
-                    }
-                ]
+                payloads:[this.signingPayload(txOrigin!,originSignHash)]
             }
             if(CheckSchema.isAddress(txDelegator)){
                 const delegationSignHash = vechainTx.signingHash(txOrigin).toString('hex');
-                response.payloads.push({
-                    address:txDelegator,
-                    hex_bytes:delegationSignHash,
-                    signature_type:SignatureType.ecdsa_recovery
-                });
+                response.payloads.push(this.signingPayload(txDelegator,delegationSignHash));
             }
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response)
         }
@@ -592,8 +583,9 @@ export class Construction extends Router {
                     return;
                 }
             }
-            const originPayload = ctx.request.body.signatures.find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.origin || '').toLowerCase()});
-            const delegatorPayload = ctx.request.body.signatures.find( p => {return (p.signing_payload.address || '').toLowerCase() == (rosettaTx.delegator || '').toLowerCase()});
+            const signerOf = (p:Signature) => (p.signing_payload.account_identifier?.address ?? p.signing_payload.address ?? '').toLowerCase();
+            const originPayload = ctx.request.body.signatures.find( p => {return signerOf(p) == (rosettaTx.origin || '').toLowerCase()});
+            const delegatorPayload = ctx.request.body.signatures.find( p => {return signerOf(p) == (rosettaTx.delegator || '').toLowerCase()});
             if(originPayload == undefined){
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(20,undefined,{
                     error:'No signature found for the transaction origin'
@@ -960,7 +952,9 @@ export class Construction extends Router {
                     curve_type:Joi.string().valid(CurveType.secp256k1).required()
                 },
                 signature_type:Joi.string().valid(SignatureType.ecdsa_recovery).required(),
-                hex_bytes:Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/).required()
+                // 65-byte ecdsa_recovery signature (r || s || v), hex without prefix;
+                // rosetta-sdk-go rejects empty and all-zero signatures.
+                hex_bytes:Joi.string().lowercase().regex(/^[0-9a-f]{130}$/).invalid('0'.repeat(130)).required()
             })).min(1).required()
         });
         const verify = schema.validate(ctx.request.body,{allowUnknown:true});
@@ -976,6 +970,16 @@ export class Construction extends Router {
             }));
             return false;
         }
+    }
+
+    /** A signing payload identifying the signer by both the deprecated `address` and `account_identifier`. */
+    private signingPayload(address:string,hexBytes:string):SigningPayload {
+        return {
+            address:address,
+            account_identifier:{address:address},
+            hex_bytes:hexBytes,
+            signature_type:SignatureType.ecdsa_recovery
+        };
     }
 
     private computeAddress(publickey:string):string {

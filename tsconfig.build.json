@@ -1,0 +1,10 @@
+{
+  // Compiles the server only, with src/ as the root so the output is
+  // dist/index.js both locally and in the Docker image (which has no tests/).
+  // `npm run typecheck` uses tsconfig.json and still covers the tests.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
+  "include": ["src", "typings"]
+}

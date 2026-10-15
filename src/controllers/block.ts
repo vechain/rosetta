@@ -44,13 +44,16 @@ export class Block extends Router {
             revision = ctx.request.body.block_identifier.hash;
         }
 
-        if(revision == undefined){
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(24,undefined));
-            return;
-        }
-
         try {
+            // Without index or hash, the current block is returned (Rosetta spec).
             const block = await this.connex.thor.block(revision).get();
+            if(block != null && this.isAboveHead(block.number)){
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
+                    revision:revision,
+                    current_block_index:this.connex.thor.status.head.number
+                }));
+                return;
+            }
             if(block != null){
                 let parent = (await this.connex.thor.block(block.parentID).get())!;
                 if(block.number == 0){
@@ -119,7 +122,7 @@ export class Block extends Router {
 
         try {
             const block = await this.connex.thor.block(revision).get();
-            if(block != null){
+            if(block != null && !this.isAboveHead(block.number)){
                 const txRece = (await this.connex.thor.transaction(txid).getReceipt());
                     if(txRece != null && txRece.meta.blockID.toLowerCase() == block.id.toLowerCase()){
                     const rosettaTx = await this.transConverter.parseRosettaTransaction(txid);
@@ -144,6 +147,15 @@ export class Block extends Router {
             return;
         }
         await next();
+    }
+
+    /**
+     * Whether a block is newer than the head connex is following. Receipts of
+     * such blocks are not available yet, so they must not be served until
+     * /network/status reports them.
+     */
+    private isAboveHead(blockNumber:number):boolean{
+        return blockNumber > this.connex.thor.status.head.number;
     }
 
     private env:Env;

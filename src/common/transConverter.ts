@@ -18,23 +18,23 @@ export class TransactionConverter {
     }
 
     public async parseRosettaTransaction(txid:string):Promise<Transaction>{
-        const result:Transaction = {transaction_identifier:{hash:''},operations:[]};
+        const result:Transaction = {transaction_identifier:{hash:txid},operations:[]};
         const txRece = (await this.connex.thor.transaction(txid).getReceipt());
-        if(txRece != undefined){
-            result.transaction_identifier = {hash:txid};
-            for(let index = 0; index < txRece.outputs.length; index++) {
-                const opers = this.parseRosettaOperations(index,txRece);
-                result.operations = result.operations.concat(opers);
-            }
-            if(txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
-                result.operations.push(this.feeDelegationOperation(txRece));
-            } else {
-                result.operations.push(this.feeOperation(txRece));
-            }
-            for(let index = 0; index < result.operations.length; index++ ){
-                result.operations[index].operation_identifier.index = index;
-                result.operations[index].status = txRece.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
-            }
+        if(txRece == undefined){
+            throw new Error(`Receipt of transaction ${txid} not found`);
+        }
+        for(let index = 0; index < txRece.outputs.length; index++) {
+            const opers = this.parseRosettaOperations(index,txRece);
+            result.operations = result.operations.concat(opers);
+        }
+        if(txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
+            result.operations.push(this.feeDelegationOperation(txRece));
+        } else {
+            result.operations.push(this.feeOperation(txRece));
+        }
+        for(let index = 0; index < result.operations.length; index++ ){
+            result.operations[index].operation_identifier.index = index;
+            result.operations[index].status = txRece.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
         }
         return result;
     }
@@ -139,25 +139,33 @@ export class TransactionConverter {
         }
     }
 
-    private async calculateGasPrice(tx: Connex.Thor.Transaction): Promise<bigint> {
+    /**
+     * The highest gas price a pending transaction can be charged: for a dynamic
+     * fee transaction min(maxFeePerGas, baseFee + maxPriorityFeePerGas), for a
+     * legacy one baseGasPrice * (1 + gasPriceCoef / 255).
+     */
+    private async pendingGasPrice(tx: Connex.Thor.Transaction): Promise<bigint> {
         if (tx.type === 81) {
-            const { baseFee, reward } = await this.getDynamicGasPrice();
-            return baseFee + reward;
+            const { baseFee } = await this.getDynamicGasPrice();
+            const maxFee = BigInt(tx.maxFeePerGas ?? 0);
+            const price = baseFee + BigInt(tx.maxPriorityFeePerGas ?? 0);
+            return price < maxFee ? price : maxFee;
         }
-        return BigInt(this.env.config.baseGasPrice);
+        const baseGasPrice = BigInt(this.env.config.baseGasPrice);
+        return baseGasPrice + baseGasPrice * BigInt(tx.gasPriceCoef ?? 0) / BigInt(255);
     }
 
-    private async createFeeOperation(tx: Connex.Thor.Transaction, delegator: string | null | undefined, origin: string): Promise<Operation> {
-        const isDelegation = CheckSchema.isAddress(delegator);
-        const gasPrice = await this.calculateGasPrice(tx);
+    private async createFeeOperation(tx: Connex.Thor.Transaction): Promise<Operation> {
+        const isDelegation = CheckSchema.isAddress(tx.delegator);
+        const gasPrice = await this.pendingGasPrice(tx);
         return {
-            operation_identifier: this.createOperationIdentifier(0, 0),
+            operation_identifier: this.createOperationIdentifier(0, tx.clauses.length),
             type: isDelegation ? OperationType.FeeDelegation : OperationType.Fee,
             account: {
-                address: isDelegation ? delegator! : origin
+                address: isDelegation ? tx.delegator! : tx.origin
             },
             amount: {
-                value: (BigInt(tx.gas) * BigInt(10**18) / gasPrice * BigInt(-1)).toString(10),
+                value: (BigInt(tx.gas) * gasPrice * BigInt(-1)).toString(10),
                 currency: VTHOCurrency
             }
         };
@@ -178,27 +186,28 @@ export class TransactionConverter {
         return this.createVETTransferOperations(origin, clause, index);
     }
 
-    public async convertClausesToOperations(tx: Connex.Thor.Transaction, txrecp?: Connex.Thor.Transaction.Receipt | null): Promise<Operation[]> {
+    /**
+     * Operations of a pending (not yet packed) transaction, derived from its
+     * clauses. Packed transactions are converted from their receipt instead,
+     * see parseRosettaTransaction.
+     *
+     * Data API operations must carry a status declared in /network/options;
+     * a pending transaction has no outcome yet, so it is reported as None.
+     */
+    public async convertClausesToOperations(tx: Connex.Thor.Transaction): Promise<Operation[]> {
         let operations: Operation[] = [];
-        const origin = tx.origin;
-        const delegator = tx.delegator;
 
         for (let index = 0; index < tx.clauses.length; index++) {
             const clause = tx.clauses[index] as VeTransaction.Clause;
-            const clauseOperations = await this.processClause(clause, index, origin);
+            const clauseOperations = await this.processClause(clause, index, tx.origin);
             operations = operations.concat(clauseOperations);
         }
 
-        operations.push(await this.createFeeOperation(tx, delegator, origin));
-
-        if (txrecp) {
-            for (const oper of operations) {
-                oper.status = txrecp.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
-            }
-            const payOp = operations.find(op => op.type == OperationType.Fee || op.type == OperationType.FeeDelegation)!;
-            const gasPrice = await this.calculateGasPrice(tx);
-            payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / gasPrice * BigInt(-1)).toString(10);
-        }
+        operations.push(await this.createFeeOperation(tx));
+        operations.forEach((operation, index) => {
+            operation.operation_identifier.index = index;
+            operation.status = OperationStatus.None;
+        });
 
         return operations;
     }

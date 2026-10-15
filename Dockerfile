@@ -24,7 +24,7 @@ RUN npm ci
 COPY process_online.json ./
 COPY process_online_solo.json ./
 COPY process_offline.json ./
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY src/ ./src/
 COPY start.sh ./
 COPY config/ ./config/

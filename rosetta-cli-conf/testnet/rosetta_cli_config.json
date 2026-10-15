@@ -4,7 +4,7 @@
         "network": "test"
     },
     "online_url": "http://localhost:8080",
-    "data_directory": "cli-data",
+    "data_directory": "cli-data/test/data",
     "http_timeout": 300,
     "max_retries": 15,
     "tip_delay": 60,
@@ -273,7 +273,7 @@
         }
     },
     "data": {
-        "results_output_file": "../../cli-data/checkdatalogs",
+        "results_output_file": "cli-data/test/data_results.json",
         "pruning_block_disabled": true,
         "initial_balance_fetch_disabled": false,
         "active_reconciliation_concurrency": 10,

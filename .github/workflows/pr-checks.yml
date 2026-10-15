@@ -25,86 +25,52 @@ jobs:
       - name: Run lint
         run: npm run lint
 
+  # Static API tests (tests/e2e/api) and thor cross-check tests (tests/e2e/solo),
+  # run against one Rosetta + thor solo environment started by jest's globalSetup.
+  # Every recorded exchange is then checked against rosetta-sdk-go v0.8.3
+  # (tests/sdk-conformance), the SDK rosetta-cli is built on.
   e2e-tests:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        test-network: [custom]
     env:
-      NETWORK: ${{ matrix.test-network }}
-      TEST_NETWORK: ${{ matrix.test-network }}
-      MODE: online
+      E2E_SHOW_LOGS: '1'
+      E2E_RECORD_FILE: ${{ github.workspace }}/tests/sdk-conformance/exchanges.jsonl
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: tests/sdk-conformance/go.mod
+          cache-dependency-path: tests/sdk-conformance/go.sum
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.18'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Prepare volume dir
-        run: |
-          mkdir -p rosetta_data
-          chmod -R 777 rosetta_data
-
       - name: Build Docker images
         run: docker compose build
-          
+
       - name: Run e2e tests
-        run: npm run test:e2e:${{ matrix.test-network }}
+        run: npm run test:e2e
+
+      - name: Check exchanges against rosetta-sdk-go
+        working-directory: tests/sdk-conformance
+        run: go run . "$E2E_RECORD_FILE"
+
+  # Full-flow validation with rosetta-cli against Rosetta + thor solo.
+  # test:rosetta-cli:test / :main depend on public nodes and run on demand.
   rosetta-cli:
     runs-on: ubuntu-latest
-    env:
-      NETWORK: custom
-      MODE: online
-      CLI_CONFIG: rosetta-cli-conf/solo/rosetta_cli_config.json
     steps:
       - uses: actions/checkout@v4
 
-      - name: Prepare volume dir
-        run: |
-          mkdir -p rosetta_data
-          chmod -R 777 rosetta_data
-
-      - name: Build Docker images
-        run: |
-          docker compose build
-          docker build -t rosetta-cli rosetta-cli-conf
-
-      - name: Start Rosetta with thor solo
-        run: |
-          docker compose up -d
-          for i in $(seq 1 120); do
-            if curl -sf -X POST http://localhost:8080/network/status \
-                -H 'Content-Type: application/json' \
-                -d '{"network_identifier":{"blockchain":"vechainthor","network":"custom"}}' > /dev/null; then
-              echo "Rosetta is ready"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "Rosetta did not become ready"
-          exit 1
-
-      # Construction first, so that check:data has transactions to reconcile.
-      - name: Run rosetta-cli check:construction
-        run: |
-          docker run --rm --network host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-            rosetta-cli check:construction --configuration-file "$CLI_CONFIG"
-
-      - name: Run rosetta-cli check:data
-        run: |
-          docker run --rm --network host --user "$(id -u):$(id -g)" -v "$PWD:/work" -w /work \
-            rosetta-cli check:data --configuration-file "$CLI_CONFIG"
-
-      - name: Show Docker logs
-        if: failure()
-        run: docker compose logs --tail=200
+      - name: Run rosetta-cli checks on thor solo
+        run: npm run test:rosetta-cli:solo
 
       - name: Upload rosetta-cli results
         if: always()
@@ -115,7 +81,3 @@ jobs:
             cli-data/solo/construction_results.json
             cli-data/solo/data_results.json
           if-no-files-found: ignore
-
-      - name: Stop services
-        if: always()
-        run: docker compose down -v

@@ -87,7 +87,8 @@ class ApiServer {
             const connex = await ConnexPro.instance(this.env.config.nodeApi);
             const apiVersion = await this.getApiVersion();
             this.env.config.apiVersion = apiVersion;
-            this.env.config.nodeVersion = this.env.config.node_version || apiVersion;
+            // Report the connected node's version; config node_version is the offline fallback.
+            this.env.config.nodeVersion = apiVersion || this.env.config.node_version;
             connex.apiVersion = apiVersion;
             connex.nodeVersion = this.env.config.nodeVersion;
             this.env.config.chainTag = connex.chainTag;
