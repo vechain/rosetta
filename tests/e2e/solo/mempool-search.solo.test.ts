@@ -4,7 +4,7 @@ import { comparable, expectedOperations } from '../utils/expected';
 import { rosetta } from '../utils/rosettaClient';
 import { thor } from '../utils/thorClient';
 
-const [sender] = SOLO_ACCOUNTS;
+const [sender, delegator] = SOLO_ACCOUNTS;
 
 interface Op {
     type: string,
@@ -47,6 +47,20 @@ describe('Mempool API vs thor', () => {
         const { gas, maxFeePerGas } = constructed.metadata.metadata;
         expect(BigInt(fee.amount.value)).toBe(-BigInt(gas) * BigInt(maxFeePerGas));
     });
+
+    it.each([
+        ['fee-delegated', delegator],
+        ['self-delegated', sender]
+    ])('a pending %s transaction charges the fee to the delegator', async (_, payer) => {
+        const constructed = await constructTransfer({ from: sender, to: randomAddress(), amount: '1000', delegator: payer });
+        const hash = await submitTransaction(constructed.combine.signed_transaction);
+        const mempoolTx = await rosetta.call('/mempool/transaction', { transaction_identifier: { hash } });
+        const feeOps = (mempoolTx.transaction.operations as Op[]).filter(op => op.type === 'Fee' || op.type === 'FeeDelegation');
+        expect(feeOps.map(op => ({ type: op.type, address: op.account.address, symbol: op.amount.currency.symbol })))
+            .toEqual([{ type: 'FeeDelegation', address: payer.address, symbol: 'VTHO' }]);
+        const { gas, maxFeePerGas } = constructed.metadata.metadata;
+        expect(BigInt(feeOps[0].amount.value)).toBe(-BigInt(gas) * BigInt(maxFeePerGas));
+    });
 });
 
 describe('Search API vs thor', () => {
@@ -68,13 +82,24 @@ describe('Search API vs thor', () => {
         const hash = await sendTransfer({ from: sender, to: randomAddress(), amount: '1000' });
         const receipt = await waitForPacked(hash);
         const { operations } = await searchOperations(hash);
-        expect(comparable(operations)).toEqual(expectedOperations(receipt));
+        expect(comparable(operations)).toEqual(expectedOperations(receipt, (await thor.transaction(hash))!));
     });
 
     it('VTHO transfer operations match the thor receipt', async () => {
         const hash = await sendTransfer({ from: sender, to: randomAddress(), amount: '1000', currency: VTHO });
         const receipt = await waitForPacked(hash);
         const { operations } = await searchOperations(hash);
-        expect(comparable(operations)).toEqual(expectedOperations(receipt));
+        expect(comparable(operations)).toEqual(expectedOperations(receipt, (await thor.transaction(hash))!));
+    });
+
+    it.each([
+        ['fee-delegated', delegator],
+        ['self-delegated', sender]
+    ])('%s transfer operations match the thor receipt', async (_, payer) => {
+        const hash = await sendTransfer({ from: sender, to: randomAddress(), amount: '1000', delegator: payer });
+        const receipt = await waitForPacked(hash);
+        expect(receipt.gasPayer).toBe(payer.address);
+        const { operations } = await searchOperations(hash);
+        expect(comparable(operations)).toEqual(expectedOperations(receipt, (await thor.transaction(hash))!));
     });
 });

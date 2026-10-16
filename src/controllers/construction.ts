@@ -166,7 +166,7 @@ export class Construction extends Router {
                     {address:origins[0]}
                 ]
             }
-            if(CheckSchema.isAddress(delegator) && delegator != origins[0]){
+            if(CheckSchema.isAddress(delegator)){
                 response.required_public_keys.push({address:delegator});
             }
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,response);
@@ -343,37 +343,7 @@ export class Construction extends Router {
             return;
         }
 
-        let vechainTxBody;
-        const commonBody = {
-            chainTag:rosettaTx.chainTag,
-            blockRef:rosettaTx.blockRef,
-            expiration:rosettaTx.expiration,
-            clauses:rosettaTx.clauses,
-            gas:rosettaTx.gas,
-            dependsOn:null,
-            nonce:rosettaTx.nonce
-        }
-        // Legacy transaction
-        if (rosettaTx.gasPriceCoef !== undefined) {
-            vechainTxBody = {
-                ...commonBody,
-                type:VeTransaction.Type.Legacy,
-                gasPriceCoef: rosettaTx.gasPriceCoef
-            } as VeTransaction.LegacyBody
-        } else {
-            // Dynamic fee transaction
-            vechainTxBody = {
-                ...commonBody,
-                type:VeTransaction.Type.DynamicFee,
-                maxFeePerGas: rosettaTx.maxFeePerGas,
-                maxPriorityFeePerGas: rosettaTx.maxPriorityFeePerGas
-            } as VeTransaction.DynamicFeeBody
-        }
-        if(CheckSchema.isAddress(rosettaTx.delegator)){
-            vechainTxBody.reserved = {features:1};
-        }
-        const vechainTx = new VeTransaction(vechainTxBody);
-        vechainTx.signature = rosettaTx.signature;
+        const vechainTx = this.toVeTransaction(rosettaTx);
 
         const raw = '0x' + vechainTx.encode().toString('hex');
         try {
@@ -553,7 +523,8 @@ export class Construction extends Router {
                         address:txOrigin
                     }]
                 }
-                if(CheckSchema.isAddress(delegator)){
+                // Signers are distinct accounts: a self-delegated transaction has one.
+                if(CheckSchema.isAddress(delegator) && delegator.toLowerCase() != txOrigin.toLowerCase()){
                     response.account_identifier_signers.push({address:delegator});
                 }
             } else {
@@ -583,12 +554,29 @@ export class Construction extends Router {
                     return;
                 }
             }
+            // Match signatures by the hash they sign, not by signer address: a
+            // delegator may be the origin itself, and then both payloads share an address.
             const signerOf = (p:Signature) => (p.signing_payload.account_identifier?.address ?? p.signing_payload.address ?? '').toLowerCase();
-            const originPayload = ctx.request.body.signatures.find( p => {return signerOf(p) == (rosettaTx.origin || '').toLowerCase()});
-            const delegatorPayload = ctx.request.body.signatures.find( p => {return signerOf(p) == (rosettaTx.delegator || '').toLowerCase()});
+            const signatureOf = (address:string|null|undefined,hash:string) => ctx.request.body.signatures.find( p => {
+                return signerOf(p) == (address || '').toLowerCase() && p.signing_payload.hex_bytes.toLowerCase() == hash;
+            });
+            const vechainTx = this.toVeTransaction(rosettaTx);
+            const originHash = vechainTx.signingHash().toString('hex');
+            const originPayload = signatureOf(rosettaTx.origin,originHash);
+            const isDelegated = CheckSchema.isAddress(rosettaTx.delegator) && CheckSchema.isAddress(rosettaTx.origin);
+            const delegatorPayload = isDelegated
+                ? signatureOf(rosettaTx.delegator,vechainTx.signingHash(rosettaTx.origin!).toString('hex'))
+                : undefined;
             if(originPayload == undefined){
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(20,undefined,{
                     error:'No signature found for the transaction origin'
+                }));
+                return;
+            }
+            // thor rejects a delegated transaction that lacks the delegator signature.
+            if(isDelegated && delegatorPayload == undefined){
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(20,undefined,{
+                    error:'No signature found for the transaction delegator'
                 }));
                 return;
             }
@@ -622,6 +610,18 @@ export class Construction extends Router {
             return;
         }
 
+        const vechainTx = this.toVeTransaction(rosettaTx);
+
+        ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
+            transaction_identifier:{
+                hash:vechainTx.id
+            }
+        });
+
+        await next();
+    }
+
+    private toVeTransaction(rosettaTx:RosettaTxBody):VeTransaction<VeTransaction.LegacyBody|VeTransaction.DynamicFeeBody> {
         const commonBody = {
             chainTag:rosettaTx.chainTag,
             blockRef:rosettaTx.blockRef,
@@ -633,7 +633,7 @@ export class Construction extends Router {
         }
 
         let vechainTxBody;
-        if(rosettaTx.gasPriceCoef != undefined){    
+        if(rosettaTx.gasPriceCoef != undefined){
             vechainTxBody = {
                 ...commonBody,
                 type:VeTransaction.Type.Legacy,
@@ -652,14 +652,7 @@ export class Construction extends Router {
         }
         const vechainTx = new VeTransaction(vechainTxBody);
         vechainTx.signature = rosettaTx.signature;
-
-        ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
-            transaction_identifier:{
-                hash:vechainTx.id
-            }
-        });
-
-        await next();
+        return vechainTx;
     }
 
     private checkOperations(ctx:RequestContext<{operations?:unknown}>,errorCode:number):boolean {

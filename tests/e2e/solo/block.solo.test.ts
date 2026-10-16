@@ -2,13 +2,14 @@ import { SOLO_ACCOUNTS, VTHO, networkIdentifier, randomAddress } from '../config
 import { TransferIntent, sendTransfer, waitForPacked } from '../utils/construction';
 import { comparable, expectedOperations } from '../utils/expected';
 import { rosetta } from '../utils/rosettaClient';
-import { ThorReceipt, thor } from '../utils/thorClient';
+import { ThorReceipt, ThorTransaction, thor } from '../utils/thorClient';
 
 const [sender, delegator] = SOLO_ACCOUNTS;
 
 interface PackedTx {
     hash: string,
-    receipt: ThorReceipt
+    receipt: ThorReceipt,
+    tx: ThorTransaction
 }
 
 const packed: Record<string, PackedTx> = {};
@@ -16,13 +17,16 @@ const packed: Record<string, PackedTx> = {};
 const cases: Array<[string, Omit<TransferIntent, 'from' | 'to'>]> = [
     ['VET transfer', { amount: '1000' }],
     ['VTHO transfer', { amount: '1000', currency: VTHO }],
-    ['fee-delegated VET transfer', { amount: '1000', delegator }]
+    ['fee-delegated VET transfer', { amount: '1000', delegator }],
+    ['fee-delegated VTHO transfer', { amount: '1000', currency: VTHO, delegator }],
+    ['self-delegated VET transfer', { amount: '1000', delegator: sender }]
 ];
 
 beforeAll(async () => {
     for (const [name, intent] of cases) {
         const hash = await sendTransfer({ from: sender, to: randomAddress(), ...intent });
-        packed[name] = { hash, receipt: await waitForPacked(hash) };
+        const receipt = await waitForPacked(hash);
+        packed[name] = { hash, receipt, tx: (await thor.transaction(hash))! };
     }
 });
 
@@ -54,10 +58,10 @@ describe('Block API vs thor', () => {
         });
 
         it('/block operations match the thor receipt', async () => {
-            const { hash, receipt } = packed[name];
+            const { hash, receipt, tx: thorTx } = packed[name];
             const response = await rosetta.call('/block', { block_identifier: { hash: receipt.meta.blockID } });
             const tx = response.block.transactions.find((t: { transaction_identifier: { hash: string } }) => t.transaction_identifier.hash === hash);
-            expect(comparable(tx.operations)).toEqual(expectedOperations(receipt));
+            expect(comparable(tx.operations)).toEqual(expectedOperations(receipt, thorTx));
         });
 
         it('/block/transaction matches the transaction in /block', async () => {

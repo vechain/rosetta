@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
-import { SOLO_ACCOUNTS, VTHO, VTHO_CONTRACT_ADDRESS, randomAddress } from '../config';
-import { ConstructedTransfer, TransferIntent, constructTransfer, signPayload, submitTransaction } from '../utils/construction';
+import { blake2b256 } from 'thor-devkit';
+import { SOLO_ACCOUNTS, VTHO, VTHO_CONTRACT_ADDRESS, networkIdentifier, randomAddress } from '../config';
+import { ConstructedTransfer, SigningPayload, TransferIntent, constructTransfer, signPayload, submitTransaction } from '../utils/construction';
 import { rosetta } from '../utils/rosettaClient';
 import { ThorReceipt, ThorTransaction, thor } from '../utils/thorClient';
 
@@ -19,7 +20,11 @@ const cases: Array<[string, Case]> = [
     ['dynamic VET transfer', { intent: { amount: '1000' }, type: 81 }],
     ['legacy VET transfer', { intent: { amount: '1000', transactionType: 'legacy' }, type: 0 }],
     ['VTHO transfer', { intent: { amount: '1000', currency: VTHO }, type: 81 }],
-    ['fee-delegated VET transfer', { intent: { amount: '1000', delegator }, type: 81 }]
+    ['fee-delegated VET transfer', { intent: { amount: '1000', delegator }, type: 81 }],
+    ['fee-delegated legacy VET transfer', { intent: { amount: '1000', transactionType: 'legacy', delegator }, type: 0 }],
+    ['fee-delegated VTHO transfer', { intent: { amount: '1000', currency: VTHO, delegator }, type: 81 }],
+    // VIP-191 allows the origin to be its own delegator; thor executes it as a delegated transaction.
+    ['self-delegated VET transfer', { intent: { amount: '1000', delegator: sender }, type: 81 }]
 ];
 
 const expectedClause = (to: string, intent: Case['intent']) =>
@@ -104,6 +109,34 @@ describe('Construction API vs thor', () => {
             });
         }
 
+        // VIP-191: the origin signs the transaction signing hash, the delegator
+        // signs blake2b256(signing hash || origin address).
+        it('payloads ask the origin, then the delegator, to sign', () => {
+            const { payloads } = constructed.payloads;
+            expect(payloads.map(p => p.account_identifier?.address)).toEqual(signers.map(s => s.address));
+            expect(payloads.map(p => p.address)).toEqual(signers.map(s => s.address));
+            const delegationHash = blake2b256(Buffer.from(payloads[0].hex_bytes, 'hex'), Buffer.from(sender.address.slice(2), 'hex')).toString('hex');
+            expect(payloads.map(p => p.hex_bytes)).toEqual([payloads[0].hex_bytes, ...(intent.delegator ? [delegationHash] : [])]);
+        });
+
+        const parsedFeeOps = () => [constructed.parsedUnsigned, constructed.parsedSigned].map(parsed =>
+            parsed.operations.filter((op: { type: string }) => op.type === 'Fee' || op.type === 'FeeDelegation'));
+
+        it('parse charges the fee to the account that pays gas', () => {
+            const payer = intent.delegator ?? sender;
+            const clauseCount = constructed.preprocess.options.clauses.length;
+            for (const feeOps of parsedFeeOps()) {
+                expect(feeOps).toHaveLength(1);
+                expect(feeOps[0]).toMatchObject({
+                    type: intent.delegator ? 'FeeDelegation' : 'Fee',
+                    account: { address: payer.address },
+                    amount: { currency: { symbol: 'VTHO' } },
+                    // The delegation fee follows the clauses; the plain Fee index is not pinned here.
+                    ...(intent.delegator ? { operation_identifier: { network_index: clauseCount } } : {})
+                });
+            }
+        });
+
         it('parse returns the intent operations and signers', () => {
             const transfers = (ops: Array<{ type: string, account: { address: string }, amount: { value: string, currency: { symbol: string } } }>) =>
                 ops.filter(op => op.type === 'Transfer').map(op => ({ address: op.account.address, value: op.amount.value, symbol: op.amount.currency.symbol }));
@@ -112,7 +145,9 @@ describe('Construction API vs thor', () => {
             expect(transfers(constructed.parsedUnsigned.operations)).toEqual(intended);
             expect(transfers(constructed.parsedSigned.operations)).toEqual(intended);
             expect(constructed.parsedUnsigned.account_identifier_signers).toBeUndefined();
-            expect(constructed.parsedSigned.account_identifier_signers).toEqual(signers.map(s => ({ address: s.address })));
+            // Rosetta requires distinct signers, so a self-delegated transaction lists the origin once.
+            const distinctSigners = [...new Set(signers.map(s => s.address))];
+            expect(constructed.parsedSigned.account_identifier_signers).toEqual(distinctSigners.map(address => ({ address })));
         });
 
         it('hash equals the id thor assigns to the submitted transaction', () => {
@@ -142,5 +177,30 @@ describe('Construction API vs thor', () => {
             expect(receipt.gasUsed).toBeLessThanOrEqual(tx.gas);
             expect(receipt.gasPayer).toBe((intent.delegator ?? sender).address);
         });
+    });
+});
+
+describe('Construction API fee delegation edge cases', () => {
+    const publicKey = (account: typeof sender) => ({ hex_bytes: account.publicKey, curve_type: 'secp256k1' });
+
+    // Combining it anyway would yield a transaction thor rejects with "invalid signature length".
+    it.each([
+        ['fee-delegated', delegator],
+        ['self-delegated', sender]
+    ])('combine rejects a %s transaction without the delegator signature', async (_, payer) => {
+        const constructed = await constructTransfer({ from: sender, to: randomAddress(), amount: '1', delegator: payer });
+        const originPayload: SigningPayload = constructed.payloads.payloads[0];
+        const response = await rosetta.postRaw<{ code: number }>('/construction/combine', {
+            network_identifier: networkIdentifier,
+            unsigned_transaction: constructed.payloads.unsigned_transaction,
+            signatures: [{
+                signing_payload: originPayload,
+                public_key: publicKey(sender),
+                signature_type: 'ecdsa_recovery',
+                hex_bytes: signPayload(sender, originPayload)
+            }]
+        });
+        expect(response.status).toBe(500);
+        expect(response.data.code).toBe(20);
     });
 });

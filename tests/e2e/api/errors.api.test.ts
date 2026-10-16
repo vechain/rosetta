@@ -6,9 +6,11 @@ import * as schema from '../utils/schemas';
 // Every error must be a Rosetta Error object, returned with HTTP 500, and
 // declared in /network/options allow.errors.
 
-const [sender] = SOLO_ACCOUNTS;
+const [sender, delegator, other] = SOLO_ACCOUNTS;
 const unknownHash = '0x' + 'ab'.repeat(32);
 const publicKey = { hex_bytes: sender.publicKey, curve_type: 'secp256k1' };
+const delegatorPublicKey = { hex_bytes: delegator.publicKey, curve_type: 'secp256k1' };
+const otherPublicKey = { hex_bytes: other.publicKey, curve_type: 'secp256k1' };
 
 describe('Error responses', () => {
     let declaredCodes: number[];
@@ -16,6 +18,7 @@ describe('Error responses', () => {
     let unsignedTransaction: string;
     let signingPayload: SigningPayload;
     let signature: string;
+    let delegatedMetadata: object;
 
     beforeAll(async () => {
         const options = await rosetta.call('/network/options');
@@ -25,6 +28,14 @@ describe('Error responses', () => {
         unsignedTransaction = constructed.payloads.unsigned_transaction;
         signingPayload = constructed.payloads.payloads[0];
         signature = signPayload(sender, signingPayload);
+        delegatedMetadata = { ...constructed.metadata.metadata, fee_delegator_account: delegator.address };
+    });
+
+    const delegatedPayloads = (publicKeys: object[]) => () => ({
+        network_identifier: networkIdentifier,
+        operations: transferOperations({ from: sender, to: randomAddress(), amount: '1' }),
+        public_keys: publicKeys,
+        metadata: delegatedMetadata
     });
 
     const cases: Array<[string, string, () => object, number]> = [
@@ -46,6 +57,9 @@ describe('Error responses', () => {
         ['metadata without clauses', '/construction/metadata', () => ({ network_identifier: networkIdentifier, options: { transactionType: 'dynamic' } }), 15],
         ['payloads without metadata', '/construction/payloads', () => ({ network_identifier: networkIdentifier, operations: transferOperations({ from: sender, to: randomAddress(), amount: '1' }), public_keys: [publicKey] }), 16],
         ['payloads without operations', '/construction/payloads', () => ({ network_identifier: networkIdentifier, public_keys: [publicKey], metadata: {} }), 18],
+        ['payloads with more than two public keys', '/construction/payloads', delegatedPayloads([publicKey, delegatorPublicKey, otherPublicKey]), 8],
+        ['payloads with a fee delegator but no delegator public key', '/construction/payloads', delegatedPayloads([publicKey]), 28],
+        ['payloads with a delegator public key that is not the fee delegator', '/construction/payloads', delegatedPayloads([publicKey, otherPublicKey]), 29],
         ['combine without the origin signature', '/construction/combine', () => { const other = randomAddress(); return { network_identifier: networkIdentifier, unsigned_transaction: unsignedTransaction, signatures: [{ signing_payload: { ...signingPayload, address: other, account_identifier: { address: other } }, public_key: publicKey, signature_type: 'ecdsa_recovery', hex_bytes: signature }] }; }, 20],
         ['combine with an all-zero signature', '/construction/combine', () => ({ network_identifier: networkIdentifier, unsigned_transaction: unsignedTransaction, signatures: [{ signing_payload: signingPayload, public_key: publicKey, signature_type: 'ecdsa_recovery', hex_bytes: '00'.repeat(65) }] }), 20],
         ['combine with a truncated signature', '/construction/combine', () => ({ network_identifier: networkIdentifier, unsigned_transaction: unsignedTransaction, signatures: [{ signing_payload: signingPayload, public_key: publicKey, signature_type: 'ecdsa_recovery', hex_bytes: signature.slice(0, 128) }] }), 20],

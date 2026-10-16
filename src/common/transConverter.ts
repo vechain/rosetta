@@ -19,7 +19,8 @@ export class TransactionConverter {
 
     public async parseRosettaTransaction(txid:string):Promise<Transaction>{
         const result:Transaction = {transaction_identifier:{hash:txid},operations:[]};
-        const txRece = (await this.connex.thor.transaction(txid).getReceipt());
+        const visitor = this.connex.thor.transaction(txid);
+        const [tx, txRece] = await Promise.all([visitor.get(), visitor.getReceipt()]);
         if(txRece == undefined){
             throw new Error(`Receipt of transaction ${txid} not found`);
         }
@@ -27,7 +28,9 @@ export class TransactionConverter {
             const opers = this.parseRosettaOperations(index,txRece);
             result.operations = result.operations.concat(opers);
         }
-        if(txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
+        // A VIP-191 delegated transaction is a fee delegation even when the
+        // delegator is the origin; a sponsored one shows only in gasPayer.
+        if(CheckSchema.isAddress(tx?.delegator) || txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
             result.operations.push(this.feeDelegationOperation(txRece));
         } else {
             result.operations.push(this.feeOperation(txRece));

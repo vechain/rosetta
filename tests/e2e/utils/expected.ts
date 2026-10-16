@@ -1,5 +1,5 @@
 import { VTHO_CONTRACT_ADDRESS } from '../config';
-import { ThorReceipt } from './thorClient';
+import { ThorReceipt, ThorTransaction } from './thorClient';
 
 // Derives, from thor's own receipt, the operations Rosetta must report for a
 // packed transaction. This is an independent re-implementation of the mapping
@@ -38,7 +38,7 @@ export const comparable = (operations: RosettaOperation[]): ComparableOperation[
 
 const topicToAddress = (topic: string): string => '0x' + topic.slice(26).toLowerCase();
 
-export const expectedOperations = (receipt: ThorReceipt): ComparableOperation[] => {
+export const expectedOperations = (receipt: ThorReceipt, tx: Pick<ThorTransaction, 'delegator'>): ComparableOperation[] => {
     const status = receipt.reverted ? 'Reverted' : 'Succeeded';
     const result: Omit<ComparableOperation, 'index'>[] = [];
 
@@ -58,7 +58,8 @@ export const expectedOperations = (receipt: ThorReceipt): ComparableOperation[] 
         }
     });
 
-    const delegated = receipt.gasPayer.toLowerCase() !== receipt.meta.txOrigin.toLowerCase();
+    // VIP-191 delegated (the delegator may be the origin itself) or paid by a sponsor.
+    const delegated = tx.delegator !== null || receipt.gasPayer.toLowerCase() !== receipt.meta.txOrigin.toLowerCase();
     result.push({
         network_index: receipt.outputs.length,
         type: delegated ? 'FeeDelegation' : 'Fee',

@@ -17,7 +17,10 @@ describe('Construction API', () => {
         ['dynamic VET transfer', { amount: '1000' }],
         ['legacy VET transfer', { amount: '1000', transactionType: 'legacy' as TransactionType }],
         ['VTHO transfer', { amount: '1000', currency: VTHO }],
-        ['fee-delegated VET transfer', { amount: '1000', delegator }]
+        ['fee-delegated VET transfer', { amount: '1000', delegator }],
+        ['fee-delegated legacy VET transfer', { amount: '1000', transactionType: 'legacy' as TransactionType, delegator }],
+        ['fee-delegated VTHO transfer', { amount: '1000', currency: VTHO, delegator }],
+        ['self-delegated VET transfer', { amount: '1000', delegator: sender }]
     ];
 
     describe.each(cases)('%s', (_, intent) => {
