@@ -135,7 +135,8 @@ export class Account extends Router {
                             const accbalance = await this.getAccountBalance(account,block.id);
                             balances.push({value:accbalance[0].value,currency:accbalance[0].currency});
                         } else {
-                            const tokenConf = this.tokenList.find( t => {return qtoken.metadata?.contractAddress != undefined && t.metadata.contractAddress.toLowerCase() == qtoken.metadata.contractAddress.toLowerCase()});
+                            const contractAddress = qtoken.metadata?.contractAddress?.toLowerCase();
+                            const tokenConf = this.tokenList.find( t => {return t.metadata.contractAddress.toLowerCase() == contractAddress});
                             if(tokenConf != undefined){
                                 const token = new VIP180Token(tokenConf.metadata.contractAddress,this.connex);
                                 const created = await token.created(revision);

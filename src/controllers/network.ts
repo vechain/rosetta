@@ -49,7 +49,7 @@ export class Network extends Router {
         await next();
     }
 
-    private async option(ctx:RequestContext<NetworkRequest>,_:Koa.Next){
+    private async option(ctx:RequestContext<NetworkRequest>,next:Koa.Next){
         const versions = {
             rosetta_version:this.env.config.rosetta_version,
             node_version:this.env.config.node_version
@@ -74,6 +74,7 @@ export class Network extends Router {
             version:versions,
             allow:allow
         });
+        await next();
     }
 
     private async status(ctx:RequestContext<NetworkRequest>,next:Koa.Next){
