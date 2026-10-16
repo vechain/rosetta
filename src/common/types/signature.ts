@@ -1,3 +1,5 @@
+import { AccountIdentifier } from "./identifiers";
+
 export type Signature = {
     signing_payload:SigningPayload,
     public_key:PublicKey,
@@ -6,7 +8,9 @@ export type Signature = {
 }
 
 export type SigningPayload = {
+    /** Deprecated by account_identifier in Rosetta 1.4.4. */
     address?:string,
+    account_identifier?:AccountIdentifier,
     hex_bytes:string,
     signature_type?:SignatureType
 }

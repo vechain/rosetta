@@ -6,5 +6,5 @@ export type Transaction = {
     transaction_identifier:TransactionIdentifier,
     operations:Array<Operation>,
     related_transactions?:Array<RelatedTransaction>,
-    metadata?:any
+    metadata?:Record<string, unknown>
 }

@@ -17,17 +17,17 @@ export type NetworkIdentifier = {
 export type AccountIdentifier = {
     address:string,
     sub_account?:SubAccountIdentifier,
-    metadata?:any
+    metadata?:Record<string, unknown>
 }
 
 export type SubAccountIdentifier = {
     address:string,
-    metadata?:any
+    metadata?:Record<string, unknown>
 }
 
 export type SubNetworkIdentifier = {
     network:string,
-    metadata?:any
+    metadata?:Record<string, unknown>
 }
 
 export type CoinIdentifier = {

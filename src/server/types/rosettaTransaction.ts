@@ -14,8 +14,8 @@ export class RosettaTransaction{
 
     public static decode(raw:Buffer,):RosettaTransactionStruct{
         const rlp = new RLP(RosettaTransactionStruct.rlpProfile);
-        const rosettaTx = rlp.decode(raw);
-        if((rosettaTx.delegator as string).toLocaleLowerCase() == "0x"){
+        const rosettaTx = rlp.decode(raw) as RosettaTransactionStruct;
+        if(rosettaTx.delegator?.toLocaleLowerCase() == "0x"){
             rosettaTx.delegator = undefined;
         }
         return rosettaTx;
