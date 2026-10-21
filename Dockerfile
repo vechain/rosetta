@@ -14,7 +14,7 @@ RUN git clone ${THOR_REPO} . && \
     make all
 
 # Node.js builder stage
-FROM node:22.18-alpine AS node-builder
+FROM node:22.23.4-alpine AS node-builder
 
 WORKDIR /usr/src/app/rosetta
 
