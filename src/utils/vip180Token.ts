@@ -2,6 +2,8 @@ import Axios from "axios";
 import { abi } from "thor-devkit";
 import ConnexPro from "./connexPro";
 
+type AbiItem = abi.Function.Definition | abi.Event.Definition | { type: "constructor" };
+
 interface AccountDataResponse {
     hasCode: boolean;
 }
@@ -15,12 +17,8 @@ export class VIP180Token {
         this.address = addr;
     }
 
-    private async callViewFunction(fName: string, args: any[] = [], revision?: string): Promise<abi.Decoded> {
-        const funAbi = (VIP180Token.contractAbi as Array<any>).find(i => i.name === fName);
-        if (!funAbi) {
-            throw new Error(`Function ${fName} not found in VIP180Token ABI`);
-        }
-        const fun = new abi.Function(funAbi);
+    private async callViewFunction(fName: string, args: unknown[] = [], revision?: string): Promise<abi.Decoded> {
+        const fun = new abi.Function(VIP180Token.functionAbi(fName));
         const data = fun.encode(...args);
         const explainArg = {
             clauses: [
@@ -40,32 +38,32 @@ export class VIP180Token {
 
     public async name(): Promise<string> {
         const decoded = await this.callViewFunction("name");
-        return String(decoded[0] ?? "");
+        return String((decoded[0] as string | undefined) ?? "");
     }
 
     public async symbol(): Promise<string> {
         const decoded = await this.callViewFunction("symbol");
-        return String(decoded[0] ?? "");
+        return String((decoded[0] as string | undefined) ?? "");
     }
 
     public async decimals(): Promise<number> {
         const decoded = await this.callViewFunction("decimals");
-        return Number(decoded[0] ?? 0);
+        return Number((decoded[0] as string | undefined) ?? 0);
     }
 
     public async totalSupply(): Promise<bigint> {
         const decoded = await this.callViewFunction("totalSupply");
-        return BigInt(decoded[0] ?? 0);
+        return BigInt((decoded[0] as string | undefined) ?? 0);
     }
 
     public async balanceOf(owner: string, revision?: string): Promise<bigint> {
         const decoded = await this.callViewFunction("balanceOf", [owner], revision);
-        return BigInt(decoded[0] ?? 0);
+        return BigInt((decoded[0] as string | undefined) ?? 0);
     }
 
     public async allowance(owner: string, spender: string): Promise<bigint> {
         const decoded = await this.callViewFunction("allowance", [owner, spender]);
-        return BigInt(decoded[0] ?? 0);
+        return BigInt((decoded[0] as string | undefined) ?? 0);
     }
 
     public async baseInfo():Promise<{name:string,symbol:string,decimals:number}>{
@@ -75,7 +73,7 @@ export class VIP180Token {
         return {name:name,symbol:symbol,decimals:decimals};
     }
 
-    public async created(revision?:string):Promise<boolean>{
+    public async created(revision?:string|number):Promise<boolean>{
         const url = this.connex.baseUrl + '/accounts/' + this.address;
         const acc = await Axios({url:url,method:'Get',responseType:'json',params:{revision:revision}});
         const data = acc.data as unknown as AccountDataResponse;
@@ -363,11 +361,27 @@ export class VIP180Token {
             "type": "function",
             "signature": "0x23b872dd"
         }
-    ]`); 
+    ]`) as ReadonlyArray<AbiItem>;
+
+    private static functionAbi(fName:string):abi.Function.Definition {
+        const def = VIP180Token.contractAbi.find((i):i is abi.Function.Definition => i.type === "function" && i.name === fName);
+        if (!def) {
+            throw new Error(`Function ${fName} not found in VIP180Token ABI`);
+        }
+        return def;
+    }
+
+    private static eventAbi(eventName:string):abi.Event.Definition {
+        const def = VIP180Token.contractAbi.find((i):i is abi.Event.Definition => i.type === "event" && i.name === eventName);
+        if (!def) {
+            throw new Error(`Event ${eventName} not found in VIP180Token ABI`);
+        }
+        return def;
+    }
 
     public static filterEvents(events:Connex.VM.Event[],address:string,eventName:string):Connex.VM.Event[] {
         const result = Array<Connex.VM.Event>();
-        const eventAbi = new abi.Event((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == eventName;}));
+        const eventAbi = new abi.Event(VIP180Token.eventAbi(eventName));
         for(const ev of events){
             if(ev.address.toLowerCase() == address.toLowerCase() && (ev.topics[0] || '').toLowerCase() == eventAbi.signature.toLowerCase()){
                 result.push(ev);
@@ -377,12 +391,12 @@ export class VIP180Token {
     }
 
     public static decodeCallData(data:string,fName:string):abi.Decoded{
-        const funAbi = new abi.Function((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == fName;}));
+        const funAbi = new abi.Function(VIP180Token.functionAbi(fName));
         return abi.decodeParameters(funAbi.definition.inputs,'0x' + data.substring(10));
     }
 
-    public static encode(fName:string,...args:any[]):string{
-        const funAbi = new abi.Function((VIP180Token.contractAbi as Array<any>).find( i => {return i.name == fName;}));
+    public static encode(fName:string,...args:unknown[]):string{
+        const funAbi = new abi.Function(VIP180Token.functionAbi(fName));
         return funAbi.encode(...args);
     }
 }

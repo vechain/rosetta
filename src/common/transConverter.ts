@@ -4,36 +4,40 @@ import { Transaction } from "../common/types/transaction";
 import ConnexPro from "../utils/connexPro";
 import { VIP180Token } from "../utils/vip180Token";
 import { CheckSchema } from './checkSchema';
-import { Currency } from "./types/currency";
+import { TokenCurrency } from "./types/currency";
+import { Env } from "./types/env";
 import { OperationIdentifier } from "./types/identifiers";
 import { Operation, OperationStatus, OperationType } from "./types/operation";
 
 export class TransactionConverter {
 
-    public constructor(env:any){
+    public constructor(env:Env){
         this.env = env;
         this.connex = this.env.connex;
         this.tokenList = this.env.config.tokenlist;
     }
 
     public async parseRosettaTransaction(txid:string):Promise<Transaction>{
-        const result:Transaction = {transaction_identifier:{hash:''},operations:[]};
-        const txRece = (await this.connex.thor.transaction(txid).getReceipt());
-        if(txRece != undefined){
-            result.transaction_identifier = {hash:txid};
-            for(let index = 0; index < txRece.outputs.length; index++) {
-                const opers = this.parseRosettaOperations(index,txRece);
-                result.operations = result.operations.concat(opers);
-            }
-            if(txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
-                result.operations.push(this.feeDelegationOperation(txRece));
-            } else {
-                result.operations.push(this.feeOperation(txRece));
-            }
-            for(let index = 0; index < result.operations.length; index++ ){
-                result.operations[index].operation_identifier.index = index;
-                result.operations[index].status = txRece.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
-            }
+        const result:Transaction = {transaction_identifier:{hash:txid},operations:[]};
+        const visitor = this.connex.thor.transaction(txid);
+        const [tx, txRece] = await Promise.all([visitor.get(), visitor.getReceipt()]);
+        if(txRece == undefined){
+            throw new Error(`Receipt of transaction ${txid} not found`);
+        }
+        for(let index = 0; index < txRece.outputs.length; index++) {
+            const opers = this.parseRosettaOperations(index,txRece);
+            result.operations = result.operations.concat(opers);
+        }
+        // A VIP-191 delegated transaction is a fee delegation even when the
+        // delegator is the origin; a sponsored one shows only in gasPayer.
+        if(CheckSchema.isAddress(tx?.delegator) || txRece.gasPayer.toLowerCase() != txRece.meta.txOrigin.toLowerCase()){
+            result.operations.push(this.feeDelegationOperation(txRece));
+        } else {
+            result.operations.push(this.feeOperation(txRece));
+        }
+        for(let index = 0; index < result.operations.length; index++ ){
+            result.operations[index].operation_identifier.index = index;
+            result.operations[index].status = txRece.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
         }
         return result;
     }
@@ -63,7 +67,7 @@ export class TransactionConverter {
         };
     }
 
-    private createTransferOperations(origin: string, clause: VeTransaction.Clause, index: number, token: Currency): Operation[] {
+    private createTransferOperations(origin: string, clause: VeTransaction.Clause, index: number, token: TokenCurrency): Operation[] {
         const decode = VIP180Token.decodeCallData(clause.data, 'transfer');
         const sendOp: Operation = {
             operation_identifier: this.createOperationIdentifier(0, index),
@@ -72,7 +76,7 @@ export class TransactionConverter {
                 address: origin
             },
             amount: {
-                value: (BigInt(decode._amount) * BigInt(-1)).toString(10),
+                value: (BigInt(decode._amount as string) * BigInt(-1)).toString(10),
                 currency: token
             }
         };
@@ -83,7 +87,7 @@ export class TransactionConverter {
                 address: decode._to as string
             },
             amount: {
-                value: BigInt(decode._amount).toString(10),
+                value: BigInt(decode._amount as string).toString(10),
                 currency: token
             }
         };
@@ -138,25 +142,33 @@ export class TransactionConverter {
         }
     }
 
-    private async calculateGasPrice(tx: Connex.Thor.Transaction): Promise<bigint> {
+    /**
+     * The highest gas price a pending transaction can be charged: for a dynamic
+     * fee transaction min(maxFeePerGas, baseFee + maxPriorityFeePerGas), for a
+     * legacy one baseGasPrice * (1 + gasPriceCoef / 255).
+     */
+    private async pendingGasPrice(tx: Connex.Thor.Transaction): Promise<bigint> {
         if (tx.type === 81) {
-            const { baseFee, reward } = await this.getDynamicGasPrice();
-            return baseFee + reward;
+            const { baseFee } = await this.getDynamicGasPrice();
+            const maxFee = BigInt(tx.maxFeePerGas ?? 0);
+            const price = baseFee + BigInt(tx.maxPriorityFeePerGas ?? 0);
+            return price < maxFee ? price : maxFee;
         }
-        return BigInt(this.env.config.baseGasPrice);
+        const baseGasPrice = BigInt(this.env.config.baseGasPrice);
+        return baseGasPrice + baseGasPrice * BigInt(tx.gasPriceCoef ?? 0) / BigInt(255);
     }
 
-    private async createFeeOperation(tx: Connex.Thor.Transaction, delegator: string | null | undefined, origin: string): Promise<Operation> {
-        const isDelegation = CheckSchema.isAddress(delegator);
-        const gasPrice = await this.calculateGasPrice(tx);
+    private async createFeeOperation(tx: Connex.Thor.Transaction): Promise<Operation> {
+        const isDelegation = CheckSchema.isAddress(tx.delegator);
+        const gasPrice = await this.pendingGasPrice(tx);
         return {
-            operation_identifier: this.createOperationIdentifier(0, 0),
+            operation_identifier: this.createOperationIdentifier(0, tx.clauses.length),
             type: isDelegation ? OperationType.FeeDelegation : OperationType.Fee,
             account: {
-                address: isDelegation ? delegator! : origin
+                address: isDelegation ? tx.delegator! : tx.origin
             },
             amount: {
-                value: (BigInt(tx.gas) * BigInt(10**18) / gasPrice * BigInt(-1)).toString(10),
+                value: (BigInt(tx.gas) * gasPrice * BigInt(-1)).toString(10),
                 currency: VTHOCurrency
             }
         };
@@ -165,9 +177,9 @@ export class TransactionConverter {
     private async processClause(clause: VeTransaction.Clause, index: number, origin: string): Promise<Operation[]> {
         if (clause.value == 0 || clause.value == '') {
             const token = this.tokenList.find(t => t.metadata.contractAddress == clause.to);
-            if (token == undefined || clause.data.substring(10) != '0xa9059cbb') {
+            if (token == undefined || clause.data.substring(0,10) != '0xa9059cbb') {
                 const code = await this.connex.driver.getCode(clause.to as string, this.connex.thor.status.head.id);
-                if (code && code.code !== '0x') {
+                if (code.code !== '0x') {
                     return [this.createCallOperation(origin, clause, index)];
                 }
                 return [];
@@ -177,27 +189,28 @@ export class TransactionConverter {
         return this.createVETTransferOperations(origin, clause, index);
     }
 
-    public async convertClausesToOperations(tx: Connex.Thor.Transaction, txrecp?: Connex.Thor.Transaction.Receipt | null): Promise<Operation[]> {
+    /**
+     * Operations of a pending (not yet packed) transaction, derived from its
+     * clauses. Packed transactions are converted from their receipt instead,
+     * see parseRosettaTransaction.
+     *
+     * Data API operations must carry a status declared in /network/options;
+     * a pending transaction has no outcome yet, so it is reported as None.
+     */
+    public async convertClausesToOperations(tx: Connex.Thor.Transaction): Promise<Operation[]> {
         let operations: Operation[] = [];
-        const origin = tx.origin;
-        const delegator = tx.delegator;
 
         for (let index = 0; index < tx.clauses.length; index++) {
             const clause = tx.clauses[index] as VeTransaction.Clause;
-            const clauseOperations = await this.processClause(clause, index, origin);
+            const clauseOperations = await this.processClause(clause, index, tx.origin);
             operations = operations.concat(clauseOperations);
         }
 
-        operations.push(await this.createFeeOperation(tx, delegator, origin));
-
-        if (txrecp) {
-            for (const oper of operations) {
-                oper.status = txrecp.reverted ? OperationStatus.Reverted : OperationStatus.Succeeded;
-            }
-            const payOp = operations.find(op => op.type == OperationType.Fee || op.type == OperationType.FeeDelegation)!;
-            const gasPrice = await this.calculateGasPrice(tx);
-            payOp.amount!.value = (BigInt(txrecp.gasUsed) * BigInt(10**18) / gasPrice * BigInt(-1)).toString(10);
-        }
+        operations.push(await this.createFeeOperation(tx));
+        operations.forEach((operation, index) => {
+            operation.operation_identifier.index = index;
+            operation.status = OperationStatus.None;
+        });
 
         return operations;
     }
@@ -244,7 +257,7 @@ export class TransactionConverter {
            for(const ev of rece.outputs[clauseIndex].events){
                 const targetToken = this.tokenList.find( token => { return token.metadata.contractAddress.toLowerCase() == ev.address.toLowerCase()});
                 if(targetToken != undefined){
-                    const transEvents = VIP180Token.filterEvents([ev],targetToken.metadata.contractAddress,'Transfer');
+                    const transEvents = VIP180Token.filterEvents([ev],ev.address,'Transfer');
                     if(transEvents.length == 1){
                         const transEvet = transEvents[0];
                         const sendOper:Operation = {
@@ -330,7 +343,7 @@ export class TransactionConverter {
         }
     }
 
-    private env:any;
+    private env:Env;
     private connex:ConnexPro;
-    private tokenList:Array<Currency> = [];
+    private tokenList:Array<TokenCurrency> = [];
 }

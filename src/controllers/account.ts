@@ -1,11 +1,15 @@
 import Axios from "axios";
 import Joi from "joi";
+import type Koa from "koa";
 import Router from "koa-router";
 import { VETCurrency, VTHOCurrency } from "..";
 import { getError } from "../common/errors";
 import { Amount } from "../common/types/amount";
-import { Currency } from "../common/types/currency";
+import { RequestContext } from "../common/types/context";
+import { Currency, TokenCurrency } from "../common/types/currency";
+import { Env } from "../common/types/env";
 import { BlockIdentifier } from "../common/types/identifiers";
+import { AccountBalanceRequest } from "../common/types/requests";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
@@ -17,7 +21,7 @@ interface AccountResponse {
 }
 
 export class Account extends Router {
-    constructor(env:any){
+    constructor(env:Env){
         super();
         this.env = env;
         this.connex = this.env.connex;
@@ -28,11 +32,11 @@ export class Account extends Router {
                 async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
                 async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
                 async (ctx,next) => { await this.verifyMiddleware.checkAccount(ctx,next);},
-                async (ctx,next) => { await this.balance(ctx,next);} 
+                async (ctx,next) => { await this.balance(ctx as RequestContext<AccountBalanceRequest>,next);} 
             );
     }
 
-    // private async balance_1(ctx:any,next: () => Promise<any>){
+    // private async balance_1(ctx:any,next:Koa.Next){
     //     const account = ctx.request.body.account_identifier.address;
     //     const subaccount = ctx.request.body.account_identifier.sub_account?.address || "";
     //     let revision = undefined;
@@ -104,7 +108,7 @@ export class Account extends Router {
     //     await next();
     // }
 
-    private async balance(ctx:any,next: () => Promise<any>){
+    private async balance(ctx:RequestContext<AccountBalanceRequest>,next:Koa.Next){
         const verify = this.checkCurrencies(ctx.request.body.currencies);
         if(verify.result){
             const account = ctx.request.body.account_identifier.address;
@@ -116,7 +120,7 @@ export class Account extends Router {
                 revision = ctx.request.body.block_identifier.index;
             }
 
-            let qlist = (ctx.request.body.currencies as Array<Currency>) || new Array<Currency>();
+            let qlist = ctx.request.body.currencies ?? new Array<Currency>();
             const balances = new Array<{value:string,currency:Currency}>();
             if(qlist.length == 0){
                 qlist.push(VETCurrency);
@@ -131,7 +135,8 @@ export class Account extends Router {
                             const accbalance = await this.getAccountBalance(account,block.id);
                             balances.push({value:accbalance[0].value,currency:accbalance[0].currency});
                         } else {
-                            const tokenConf = this.tokenList.find( t => {return qtoken.metadata.contractAddress != undefined && t.metadata.contractAddress.toLowerCase() == qtoken.metadata.contractAddress.toLowerCase()});
+                            const contractAddress = qtoken.metadata?.contractAddress?.toLowerCase();
+                            const tokenConf = this.tokenList.find( t => {return t.metadata.contractAddress.toLowerCase() == contractAddress});
                             if(tokenConf != undefined){
                                 const token = new VIP180Token(tokenConf.metadata.contractAddress,this.connex);
                                 const created = await token.created(revision);
@@ -140,14 +145,14 @@ export class Account extends Router {
                                     balances.push({value:balance.toString(10),currency:tokenConf});
                                 } else {
                                     ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(27,undefined,{
-                                        contractAddress:qtoken.metadata.contractAddress,
+                                        contractAddress:qtoken.metadata?.contractAddress,
                                         revision:revision
                                     }));
                                     return;
                                 }
                             } else {
                                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(1,undefined,{
-                                    contractAddress:qtoken.metadata.contractAddress
+                                    contractAddress:qtoken.metadata?.contractAddress
                                 }));
                                 return;
                             }
@@ -197,7 +202,7 @@ export class Account extends Router {
         return result;
     }
 
-    private checkCurrencies(currencies:any):{result:boolean,error:any}{
+    private checkCurrencies(currencies:unknown):{result:boolean,error:Joi.ValidationError|undefined}{
         const schema = Joi.array().items(Joi.object({
             symbol:Joi.string().required(),
             decimals:Joi.number().min(0).required(),
@@ -209,8 +214,8 @@ export class Account extends Router {
         return {result:verify.error == undefined,error:verify.error};
     }
 
-    private env:any;
+    private env:Env;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
-    private tokenList:Array<Currency>;
+    private tokenList:Array<TokenCurrency>;
 }

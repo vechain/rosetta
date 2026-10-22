@@ -25,7 +25,7 @@ module.exports = [
         },
         rules: {
             "@typescript-eslint/explicit-function-return-type": "off",
-            "@typescript-eslint/no-explicit-any": "off",
+            "@typescript-eslint/no-explicit-any": "warn",
             "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
             "@typescript-eslint/no-require-imports": "off",
             "no-console": "off",
@@ -33,9 +33,48 @@ module.exports = [
             "jest/no-focused-tests": "error",
             "jest/no-identical-title": "error",
             "jest/prefer-to-have-length": "warn",
-            "jest/valid-expect": "error"
+            "jest/valid-expect": "error",
+            "jest/no-standalone-expect": ["error", { additionalTestBlockFunctions: ["knownBug"] }]
         }
     }),
+    {
+        files: ["**/*.ts"],
+        languageOptions: {
+            parserOptions: {
+                project: "./tsconfig.json",
+                tsconfigRootDir: __dirname
+            }
+        }
+    },
+    // Strictly typed modules: `any` must not leak through here. Extend this list
+    // as other directories are cleaned up (index.ts, tests).
+    {
+        files: [
+            "src/common/**/*.ts",
+            "src/controllers/**/*.ts",
+            "src/middlewares/**/*.ts",
+            "src/server/**/*.ts",
+            "src/utils/**/*.ts"
+        ],
+        rules: {
+            "@typescript-eslint/no-explicit-any": "error",
+            "@typescript-eslint/no-unsafe-argument": "error",
+            "@typescript-eslint/no-unsafe-assignment": "error",
+            "@typescript-eslint/no-unsafe-call": "error",
+            "@typescript-eslint/no-unsafe-member-access": "error",
+            "@typescript-eslint/no-unsafe-return": "error",
+            // Rejects `any`-typed conditions such as `decoded.length ? ... : ...`
+            // on thor-devkit's abi.Decoded, which silently returned 0 balances.
+            "@typescript-eslint/strict-boolean-expressions": ["error", {
+                allowString: true,
+                allowNumber: true,
+                allowNullableObject: true,
+                allowNullableBoolean: true,
+                allowNullableString: true,
+                allowAny: false
+            }]
+        }
+    },
     {
         files: ["typings/**/*.d.ts"],
         rules: {

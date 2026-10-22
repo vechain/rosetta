@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions:
+  contents: read
+
 jobs:
   lint:
     runs-on: ubuntu-latest
@@ -19,40 +22,65 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Run typecheck
+        run: npm run typecheck
+
       - name: Run lint
         run: npm run lint
 
+  # Static API tests (tests/e2e/api) and thor cross-check tests (tests/e2e/solo),
+  # run against one Rosetta + thor solo environment started by jest's globalSetup.
+  # Every recorded exchange is then checked against rosetta-sdk-go v0.8.3
+  # (tests/sdk-conformance), the SDK rosetta-cli is built on.
   e2e-tests:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        test-network: [custom]
     env:
-      NETWORK: ${{ matrix.test-network }}
-      TEST_NETWORK: ${{ matrix.test-network }}
-      MODE: online
-      THOR_VERSION: v2.4.3
-      THOR_REPO: https://github.com/vechain/thor.git
+      E2E_SHOW_LOGS: '1'
+      E2E_RECORD_FILE: ${{ github.workspace }}/tests/sdk-conformance/exchanges.jsonl
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: tests/sdk-conformance/go.mod
+          cache-dependency-path: tests/sdk-conformance/go.sum
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22.18'
           cache: 'npm'
-          
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Prepare volume dir
-        run: |
-          mkdir -p rosetta_data
-          chmod -R 777 rosetta_data
-
       - name: Build Docker images
         run: docker compose build
-          
+
       - name: Run e2e tests
-        run: npm run test:e2e:${{ matrix.test-network }}
+        run: npm run test:e2e
+
+      - name: Check exchanges against rosetta-sdk-go
+        working-directory: tests/sdk-conformance
+        run: go run . "$E2E_RECORD_FILE"
+
+  # Full-flow validation with rosetta-cli against Rosetta + thor solo.
+  # test:rosetta-cli:test / :main depend on public nodes and run on demand.
+  rosetta-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run rosetta-cli checks on thor solo
+        run: npm run test:rosetta-cli:solo
+
+      - name: Upload rosetta-cli results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rosetta-cli-results
+          path: |
+            cli-data/solo/construction_results.json
+            cli-data/solo/data_results.json
+          if-no-files-found: ignore
