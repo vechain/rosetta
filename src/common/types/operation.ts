@@ -10,7 +10,7 @@ export type Operation = {
     account?:AccountIdentifier,
     amount?:Amount,
     coin_change?:CoinChange,
-    metadata?:any
+    metadata?:Record<string, unknown>
 }
 
 export enum OperationType {

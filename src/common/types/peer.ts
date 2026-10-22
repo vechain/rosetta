@@ -1,4 +1,4 @@
 export type Peer = {
     peer_id:string,
-    metadata?:any
+    metadata?:Record<string, unknown>
 }

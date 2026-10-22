@@ -6,7 +6,7 @@ export type Block = {
     parent_block_identifier:BlockIdentifier,
     timestamp:number,
     transactions:Transaction,
-    metadata?:any
+    metadata?:Record<string, unknown>
 }
 
 export type BlockEvent = {

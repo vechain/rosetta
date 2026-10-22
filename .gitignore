@@ -8,3 +8,4 @@ rosetta/bin/
 rosetta_data/
 cli-data/
 .idea/
+tests/sdk-conformance/exchanges.jsonl
