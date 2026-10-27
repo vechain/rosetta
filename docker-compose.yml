@@ -1,5 +1,7 @@
 services:
   rosetta-server:
+    # A fixed name, so the tests (compose project rosetta-e2e) reuse the image built here.
+    image: vechain-rosetta
     build:
       context: .
       # Passed through only when set, so the Dockerfile defaults apply otherwise.
@@ -7,7 +9,7 @@ services:
         - THOR_REPO
         - THOR_VERSION
     volumes:
-      - ./rosetta_data/:/data
+      - ${ROSETTA_DATA:-./rosetta_data}:/data
     ports:
       - "0.0.0.0:8080:8080"
       - "0.0.0.0:8669:8669"

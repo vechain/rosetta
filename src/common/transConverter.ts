@@ -143,24 +143,21 @@ export class TransactionConverter {
     }
 
     /**
-     * The highest gas price a pending transaction can be charged: for a dynamic
-     * fee transaction min(maxFeePerGas, baseFee + maxPriorityFeePerGas), for a
-     * legacy one baseGasPrice * (1 + gasPriceCoef / 255).
+     * The highest gas price a pending transaction can be charged: maxFeePerGas
+     * for a dynamic fee transaction (the base fee of the block that packs it is
+     * not known yet), baseGasPrice * (1 + gasPriceCoef / 255) for a legacy one.
      */
-    private async pendingGasPrice(tx: Connex.Thor.Transaction): Promise<bigint> {
+    private pendingGasPrice(tx: Connex.Thor.Transaction): bigint {
         if (tx.type === 81) {
-            const { baseFee } = await this.getDynamicGasPrice();
-            const maxFee = BigInt(tx.maxFeePerGas ?? 0);
-            const price = baseFee + BigInt(tx.maxPriorityFeePerGas ?? 0);
-            return price < maxFee ? price : maxFee;
+            return BigInt(tx.maxFeePerGas ?? 0);
         }
         const baseGasPrice = BigInt(this.env.config.baseGasPrice);
         return baseGasPrice + baseGasPrice * BigInt(tx.gasPriceCoef ?? 0) / BigInt(255);
     }
 
-    private async createFeeOperation(tx: Connex.Thor.Transaction): Promise<Operation> {
+    private createFeeOperation(tx: Connex.Thor.Transaction): Operation {
         const isDelegation = CheckSchema.isAddress(tx.delegator);
-        const gasPrice = await this.pendingGasPrice(tx);
+        const gasPrice = this.pendingGasPrice(tx);
         return {
             operation_identifier: this.createOperationIdentifier(0, tx.clauses.length),
             type: isDelegation ? OperationType.FeeDelegation : OperationType.Fee,
@@ -184,7 +181,12 @@ export class TransactionConverter {
                 }
                 return [];
             }
-            return this.createTransferOperations(origin, clause, index, token);
+            try {
+                return this.createTransferOperations(origin, clause, index, token);
+            } catch {
+                // Malformed transfer arguments: the clause still calls the contract.
+                return [this.createCallOperation(origin, clause, index)];
+            }
         }
         return this.createVETTransferOperations(origin, clause, index);
     }
@@ -206,7 +208,7 @@ export class TransactionConverter {
             operations = operations.concat(clauseOperations);
         }
 
-        operations.push(await this.createFeeOperation(tx));
+        operations.push(this.createFeeOperation(tx));
         operations.forEach((operation, index) => {
             operation.operation_identifier.index = index;
             operation.status = OperationStatus.None;

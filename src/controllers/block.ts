@@ -99,7 +99,7 @@ export class Block extends Router {
                 }));
             }
         } catch (error) {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{error}));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{error:String(error)}));
             return;
         }
         await next();
@@ -143,7 +143,7 @@ export class Block extends Router {
                 return;
             }
         } catch (error) {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,error));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{error:String(error)}));
             return;
         }
         await next();

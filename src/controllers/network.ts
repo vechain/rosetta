@@ -60,7 +60,7 @@ export class Network extends Router {
                 {status:OperationStatus.Succeeded,successful:true},
                 {status:OperationStatus.Reverted,successful:false}
             ],
-            operation_types:[OperationType.None,OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation],
+            operation_types:[OperationType.None,OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation,OperationType.Call],
             errors:[],
             historical_balance_lookup:true,
             call_methods:[],
