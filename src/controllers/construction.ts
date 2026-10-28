@@ -937,7 +937,8 @@ export class Construction extends Router {
                             address:Joi.string().lowercase().length(42).regex(/^(-0x|0x)?[0-9a-f]*$/)
                         })
                     }),
-                    hex_bytes:Joi.string().lowercase().regex(/^(-0x|0x)?[0-9a-f]*$/),
+                    // 32-byte signing hash, hex without prefix, as returned by /construction/payloads.
+                    hex_bytes:Joi.string().lowercase().regex(/^[0-9a-f]{64}$/).required(),
                     signature_type:Joi.string().valid(SignatureType.ecdsa_recovery)
                 }).required(),
                 public_key:{

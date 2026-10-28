@@ -96,6 +96,8 @@ npm run test:e2e
 
 `npm run test:e2e`, `test:api` and `test:solo` start a fresh environment once per run and stop it afterwards. Set `E2E_REUSE_ENV=1` to run against an environment that is already up (`NETWORK=custom MODE=online docker compose up -d`) and keep it running, which is faster while iterating.
 
+The tests and `tests/rosetta-cli/run.sh solo` use their own compose project (`rosetta-e2e`) and data dir (`./.e2e_data`), so a node started with `npm run start:*` in `./rosetta_data` is left untouched. Both bind port 8080, so stop that node before running the tests.
+
 Tests for confirmed, not yet fixed bugs are declared with `knownBug` (`tests/e2e/utils/knownBug.ts`): they pass while the bug exists and fail once it is fixed. Run with `E2E_KNOWN_BUGS=run` to see the actual failures.
 
 ### Testing Against a Custom Thor Branch

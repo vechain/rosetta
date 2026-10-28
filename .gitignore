@@ -6,6 +6,7 @@ log/
 .vscode/
 rosetta/bin/
 rosetta_data/
+.e2e_data/
 cli-data/
 .idea/
 tests/sdk-conformance/exchanges.jsonl

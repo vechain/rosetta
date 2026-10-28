@@ -44,6 +44,10 @@ case "$TARGET" in
         ;;
 esac
 export NETWORK MODE=online
+# Own compose project and data dir, so a node started with `npm run start:*`
+# (project "rosetta", ./rosetta_data) is never stopped or wiped.
+export ROSETTA_DATA=$PWD/.e2e_data
+COMPOSE="docker compose -p rosetta-e2e"
 
 CLI_IMAGE=rosetta-cli
 ROSETTA_URL=http://localhost:8080
@@ -54,8 +58,8 @@ cleanup() {
     local status=$?
     if [ "${REUSE_ENV:-0}" != "1" ]; then
         if [ "$TARGET" = "solo" ]; then
-            [ "$status" -ne 0 ] && docker compose logs --tail=200 || true
-            docker compose down -v || true
+            [ "$status" -ne 0 ] && $COMPOSE logs --tail=200 || true
+            $COMPOSE down -v || true
         else
             [ "$status" -ne 0 ] && docker logs --tail=200 "$ROSETTA_CONTAINER" || true
             docker rm -f "$ROSETTA_CONTAINER" > /dev/null 2>&1 || true
@@ -71,23 +75,30 @@ run_cli() {
 
 if [ "${SKIP_BUILD:-0}" != "1" ]; then
     echo "==> Building images"
-    docker compose build
+    $COMPOSE build
     docker build -t "$CLI_IMAGE" rosetta-cli-conf
 fi
 
 if [ "${REUSE_ENV:-0}" != "1" ]; then
     if [ "$TARGET" = "solo" ]; then
         echo "==> Starting Rosetta with thor solo"
-        docker compose down -v
-        rm -rf rosetta_data && mkdir -p rosetta_data && chmod 777 rosetta_data
-        docker compose up -d
+        $COMPOSE down -v
+        # Files written by the container may belong to its uid: remove those from inside it.
+        rm -rf "$ROSETTA_DATA" 2> /dev/null ||
+            $COMPOSE run --rm --no-deps --entrypoint sh rosetta-server -c 'rm -rf /data/* /data/.[!.]*'
+        if [ -n "$(ls -A "$ROSETTA_DATA" 2> /dev/null)" ]; then
+            echo "Could not clean $ROSETTA_DATA" >&2
+            exit 1
+        fi
+        mkdir -p "$ROSETTA_DATA" && chmod 777 "$ROSETTA_DATA"
+        $COMPOSE up -d
     else
         # Run only the Rosetta server from the image, against the external node.
         echo "==> Starting Rosetta for $NETWORK against $NODE_URL"
         docker rm -f "$ROSETTA_CONTAINER" > /dev/null 2>&1 || true
         docker run -d --name "$ROSETTA_CONTAINER" --network host \
             -e MODE=online -e NETWORK="$NETWORK" -e NODEURL="$NODE_URL" \
-            --entrypoint node "$(docker compose config --images | head -1)" /usr/src/app/rosetta/dist/index.js > /dev/null
+            --entrypoint node "$($COMPOSE config --images | head -1)" /usr/src/app/rosetta/dist/index.js > /dev/null
     fi
 fi
 

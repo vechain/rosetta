@@ -1,4 +1,6 @@
-import { SOLO_ACCOUNTS, VTHO, randomAddress } from '../config';
+import axios from 'axios';
+import { Transaction, secp256k1 } from 'thor-devkit';
+import { SOLO_ACCOUNTS, THOR_URL, VTHO, VTHO_CONTRACT_ADDRESS, randomAddress } from '../config';
 import { TransferIntent, constructTransfer, sendTransfer, submitTransaction, waitForPacked } from '../utils/construction';
 import { comparable, expectedOperations } from '../utils/expected';
 import { rosetta } from '../utils/rosettaClient';
@@ -46,6 +48,25 @@ describe('Mempool API vs thor', () => {
         const fee = (mempoolTx.transaction.operations as Op[]).find(op => op.type === 'Fee')!;
         const { gas, maxFeePerGas } = constructed.metadata.metadata;
         expect(BigInt(fee.amount.value)).toBe(-BigInt(gas) * BigInt(maxFeePerGas));
+    });
+
+    it('a pending VTHO call with malformed transfer arguments is reported as a contract call', async () => {
+        const [genesis, best] = await Promise.all([thor.block(0), thor.best()]);
+        const tx = new Transaction({
+            chainTag: parseInt(genesis.id.slice(-2), 16),
+            blockRef: best.id.slice(0, 18),
+            expiration: 32,
+            clauses: [{ to: VTHO_CONTRACT_ADDRESS, value: 0, data: '0xa9059cbb' }],
+            gasPriceCoef: 0,
+            gas: 50000,
+            dependsOn: null,
+            nonce: Date.now()
+        });
+        tx.signature = secp256k1.sign(tx.signingHash(), Buffer.from(sender.privateKey, 'hex'));
+        const { id: hash } = (await axios.post(`${THOR_URL}/transactions`, { raw: '0x' + tx.encode().toString('hex') })).data;
+
+        const mempoolTx = await rosetta.call('/mempool/transaction', { transaction_identifier: { hash } });
+        expect((mempoolTx.transaction.operations as Op[]).map(op => op.type)).toEqual(['Call', 'Fee']);
     });
 
     it.each([

@@ -1,0 +1,7 @@
+# The Dockerfile copies only what it needs; keep node data out of the build
+# context (files written by the container may not be readable by the host user).
+node_modules/
+dist/
+rosetta_data/
+.e2e_data/
+cli-data/

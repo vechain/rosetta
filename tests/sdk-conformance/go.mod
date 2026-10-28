@@ -1,6 +1,6 @@
 module github.com/vechain/rosetta/tests/sdk-conformance
 
-go 1.24
+go 1.26.10
 
 // Pinned to the SDK that rosetta-cli (mesh-cli v0.10.4) is built on.
 require (
