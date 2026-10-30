@@ -76,25 +76,29 @@ services:
 
 ### Running Tests Locally
 
-The project includes end-to-end tests that verify the Rosetta API implementation:
+Tests are grouped in three categories. All of them run against Rosetta with an embedded thor solo node (`NETWORK=custom`):
+
+| Category | Location | Command | What it checks |
+|---|---|---|---|
+| Static API | `tests/e2e/api` | `npm run test:api` | Calls every endpoint, including error paths, and validates the responses against the Rosetta spec schema. Values are not checked. |
+| Solo cross-check | `tests/e2e/solo` | `npm run test:solo` | Compares response values and logic with the thor node API: blocks, balances, operations derived from receipts, constructed vs. packed transactions, fees. |
+| rosetta-cli flow | `tests/rosetta-cli` | `npm run test:rosetta-cli:solo` / `:test` / `:main` | Runs rosetta-cli against thor solo (`check:construction` and `check:data`), testnet or mainnet (`check:data` on recent blocks). See [rosetta-cli Validation](#rosetta-cli-validation). |
+| SDK conformance | `tests/sdk-conformance` | `npm run test:sdk-conformance` | Records every request/response of the static API and solo tests, then checks each against rosetta-sdk-go v0.8.3 (the SDK rosetta-cli is built on): strict decoding into the SDK types (no unknown or missing fields) plus the SDK server/client asserters. Requires Go. |
 
 ```shell
-# Install dependencies
+# Install dependencies and build the Rosetta image (thor is compiled from source)
 npm ci
+docker compose build
 
-# Prepare data directory
-mkdir -p rosetta_data
-chmod -R 777 rosetta_data
-
-# Run e2e tests
-npm run test:e2e:custom
+# Static API + solo cross-check tests (same as `npm test`)
+npm run test:e2e
 ```
 
-The tests will automatically:
-1. Build Docker images with the default Thor version
-2. Start a fresh solo node from genesis
-3. Run all test suites
-4. Clean up containers and volumes
+`npm run test:e2e`, `test:api` and `test:solo` start a fresh environment once per run and stop it afterwards. Set `E2E_REUSE_ENV=1` to run against an environment that is already up (`NETWORK=custom MODE=online docker compose up -d`) and keep it running, which is faster while iterating.
+
+The tests and `tests/rosetta-cli/run.sh solo` use their own compose project (`rosetta-e2e`) and data dir (`./.e2e_data`), so a node started with `npm run start:*` in `./rosetta_data` is left untouched. Both bind port 8080, so stop that node before running the tests.
+
+Tests for confirmed, not yet fixed bugs are declared with `knownBug` (`tests/e2e/utils/knownBug.ts`): they pass while the bug exists and fail once it is fixed. Run with `E2E_KNOWN_BUGS=run` to see the actual failures.
 
 ### Testing Against a Custom Thor Branch
 
@@ -107,7 +111,7 @@ THOR_VERSION=your-branch-name \
 docker compose build --no-cache
 
 # Then run tests
-npm run test:e2e:custom
+npm run test:e2e
 ```
 
 **Note:** Build arguments (`THOR_REPO`, `THOR_VERSION`) must be set **during** `docker compose build`, not when starting containers. They determine which Thor version gets compiled into the image.
@@ -129,6 +133,29 @@ docker compose down -v
 rm -rf ./rosetta_data/*
 docker compose build --no-cache
 ```
+
+### rosetta-cli Validation
+
+[rosetta-cli](https://github.com/coinbase/mesh-cli) checks the implementation against the Rosetta spec. `check:construction` builds, signs and broadcasts VET and VTHO transfers; `check:data` syncs the chain and reconciles every balance it sees. Configurations live in `rosetta-cli-conf/` (`solo`, `testnet`, `mainnet`).
+
+`tests/rosetta-cli/run.sh <solo|test|main>` builds the Rosetta image and a Linux rosetta-cli image (`rosetta-cli-conf/bin/rosetta-cli` is a macOS arm64 binary), runs the checks and stops what it started:
+
+| Command | Network | Checks | Setup |
+|---|---|---|---|
+| `npm run test:rosetta-cli:solo` | thor solo, fresh chain | `check:construction`, then `check:data` from genesis | Rosetta with an embedded thor solo node (docker compose). Runs in CI. |
+| `npm run test:rosetta-cli:test` | testnet | `check:data` on the last `BLOCKS` blocks (default 500) | Rosetta only, connected to `NODE_URL` (default `https://testnet.vechain.org`). |
+| `npm run test:rosetta-cli:main` | mainnet | `check:data` on the last `BLOCKS` blocks (default 50) | Rosetta only, connected to `NODE_URL` (default `https://mainnet.vechain.org`). |
+
+```shell
+npm run test:rosetta-cli:solo
+BLOCKS=200 NODE_URL=http://localhost:8669 npm run test:rosetta-cli:main   # a local, synced mainnet node
+```
+
+testnet and mainnet are checked on a window of recent blocks rather than the whole chain: the check finishes in minutes, and the historical balance lookups stay within the state that a pruned node still keeps. Testnet carries few transactions, hence the larger default window; the script warns when a window contains no balance change to reconcile.
+
+Set `SKIP_BUILD=1` to reuse existing images and `REUSE_ENV=1` to use a Rosetta that is already running on port 8080. Results are written to `cli-data/<solo|test|main>/`.
+
+**Note:** VTHO has a `dynamic` balance exemption because it accrues every block, so rosetta-cli does not reconcile VTHO balances. VTHO correctness is covered by the solo cross-check tests in `tests/e2e/solo/account.solo.test.ts` instead.
 
 ## Endpoints
 

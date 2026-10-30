@@ -1,21 +1,23 @@
-module.exports = {
+// E2E test categories, all run against Rosetta + thor solo started once by globalSetup:
+//   api  - tests/e2e/api:  call every endpoint and validate responses against the Rosetta spec schema
+//   solo - tests/e2e/solo: cross-check response values and logic against the thor node API
+// The rosetta-cli flow (third category) runs separately: tests/rosetta-cli/run.sh
+const project = (name) => ({
+    displayName: name,
     preset: 'ts-jest',
     testEnvironment: 'node',
-    testMatch: [
-        (process.env.TEST_NETWORK === 'solo' || process.env.TEST_NETWORK === 'custom')
-            ? '**/tests/e2e/**/*.solo.test.ts'
-            : []
-    ],
-    testPathIgnorePatterns: [
-        '/node_modules/'
-    ],
+    testMatch: [`<rootDir>/tests/e2e/${name}/**/*.${name}.test.ts`],
     transform: {
-        '^.+\\.ts$': ['ts-jest', {
-            tsconfig: 'tsconfig.json'
-        }]
-    },
-    setupFilesAfterEnv: ['<rootDir>/tests/e2e/setup.ts'],
-    testTimeout: 300000, // 5 minutes timeout for e2e tests
+        '^.+\\.ts$': ['ts-jest', { tsconfig: 'tsconfig.json' }]
+    }
+});
+
+module.exports = {
+    projects: [project('api'), project('solo')],
+    globalSetup: '<rootDir>/tests/e2e/globalSetup.ts',
+    globalTeardown: '<rootDir>/tests/e2e/globalTeardown.ts',
+    testTimeout: 120000,
     verbose: true,
-    maxWorkers: 1, // Execute tests sequentially
-}; 
+    // All tests share one chain and the same funded accounts.
+    maxWorkers: 1
+};

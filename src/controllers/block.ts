@@ -1,7 +1,11 @@
+import type Koa from "koa";
 import Router from "koa-router";
 import { getError } from "../common/errors";
 import { TransactionConverter } from "../common/transConverter";
+import { RequestContext } from "../common/types/context";
+import { Env } from "../common/types/env";
 import { BlockIdentifier } from "../common/types/identifiers";
+import { BlockRequest, BlockTransactionRequest } from "../common/types/requests";
 import { Transaction } from "../common/types/transaction";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
@@ -9,7 +13,7 @@ import ConnexPro from "../utils/connexPro";
 
 
 export class Block extends Router {
-    constructor(env:any){
+    constructor(env:Env){
         super();
         this.env = env;
         this.transConverter = new TransactionConverter(this.env);
@@ -20,7 +24,7 @@ export class Block extends Router {
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkBlock(ctx,next);},
-            async (ctx,next) => { await this.block(ctx,next)}
+            async (ctx,next) => { await this.block(ctx as RequestContext<BlockRequest>,next)}
         );
         this.post('/block/transaction',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
@@ -28,11 +32,11 @@ export class Block extends Router {
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkBlock(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkTransaction(ctx,next);},
-            async (ctx,next) => { await this.blockTransaction(ctx,next)}
+            async (ctx,next) => { await this.blockTransaction(ctx as RequestContext<BlockTransactionRequest>,next)}
         );
     }
 
-    private async block(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async block(ctx:RequestContext<BlockRequest>,next:Koa.Next){
         let revision = undefined;
         if(ctx.request.body.block_identifier?.index != undefined){
             revision = ctx.request.body.block_identifier.index;
@@ -40,13 +44,16 @@ export class Block extends Router {
             revision = ctx.request.body.block_identifier.hash;
         }
 
-        if(revision == undefined){
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(24,undefined));
-            return;
-        }
-
         try {
+            // Without index or hash, the current block is returned (Rosetta spec).
             const block = await this.connex.thor.block(revision).get();
+            if(block != null && this.isAboveHead(block.number)){
+                ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
+                    revision:revision,
+                    current_block_index:this.connex.thor.status.head.number
+                }));
+                return;
+            }
             if(block != null){
                 let parent = (await this.connex.thor.block(block.parentID).get())!;
                 if(block.number == 0){
@@ -92,13 +99,13 @@ export class Block extends Router {
                 }));
             }
         } catch (error) {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{error}));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{error:String(error)}));
             return;
         }
         await next();
     }
 
-    private async blockTransaction(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async blockTransaction(ctx:RequestContext<BlockTransactionRequest>,next:Koa.Next){
         let revision = undefined;
         if(ctx.request.body.block_identifier?.hash != undefined){
             revision = ctx.request.body.block_identifier.hash;
@@ -115,7 +122,7 @@ export class Block extends Router {
 
         try {
             const block = await this.connex.thor.block(revision).get();
-            if(block != null){
+            if(block != null && !this.isAboveHead(block.number)){
                 const txRece = (await this.connex.thor.transaction(txid).getReceipt());
                     if(txRece != null && txRece.meta.blockID.toLowerCase() == block.id.toLowerCase()){
                     const rosettaTx = await this.transConverter.parseRosettaTransaction(txid);
@@ -131,18 +138,27 @@ export class Block extends Router {
                 }
             } else {
                 ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(3,undefined,{
-                    block_identifier_hash:revision || ''
+                    block_identifier_hash:revision
                 }));
                 return;
             }
         } catch (error) {
-            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,error));
+            ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(500,undefined,{error:String(error)}));
             return;
         }
         await next();
     }
 
-    private env:any;
+    /**
+     * Whether a block is newer than the head connex is following. Receipts of
+     * such blocks are not available yet, so they must not be served until
+     * /network/status reports them.
+     */
+    private isAboveHead(blockNumber:number):boolean{
+        return blockNumber > this.connex.thor.status.head.number;
+    }
+
+    private env:Env;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
     private transConverter:TransactionConverter;

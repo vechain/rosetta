@@ -1,22 +1,25 @@
+import type Koa from "koa";
 import log4js from "log4js";
 import path from "path";
+import { Env } from "../common/types/env";
 
 export class Logger {
-    public constructor(env:any) {
+    public constructor(env:Env) {
         this.env = env;
         this.serviceName = this.env.config.serviceName;
         this.initLogConfig();
     }
 
-    public async httpLoggerMiddleware(ctx:any, next: () => Promise<any>){
+    public async httpLoggerMiddleware(ctx:Koa.Context, next:Koa.Next){
+        const forwardedFor = ctx.headers['x-forwarded-for'];
         const params = {
-            remoteAdd: ctx.headers['x-forwarded-for'] || (ctx as any).ip || ctx.ips || (ctx.socket && (ctx.socket.remoteAddress || ((ctx as any).socket.socket && (ctx as any).socket.socket.remoteAddress))),
+            remoteAdd: String(forwardedFor !== undefined && forwardedFor.length > 0 ? forwardedFor : ctx.ip),
             method: ctx.method,
             body: JSON.stringify(ctx.request.body),
             url: ctx.originalUrl,
             status: ctx.status || ctx.response.status || ctx.res.statusCode,
             responseTime: 0,
-            response: {},
+            response: '{}',
             header: JSON.stringify(ctx.request.headers),
             requestTime: (new Date()).toISOString()
         }
@@ -25,8 +28,7 @@ export class Logger {
         await next();
         const endTs = new Date().getTime();
         if (String(params.remoteAdd).startsWith("::ffff:")) {
-            const remoteAdd: string = params.remoteAdd;
-            params.remoteAdd = remoteAdd.replace("::ffff:", "");
+            params.remoteAdd = params.remoteAdd.replace("::ffff:", "");
         }
         params.responseTime = (endTs - startTs);
         params.status = ctx.status || ctx.response.status || ctx.res.statusCode;
@@ -155,6 +157,6 @@ export class Logger {
         return logConfig;
     }
 
-    private env:any;
+    private env:Env;
     private serviceName:string;
 }

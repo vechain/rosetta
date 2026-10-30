@@ -1,9 +1,13 @@
 import Axios from "axios";
+import type Koa from "koa";
 import Router from "koa-router";
 import { VTHOCurrency } from "..";
 import { Errors, getError } from "../common/errors";
 import { Allow, ExemptionType } from "../common/types/allow";
+import { RequestContext } from "../common/types/context";
+import { Env } from "../common/types/env";
 import { OperationStatus, OperationType } from "../common/types/operation";
+import { MetadataRequest, NetworkRequest } from "../common/types/requests";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
@@ -14,28 +18,28 @@ interface PeerResponse {
 }
 
 export class Network extends Router {
-    constructor(env:any){
+    constructor(env:Env){
         super();
         this.env = env;
         this.connex = this.env.connex;
         this.verifyMiddleware = new RequestInfoVerifyMiddleware(this.env);
         
         this.post('/network/list',
-         async (ctx,next) => { await this.list(ctx,next);},
+         async (ctx,next) => { await this.list(ctx as RequestContext<MetadataRequest>,next);},
         );
         this.post('/network/options',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
-            async (ctx,next) => { await this.option(ctx,next);}
+            async (ctx,next) => { await this.option(ctx as RequestContext<NetworkRequest>,next);}
         );
         this.post('/network/status',
             async (ctx,next) => { await this.verifyMiddleware.checkNetwork(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkRunMode(ctx,next);},
             async (ctx,next) => { await this.verifyMiddleware.checkModeNetwork(ctx,next);},
-            async (ctx,next) => { await this.status(ctx,next);}
+            async (ctx,next) => { await this.status(ctx as RequestContext<NetworkRequest>,next);}
         );
     }
 
-    private async list(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async list(ctx:RequestContext<MetadataRequest>,next:Koa.Next){
         ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
             network_identifiers:[{
                 blockchain:'vechainthor',
@@ -45,7 +49,7 @@ export class Network extends Router {
         await next();
     }
 
-    private async option(ctx:Router.IRouterContext,_: () => Promise<any>){
+    private async option(ctx:RequestContext<NetworkRequest>,next:Koa.Next){
         const versions = {
             rosetta_version:this.env.config.rosetta_version,
             node_version:this.env.config.node_version
@@ -56,7 +60,7 @@ export class Network extends Router {
                 {status:OperationStatus.Succeeded,successful:true},
                 {status:OperationStatus.Reverted,successful:false}
             ],
-            operation_types:[OperationType.None,OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation],
+            operation_types:[OperationType.None,OperationType.Transfer,OperationType.Fee,OperationType.FeeDelegation,OperationType.Call],
             errors:[],
             historical_balance_lookup:true,
             call_methods:[],
@@ -70,9 +74,10 @@ export class Network extends Router {
             version:versions,
             allow:allow
         });
+        await next();
     }
 
-    private async status(ctx:Router.IRouterContext,next: () => Promise<any>){
+    private async status(ctx:RequestContext<NetworkRequest>,next:Koa.Next){
         try {
             const bestBlock = (await this.connex.thor.block().get())!;
             const genesisBlock = (await this.connex.thor.block(0).get())!;
@@ -116,9 +121,9 @@ export class Network extends Router {
         const result = new Array<{peerID:string,bestBlockID:string}>();
         try {
             const url = this.env.config.nodeApi + '/node/network/peers';
-            const response = await Axios({url:url,method:'Get',responseType:'json'});
+            const response = await Axios<PeerResponse[] | undefined>({url:url,method:'Get',responseType:'json'});
             if(response.data != undefined){
-                const peers = response.data as unknown as PeerResponse[];
+                const peers = response.data;
                 for(const peer of peers){
                     result.push({peerID:peer.peerID,bestBlockID:peer.bestBlockID});
                 }
@@ -140,7 +145,7 @@ export class Network extends Router {
         return result;
     }
 
-    private env:any;
+    private env:Env;
     private connex:ConnexPro;
     private verifyMiddleware:RequestInfoVerifyMiddleware;
 }

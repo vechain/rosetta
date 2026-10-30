@@ -1,8 +1,9 @@
+import type Koa from "koa";
+
 export class URLCodeMiddleware
 {
-    public static async URLDecoder(ctx:any,next:()=>Promise<any>){
+    public static async URLDecoder(ctx:Koa.Context,next:Koa.Next){
         if(ctx.querystring != undefined && ctx.querystring.length>0){
-            (ctx as any).jmeQueryString = ctx.querystring;
             ctx.querystring = decodeURIComponent(ctx.querystring);
         }
         await next();
