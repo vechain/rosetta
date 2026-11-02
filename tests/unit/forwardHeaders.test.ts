@@ -1,5 +1,5 @@
-import http, { IncomingHttpHeaders } from 'http';
-import { AddressInfo } from 'net';
+import http, { IncomingHttpHeaders } from 'node:http';
+import { AddressInfo } from 'node:net';
 import Koa from 'koa';
 import request from 'supertest';
 import WebSocket from 'ws';
