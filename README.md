@@ -72,24 +72,26 @@ services:
     restart: unless-stopped
 ```
 
-### Forwarding request headers
+### Headers sent to the node
 
-Rosetta can copy selected headers from each incoming request onto the calls it makes to the thor node while serving that request, for example a client ID used for metrics or attribution on the node side.
+Rosetta can add headers to the calls it makes to the thor node, for example a client ID used for metrics, attribution or access control on the node side. Two environment variables control this; both are unset by default, and then nothing changes.
 
-Set `FORWARD_HEADERS` to a comma-separated, case-insensitive list of header names:
+`NODE_HEADERS` is a comma-separated list of `name=value` pairs sent on every node call, including the calls Rosetta makes on its own (startup checks, head tracking over HTTP and websocket). Values cannot contain commas.
+
+`FORWARD_HEADERS` is a comma-separated, case-insensitive list of header names copied from each incoming request onto the node calls made while serving that request. A forwarded header replaces the `NODE_HEADERS` value of the same name for that request; when the incoming request does not have the header, the `NODE_HEADERS` value is sent.
 
 ```yaml
     environment:
       - NETWORK=main
       - MODE=online
+      - NODE_HEADERS=x-client-id=rosetta
       - FORWARD_HEADERS=x-client-id,x-request-id
 ```
 
-- Unset or empty (the default) forwards nothing.
-- Only the listed headers are forwarded, and only when the incoming request has them.
-- Values are kept per request and added to each node call at send time; they are never stored on a shared HTTP client, so one caller's headers do not appear on another caller's node calls.
-- Node calls Rosetta makes on its own (head tracking, startup checks) carry no forwarded headers.
-- Connection and body headers (`host`, `content-length`, `content-type`, `transfer-encoding`, ...) are ignored with a warning.
+With this example, a request carrying `x-client-id: wallet` reaches the node with `x-client-id: wallet`; a request without it, and Rosetta's own calls, reach the node with `x-client-id: rosetta`.
+
+- Forwarded values are kept per request and added to each node call at send time; they are never stored on a shared HTTP client, so one caller's headers do not appear on another caller's node calls.
+- Connection and body headers (`host`, `content-length`, `content-type`, `transfer-encoding`, websocket handshake headers, ...) are ignored with a warning.
 - Rosetta caches some node responses and merges identical node calls that are in flight at the same time, so a request served from cache makes no node call, and a merged call carries the headers of the request that started it.
 
 ## Development & Testing
@@ -100,7 +102,7 @@ Tests are grouped in three categories. All of them run against Rosetta with an e
 
 | Category | Location | Command | What it checks |
 |---|---|---|---|
-| Unit | `tests/unit` | `npm run test:unit` | Runs without docker or a thor node. Covers request header forwarding (`FORWARD_HEADERS`). |
+| Unit | `tests/unit` | `npm run test:unit` | Runs without docker or a thor node. Covers the headers sent to the node (`NODE_HEADERS`, `FORWARD_HEADERS`). |
 | Static API | `tests/e2e/api` | `npm run test:api` | Calls every endpoint, including error paths, and validates the responses against the Rosetta spec schema. Values are not checked. |
 | Solo cross-check | `tests/e2e/solo` | `npm run test:solo` | Compares response values and logic with the thor node API: blocks, balances, operations derived from receipts, constructed vs. packed transactions, fees. |
 | rosetta-cli flow | `tests/rosetta-cli` | `npm run test:rosetta-cli:solo` / `:test` / `:main` | Runs rosetta-cli against thor solo (`check:construction` and `check:data`), testnet or mainnet (`check:data` on recent blocks). See [rosetta-cli Validation](#rosetta-cli-validation). |

@@ -23,6 +23,8 @@ export type Config = {
     nodeApi: string,
     // lowercase header names from FORWARD_HEADERS, forwarded to the thor node
     forwardHeaders: string[],
+    // static headers from NODE_HEADERS, sent on every thor node call
+    nodeHeaders: Record<string, string>,
     serviceName: string,
     tokenlist: Array<TokenCurrency>,
     apiVersion: string,

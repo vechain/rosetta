@@ -1,12 +1,28 @@
 import { Driver, Net, SimpleNet, Wallet } from "@vechain/connex-driver";
 import { Framework } from "@vechain/connex-framework";
-import { withForwardHeaders } from "./forwardHeaders";
+import { currentNodeHeaders, withNodeHeaders } from "./forwardHeaders";
+import { HeaderWebSocketReader } from "./headerWebSocketReader";
 
-/** SimpleNet that adds the current request's forwarded headers to each HTTP call. */
+/** SimpleNet that adds the current node headers (static and forwarded) to each HTTP call and websocket. */
 export class ForwardingNet extends SimpleNet {
+    constructor(baseURL: string, timeout?: number, private readonly wsReadTimeout = 30 * 1000) {
+        super(baseURL, timeout, wsReadTimeout);
+    }
+
     public http(method: 'GET' | 'POST', path: string, params?: Net.Params): Promise<any> { // eslint-disable-line @typescript-eslint/no-explicit-any
-        const headers = withForwardHeaders(params?.headers);
+        const headers = withNodeHeaders(params?.headers);
         return super.http(method, path, headers ? { ...params, headers } : params);
+    }
+
+    public openWebSocketReader(path: string): Net.WebSocketReader {
+        const headers = currentNodeHeaders();
+        if (Object.keys(headers).length === 0) {
+            return super.openWebSocketReader(path);
+        }
+        const url = new URL(path, this.baseURL).toString()
+            .replace(/^http:/i, 'ws:')
+            .replace(/^https:/i, 'wss:');
+        return new HeaderWebSocketReader(url, headers, this.wsReadTimeout);
     }
 }
 

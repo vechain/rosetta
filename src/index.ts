@@ -13,7 +13,7 @@ import { Network } from "./controllers/network";
 import { Search } from "./controllers/search";
 import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
 import ConnexPro from "./utils/connexPro";
-import { forwardHeadersMiddleware, nodeAxios, parseForwardHeaders } from "./utils/forwardHeaders";
+import { forwardHeadersMiddleware, nodeAxios, parseForwardHeaders, parseNodeHeaders, setNodeHeaders } from "./utils/forwardHeaders";
 import { Logger } from "./utils/logger";
 
 process.setMaxListeners(50);
@@ -67,6 +67,8 @@ class ApiServer {
         this.env.config.network = (process.env['NETWORK'] || 'custom') as string;
         this.env.config.nodeApi = (process.env['NODEURL'] || '') as string;
         this.env.config.forwardHeaders = parseForwardHeaders(process.env['FORWARD_HEADERS']);
+        this.env.config.nodeHeaders = parseNodeHeaders(process.env['NODE_HEADERS']);
+        setNodeHeaders(this.env.config.nodeHeaders);
         this.env.config.serviceName = 'VeChain Rosetta API';
         this.env.logger = new Logger(this.env);
     }
@@ -150,6 +152,7 @@ class ApiServer {
             |   Node Version      |   ${this.env.config.nodeVersion}
             |   Network           |   ${this.env.config.network}
             |   Forward Headers   |   ${this.env.config.forwardHeaders.join(',') || '-'}
+            |   Node Headers      |   ${Object.keys(this.env.config.nodeHeaders).join(',') || '-'}
             *******************************************************************
             `);
         

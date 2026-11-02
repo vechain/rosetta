@@ -18,6 +18,7 @@ services:
     environment:
       - NETWORK=${NETWORK}
       - MODE=${MODE}
-      # Passed through only when set; see "Forwarding request headers" in the README.
+      # Passed through only when set; see "Headers sent to the node" in the README.
       - FORWARD_HEADERS
+      - NODE_HEADERS
     restart: unless-stopped 
