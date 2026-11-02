@@ -72,28 +72,27 @@ services:
     restart: unless-stopped
 ```
 
-### Headers sent to the node
+### Client ID header
 
-Rosetta can add headers to the calls it makes to the thor node, for example a client ID used for metrics and attribution on the node side, or a credential that authenticates Rosetta to a node gateway. Two environment variables control this; both are unset by default, and then nothing changes.
+Rosetta can send one client ID header on every call it makes to the thor node, so a node gateway can attribute or authenticate the traffic. It is off by default, and then nothing changes.
 
-`NODE_HEADERS` is a comma-separated list of `name=value` pairs sent on every node call, including the calls Rosetta makes on its own (startup checks, head tracking over HTTP and websocket). Values cannot contain commas.
+- `CLIENT_ID_HEADER`: the header name, for example `x-client-id`.
+- `CLIENT_ID_DEFAULT`: the value sent on node calls Rosetta makes on its own: the startup check and head tracking over HTTP and websocket.
 
-`FORWARD_HEADERS` is a comma-separated, case-insensitive list of header names copied from each incoming request onto the node calls made while serving that request. A forwarded header replaces the `NODE_HEADERS` value of the same name for that request; when the incoming request does not have the header, the `NODE_HEADERS` value is sent.
+On node calls made while serving a request, Rosetta forwards the request's value of that header. A request without the header sends none; Rosetta does not fill in the default for it.
 
 ```yaml
     environment:
       - NETWORK=main
       - MODE=online
-      - NODE_HEADERS=x-client-id=rosetta
-      - FORWARD_HEADERS=x-client-id,x-request-id
+      - CLIENT_ID_HEADER=x-client-id
+      - CLIENT_ID_DEFAULT=internal/rosetta
 ```
 
-With this example, a request carrying `x-client-id: wallet` reaches the node with `x-client-id: wallet`; a request without it, and Rosetta's own calls, reach the node with `x-client-id: rosetta`.
-
-- Forwarded values are kept per request and added to each node call at send time; they are never stored on a shared HTTP client, so one caller's headers do not appear on another caller's node calls.
-- Connection, body and response-format headers (`host`, `accept`, `content-length`, `content-type`, `transfer-encoding`, websocket handshake headers, ...) and values with characters HTTP does not allow are ignored with a warning. Warnings never include header values.
-- Rosetta caches some node responses and merges identical node calls that are in flight at the same time, so a request served from cache makes no node call, and a merged call carries the headers of the request that started it.
-- Because of that caching and merging, forwarded headers are suited to attribution, not to per-caller authorization enforced by the node: a caller can receive a response the node served to another caller. Authenticate and authorize callers before they reach Rosetta.
+- The request's value is kept per request and added to each node call at send time. It is never stored on a shared HTTP client, so one caller's value does not appear on another caller's node calls.
+- Rosetta caches some node responses and merges identical node calls that are in flight at the same time. A request served from cache makes no node call, and a merged call carries the client ID of the request that started it. If the node rejects calls without a client ID, a caller can therefore get an error from a merged call started by a request that had none.
+- Because of that caching and merging, the header is suited to attribution and to authenticating Rosetta to the node, not to per-caller authorization enforced by the node. Authenticate and authorize callers before they reach Rosetta.
+- Header names that would break the node call (`host`, `content-length`, `content-type`, `transfer-encoding`, `connection`, `upgrade`, `accept`, `sec-websocket-*`) are refused with a warning. Header values are never logged.
 
 ## Development & Testing
 
@@ -103,7 +102,7 @@ Tests are grouped in three categories. All of them run against Rosetta with an e
 
 | Category | Location | Command | What it checks |
 |---|---|---|---|
-| Unit | `tests/unit` | `npm run test:unit` | Runs without docker or a thor node. Covers the headers sent to the node (`NODE_HEADERS`, `FORWARD_HEADERS`). |
+| Unit | `tests/unit` | `npm run test:unit` | Runs without docker or a thor node. Covers the client ID header (`CLIENT_ID_HEADER`, `CLIENT_ID_DEFAULT`). |
 | Static API | `tests/e2e/api` | `npm run test:api` | Calls every endpoint, including error paths, and validates the responses against the Rosetta spec schema. Values are not checked. |
 | Solo cross-check | `tests/e2e/solo` | `npm run test:solo` | Compares response values and logic with the thor node API: blocks, balances, operations derived from receipts, constructed vs. packed transactions, fees. |
 | rosetta-cli flow | `tests/rosetta-cli` | `npm run test:rosetta-cli:solo` / `:test` / `:main` | Runs rosetta-cli against thor solo (`check:construction` and `check:data`), testnet or mainnet (`check:data` on recent blocks). See [rosetta-cli Validation](#rosetta-cli-validation). |

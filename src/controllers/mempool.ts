@@ -9,7 +9,7 @@ import { MempoolRequest, TransactionIdentifierRequest } from '../common/types/re
 import { ConvertJSONResponseMiddleware } from '../middlewares/convertJSONResponseMiddleware';
 import { RequestInfoVerifyMiddleware } from '../middlewares/requestInfoVerifyMiddleware';
 import ConnexPro from '../utils/connexPro';
-import { nodeAxios } from '../utils/forwardHeaders';
+import { nodeAxios } from '../utils/clientIdHeader';
 
 
 export class Mempool extends Router {

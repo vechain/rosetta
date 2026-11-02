@@ -1,6 +1,6 @@
 import { abi } from "thor-devkit";
 import ConnexPro from "./connexPro";
-import { nodeAxios } from "./forwardHeaders";
+import { nodeAxios } from "./clientIdHeader";
 
 type AbiItem = abi.Function.Definition | abi.Event.Definition | { type: "constructor" };
 

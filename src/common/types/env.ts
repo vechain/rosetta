@@ -1,3 +1,4 @@
+import type { ClientIdConfig } from "../../utils/clientIdHeader";
 import type ConnexPro from "../../utils/connexPro";
 import type { Logger } from "../../utils/logger";
 import { TokenCurrency } from "./currency";
@@ -21,10 +22,8 @@ export type Config = {
     // populated at startup
     network: NetworkName,
     nodeApi: string,
-    // lowercase header names from FORWARD_HEADERS, forwarded to the thor node
-    forwardHeaders: string[],
-    // static headers from NODE_HEADERS, sent on every thor node call
-    nodeHeaders: Record<string, string>,
+    // CLIENT_ID_HEADER / CLIENT_ID_DEFAULT; undefined when off
+    clientId: ClientIdConfig | undefined,
     serviceName: string,
     tokenlist: Array<TokenCurrency>,
     apiVersion: string,

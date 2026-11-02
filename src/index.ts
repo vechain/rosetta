@@ -13,7 +13,7 @@ import { Network } from "./controllers/network";
 import { Search } from "./controllers/search";
 import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
 import ConnexPro from "./utils/connexPro";
-import { forwardHeadersMiddleware, nodeAxios, parseForwardHeaders, parseNodeHeaders, setNodeHeaders } from "./utils/forwardHeaders";
+import { clientIdMiddleware, nodeAxios, parseClientIdConfig, setClientIdConfig } from "./utils/clientIdHeader";
 import { Logger } from "./utils/logger";
 
 process.setMaxListeners(50);
@@ -66,9 +66,8 @@ class ApiServer {
         this.env.config.mode = (process.env['MODE'] || 'online') as string;
         this.env.config.network = (process.env['NETWORK'] || 'custom') as string;
         this.env.config.nodeApi = (process.env['NODEURL'] || '') as string;
-        this.env.config.forwardHeaders = parseForwardHeaders(process.env['FORWARD_HEADERS']);
-        this.env.config.nodeHeaders = parseNodeHeaders(process.env['NODE_HEADERS']);
-        setNodeHeaders(this.env.config.nodeHeaders);
+        this.env.config.clientId = parseClientIdConfig(process.env['CLIENT_ID_HEADER'], process.env['CLIENT_ID_DEFAULT']);
+        setClientIdConfig(this.env.config.clientId);
         this.env.config.serviceName = 'VeChain Rosetta API';
         this.env.logger = new Logger(this.env);
     }
@@ -101,7 +100,7 @@ class ApiServer {
                 process.exit();
             }
         } catch (error) {
-            // Log the message only: the error object can include the request headers (NODE_HEADERS).
+            // Log the message only: the error object can include the request headers.
             console.error(`Connect vechain node ${this.env.config.nodeApi} failed: ${error instanceof Error ? error.message : String(error)}`);
             process.exit();
         }
@@ -138,7 +137,7 @@ class ApiServer {
         const port = Number(this.env.config.port || 8000);
         const root = this.initRouter();
         const koaServer = new Koa();
-        koaServer.use(forwardHeadersMiddleware(this.env.config.forwardHeaders));
+        koaServer.use(clientIdMiddleware());
         koaServer.use(async (ctx,next) => { await URLCodeMiddleware.URLDecoder(ctx,next);});
         koaServer.use(bodyParser());
         koaServer.use(async (ctx,next) => { await (this.env.logger as Logger).httpLoggerMiddleware(ctx,next);})
@@ -152,8 +151,7 @@ class ApiServer {
             |   Node URL          |   ${this.env.config.nodeApi}
             |   Node Version      |   ${this.env.config.nodeVersion}
             |   Network           |   ${this.env.config.network}
-            |   Forward Headers   |   ${this.env.config.forwardHeaders.join(',') || '-'}
-            |   Node Headers      |   ${Object.keys(this.env.config.nodeHeaders).join(',') || '-'}
+            |   Client ID Header  |   ${this.env.config.clientId ? `${this.env.config.clientId.header} (default ${this.env.config.clientId.defaultValue ? 'set' : 'not set'})` : '-'}
             *******************************************************************
             `);
         

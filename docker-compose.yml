@@ -18,7 +18,7 @@ services:
     environment:
       - NETWORK=${NETWORK}
       - MODE=${MODE}
-      # Passed through only when set; see "Headers sent to the node" in the README.
-      - FORWARD_HEADERS
-      - NODE_HEADERS
+      # Passed through only when set; see "Client ID header" in the README.
+      - CLIENT_ID_HEADER
+      - CLIENT_ID_DEFAULT
     restart: unless-stopped 

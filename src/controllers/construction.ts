@@ -27,7 +27,7 @@ import { CurveType, Signature, SignatureType, SigningPayload } from "../common/t
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
-import { nodeAxios } from "../utils/forwardHeaders";
+import { nodeAxios } from "../utils/clientIdHeader";
 import { VIP180Token } from "../utils/vip180Token";
 
 /** A rosetta transaction as encoded by the RLP profiles below. */

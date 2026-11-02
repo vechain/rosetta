@@ -10,7 +10,7 @@ import { MetadataRequest, NetworkRequest } from "../common/types/requests";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
-import { nodeAxios } from "../utils/forwardHeaders";
+import { nodeAxios } from "../utils/clientIdHeader";
 
 interface PeerResponse {
     peerID: string;
