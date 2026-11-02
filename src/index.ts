@@ -1,4 +1,3 @@
-import Axios from "axios";
 import Koa from 'koa';
 import bodyParser from "koa-bodyparser";
 import Router from "koa-router";
@@ -14,6 +13,7 @@ import { Network } from "./controllers/network";
 import { Search } from "./controllers/search";
 import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
 import ConnexPro from "./utils/connexPro";
+import { forwardHeadersMiddleware, nodeAxios, parseForwardHeaders } from "./utils/forwardHeaders";
 import { Logger } from "./utils/logger";
 
 process.setMaxListeners(50);
@@ -66,6 +66,7 @@ class ApiServer {
         this.env.config.mode = (process.env['MODE'] || 'online') as string;
         this.env.config.network = (process.env['NETWORK'] || 'custom') as string;
         this.env.config.nodeApi = (process.env['NODEURL'] || '') as string;
+        this.env.config.forwardHeaders = parseForwardHeaders(process.env['FORWARD_HEADERS']);
         this.env.config.serviceName = 'VeChain Rosetta API';
         this.env.logger = new Logger(this.env);
     }
@@ -134,6 +135,7 @@ class ApiServer {
         const port = Number(this.env.config.port || 8000);
         const root = this.initRouter();
         const koaServer = new Koa();
+        koaServer.use(forwardHeadersMiddleware(this.env.config.forwardHeaders));
         koaServer.use(async (ctx,next) => { await URLCodeMiddleware.URLDecoder(ctx,next);});
         koaServer.use(bodyParser());
         koaServer.use(async (ctx,next) => { await (this.env.logger as Logger).httpLoggerMiddleware(ctx,next);})
@@ -147,6 +149,7 @@ class ApiServer {
             |   Node URL          |   ${this.env.config.nodeApi}
             |   Node Version      |   ${this.env.config.nodeVersion}
             |   Network           |   ${this.env.config.network}
+            |   Forward Headers   |   ${this.env.config.forwardHeaders.join(',') || '-'}
             *******************************************************************
             `);
         
@@ -177,7 +180,7 @@ class ApiServer {
 
     private async getApiVersion():Promise<string>{
         const url = this.env.config.nodeApi + '/blocks/0';
-        const response = await Axios({url:url,method:'Get',responseType:'json'});
+        const response = await nodeAxios({url:url,method:'Get',responseType:'json'});
         return response.headers['x-thorest-ver'] as string;
     }
 

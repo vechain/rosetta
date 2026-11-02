@@ -8,7 +8,7 @@ const compat = new FlatCompat({
 
 module.exports = [
     {
-        ignores: ["node_modules/**", "dist/**", "coverage/**", "*.js", "!jest.config.js"]
+        ignores: ["node_modules/**", "dist/**", "coverage/**", "*.js", "!jest.config.js", "!jest.unit.config.js"]
     },
     ...compat.config({
         parser: "@typescript-eslint/parser",

@@ -18,4 +18,6 @@ services:
     environment:
       - NETWORK=${NETWORK}
       - MODE=${MODE}
+      # Passed through only when set; see "Forwarding request headers" in the README.
+      - FORWARD_HEADERS
     restart: unless-stopped 

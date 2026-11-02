@@ -6,6 +6,7 @@
   "scripts": {
     "test": "jest",
     "test:e2e": "jest",
+    "test:unit": "jest -c jest.unit.config.js",
     "test:api": "jest --selectProjects api",
     "test:solo": "jest --selectProjects solo",
     "test:sdk-conformance": "E2E_RECORD_FILE=$PWD/tests/sdk-conformance/exchanges.jsonl jest && cd tests/sdk-conformance && go run . exchanges.jsonl",

@@ -27,6 +27,7 @@ import { CurveType, Signature, SignatureType, SigningPayload } from "../common/t
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
+import { nodeAxios } from "../utils/forwardHeaders";
 import { VIP180Token } from "../utils/vip180Token";
 
 /** A rosetta transaction as encoded by the RLP profiles below. */
@@ -347,7 +348,7 @@ export class Construction extends Router {
 
         const raw = '0x' + vechainTx.encode().toString('hex');
         try {
-            const response = await axios.post<{id:string}>(this.connex.baseUrl + '/transactions',{raw:raw},{responseType:'json'});
+            const response = await nodeAxios.post<{id:string}>(this.connex.baseUrl + '/transactions',{raw:raw},{responseType:'json'});
             const txid = response.data.id;
             ConvertJSONResponseMiddleware.BodyDataToJSONResponse(ctx,{
                 transaction_identifier:{

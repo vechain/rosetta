@@ -72,6 +72,26 @@ services:
     restart: unless-stopped
 ```
 
+### Forwarding request headers
+
+Rosetta can copy selected headers from each incoming request onto the calls it makes to the thor node while serving that request, for example a client ID used for metrics or attribution on the node side.
+
+Set `FORWARD_HEADERS` to a comma-separated, case-insensitive list of header names:
+
+```yaml
+    environment:
+      - NETWORK=main
+      - MODE=online
+      - FORWARD_HEADERS=x-client-id,x-request-id
+```
+
+- Unset or empty (the default) forwards nothing.
+- Only the listed headers are forwarded, and only when the incoming request has them.
+- Values are kept per request and added to each node call at send time; they are never stored on a shared HTTP client, so one caller's headers do not appear on another caller's node calls.
+- Node calls Rosetta makes on its own (head tracking, startup checks) carry no forwarded headers.
+- Connection and body headers (`host`, `content-length`, `content-type`, `transfer-encoding`, ...) are ignored with a warning.
+- Rosetta caches some node responses and merges identical node calls that are in flight at the same time, so a request served from cache makes no node call, and a merged call carries the headers of the request that started it.
+
 ## Development & Testing
 
 ### Running Tests Locally
@@ -80,6 +100,7 @@ Tests are grouped in three categories. All of them run against Rosetta with an e
 
 | Category | Location | Command | What it checks |
 |---|---|---|---|
+| Unit | `tests/unit` | `npm run test:unit` | Runs without docker or a thor node. Covers request header forwarding (`FORWARD_HEADERS`). |
 | Static API | `tests/e2e/api` | `npm run test:api` | Calls every endpoint, including error paths, and validates the responses against the Rosetta spec schema. Values are not checked. |
 | Solo cross-check | `tests/e2e/solo` | `npm run test:solo` | Compares response values and logic with the thor node API: blocks, balances, operations derived from receipts, constructed vs. packed transactions, fees. |
 | rosetta-cli flow | `tests/rosetta-cli` | `npm run test:rosetta-cli:solo` / `:test` / `:main` | Runs rosetta-cli against thor solo (`check:construction` and `check:data`), testnet or mainnet (`check:data` on recent blocks). See [rosetta-cli Validation](#rosetta-cli-validation). |

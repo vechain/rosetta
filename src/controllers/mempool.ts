@@ -1,4 +1,3 @@
-import axios from 'axios';
 import Joi from 'joi';
 import type Koa from 'koa';
 import Router from "koa-router";
@@ -10,6 +9,7 @@ import { MempoolRequest, TransactionIdentifierRequest } from '../common/types/re
 import { ConvertJSONResponseMiddleware } from '../middlewares/convertJSONResponseMiddleware';
 import { RequestInfoVerifyMiddleware } from '../middlewares/requestInfoVerifyMiddleware';
 import ConnexPro from '../utils/connexPro';
+import { nodeAxios } from '../utils/forwardHeaders';
 
 
 export class Mempool extends Router {
@@ -45,7 +45,7 @@ export class Mempool extends Router {
         const originQuery = origin ? `${originParam}origin=${origin}` : '';
         const url = `${baseUrl}${expandedParam}${originQuery}`;
         
-        const response = await axios.get<Connex.Thor.Transaction[] | string[]>(url);
+        const response = await nodeAxios.get<Connex.Thor.Transaction[] | string[]>(url);
         return response.data;
     }
 

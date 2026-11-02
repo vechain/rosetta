@@ -21,6 +21,8 @@ export type Config = {
     // populated at startup
     network: NetworkName,
     nodeApi: string,
+    // lowercase header names from FORWARD_HEADERS, forwarded to the thor node
+    forwardHeaders: string[],
     serviceName: string,
     tokenlist: Array<TokenCurrency>,
     apiVersion: string,
