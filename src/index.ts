@@ -101,7 +101,8 @@ class ApiServer {
                 process.exit();
             }
         } catch (error) {
-            console.error(`Connect vechain node ${this.env.config.nodeApi} failed.`, error);
+            // Log the message only: the error object can include the request headers (NODE_HEADERS).
+            console.error(`Connect vechain node ${this.env.config.nodeApi} failed: ${error instanceof Error ? error.message : String(error)}`);
             process.exit();
         }
     }

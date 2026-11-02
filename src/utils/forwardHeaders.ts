@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from "axios";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { validateHeaderName, validateHeaderValue } from "node:http";
 import type { Context, Next } from "koa";
 
 /**
@@ -16,9 +17,14 @@ import type { Context, Next } from "koa";
  * client, so one caller's headers cannot reach another caller's node calls.
  */
 
-/** Headers that describe the connection or body, not the caller. Sending them would break the outbound request. */
+/**
+ * Headers that describe the connection, body or response format, not the
+ * caller. Sending them would break the outbound request or the JSON
+ * responses Rosetta expects from the node.
+ */
 const BLOCKED_HEADERS = new Set([
     "host",
+    "accept",
     "connection",
     "content-length",
     "content-type",
@@ -36,16 +42,19 @@ const BLOCKED_HEADERS = new Set([
     "sec-websocket-protocol",
 ]);
 
-/** RFC 9110 token characters. */
-const HEADER_NAME = /^[!#$%&'*+.^_`|~0-9a-z-]+$/;
-
-function checkHeaderName(variable: string, name: string): boolean {
-    if (!HEADER_NAME.test(name)) {
-        console.warn(`${variable}: ignoring "${name}", it is not a valid header name`);
+/**
+ * Checks a lowercase header name. Warnings name the entry by position, not by
+ * content, because a malformed entry may hold a secret value.
+ */
+function checkHeaderName(variable: string, entry: number, name: string): boolean {
+    try {
+        validateHeaderName(name);
+    } catch {
+        console.warn(`${variable}: ignoring entry ${entry}, it is not a valid header name`);
         return false;
     }
     if (BLOCKED_HEADERS.has(name)) {
-        console.warn(`${variable}: ignoring "${name}", it cannot be sent to the node`);
+        console.warn(`${variable}: ignoring entry ${entry} ("${name}"), it cannot be sent to the node`);
         return false;
     }
     return true;
@@ -60,40 +69,48 @@ export function parseForwardHeaders(value: string | undefined): string[] {
         return [];
     }
     const names = new Set<string>();
-    for (const raw of value.split(",")) {
+    value.split(",").forEach((raw, index) => {
         const name = raw.trim().toLowerCase();
-        if (name !== "" && checkHeaderName("FORWARD_HEADERS", name)) {
+        if (name !== "" && checkHeaderName("FORWARD_HEADERS", index + 1, name)) {
             names.add(name);
         }
-    }
+    });
     return Array.from(names);
 }
 
 /**
  * Parses comma-separated name=value pairs (NODE_HEADERS), for example
  * "x-client-id=rosetta". Names are lowercased; values cannot contain commas.
- * Empty or unset means no static headers.
+ * Empty or unset means no static headers. Values are never logged.
  */
 export function parseNodeHeaders(value: string | undefined): Record<string, string> {
     const headers: Record<string, string> = {};
     if (!value) {
         return headers;
     }
-    for (const pair of value.split(",")) {
+    value.split(",").forEach((pair, index) => {
+        const entry = index + 1;
         if (pair.trim() === "") {
-            continue;
+            return;
         }
         const separator = pair.indexOf("=");
-        const name = (separator < 0 ? pair : pair.slice(0, separator)).trim().toLowerCase();
-        const headerValue = separator < 0 ? "" : pair.slice(separator + 1).trim();
-        if (headerValue === "" || /[\r\n]/.test(headerValue)) {
-            console.warn(`NODE_HEADERS: ignoring "${pair.trim()}", expected name=value`);
-            continue;
+        if (separator < 0 || pair.slice(separator + 1).trim() === "") {
+            console.warn(`NODE_HEADERS: ignoring entry ${entry}, expected name=value`);
+            return;
         }
-        if (checkHeaderName("NODE_HEADERS", name)) {
-            headers[name] = headerValue;
+        const name = pair.slice(0, separator).trim().toLowerCase();
+        const headerValue = pair.slice(separator + 1).trim();
+        if (!checkHeaderName("NODE_HEADERS", entry, name)) {
+            return;
         }
-    }
+        try {
+            validateHeaderValue(name, headerValue);
+        } catch {
+            console.warn(`NODE_HEADERS: ignoring entry ${entry} ("${name}"), the value has invalid characters`);
+            return;
+        }
+        headers[name] = headerValue;
+    });
     return headers;
 }
 

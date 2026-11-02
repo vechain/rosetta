@@ -74,7 +74,7 @@ services:
 
 ### Headers sent to the node
 
-Rosetta can add headers to the calls it makes to the thor node, for example a client ID used for metrics, attribution or access control on the node side. Two environment variables control this; both are unset by default, and then nothing changes.
+Rosetta can add headers to the calls it makes to the thor node, for example a client ID used for metrics and attribution on the node side, or a credential that authenticates Rosetta to a node gateway. Two environment variables control this; both are unset by default, and then nothing changes.
 
 `NODE_HEADERS` is a comma-separated list of `name=value` pairs sent on every node call, including the calls Rosetta makes on its own (startup checks, head tracking over HTTP and websocket). Values cannot contain commas.
 
@@ -91,8 +91,9 @@ Rosetta can add headers to the calls it makes to the thor node, for example a cl
 With this example, a request carrying `x-client-id: wallet` reaches the node with `x-client-id: wallet`; a request without it, and Rosetta's own calls, reach the node with `x-client-id: rosetta`.
 
 - Forwarded values are kept per request and added to each node call at send time; they are never stored on a shared HTTP client, so one caller's headers do not appear on another caller's node calls.
-- Connection and body headers (`host`, `content-length`, `content-type`, `transfer-encoding`, websocket handshake headers, ...) are ignored with a warning.
+- Connection, body and response-format headers (`host`, `accept`, `content-length`, `content-type`, `transfer-encoding`, websocket handshake headers, ...) and values with characters HTTP does not allow are ignored with a warning. Warnings never include header values.
 - Rosetta caches some node responses and merges identical node calls that are in flight at the same time, so a request served from cache makes no node call, and a merged call carries the headers of the request that started it.
+- Because of that caching and merging, forwarded headers are suited to attribution, not to per-caller authorization enforced by the node: a caller can receive a response the node served to another caller. Authenticate and authorize callers before they reach Rosetta.
 
 ## Development & Testing
 
