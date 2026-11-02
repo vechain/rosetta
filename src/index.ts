@@ -143,6 +143,11 @@ class ApiServer {
         koaServer.use(async (ctx,next) => { await (this.env.logger as Logger).httpLoggerMiddleware(ctx,next);})
         koaServer.use(root.routes()).use(root.allowedMethods());
         koaServer.listen(port);
+        const clientId = this.env.config.clientId;
+        let clientIdInfo = '-';
+        if (clientId) {
+            clientIdInfo = `${clientId.header} (default ${clientId.defaultValue ? 'set' : 'not set'})`;
+        }
         console.info(`
             ******************** VeChain Rosetta API Server ********************
             |   Api               |   localhost:${port}
@@ -151,7 +156,7 @@ class ApiServer {
             |   Node URL          |   ${this.env.config.nodeApi}
             |   Node Version      |   ${this.env.config.nodeVersion}
             |   Network           |   ${this.env.config.network}
-            |   Client ID Header  |   ${this.env.config.clientId ? `${this.env.config.clientId.header} (default ${this.env.config.clientId.defaultValue ? 'set' : 'not set'})` : '-'}
+            |   Client ID Header  |   ${clientIdInfo}
             *******************************************************************
             `);
         
