@@ -46,8 +46,8 @@ describe('parseNodeHeaders', () => {
     });
 
     it('parses name=value pairs and lowercases names', () => {
-        expect(parseNodeHeaders('X-Client-ID = c3/rosetta-vechain , x-team=a=b')).toEqual({
-            'x-client-id': 'c3/rosetta-vechain',
+        expect(parseNodeHeaders('X-Client-ID = internal/rosetta , x-team=a=b')).toEqual({
+            'x-client-id': 'internal/rosetta',
             'x-team': 'a=b'
         });
     });
