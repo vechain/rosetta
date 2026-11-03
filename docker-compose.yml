@@ -18,4 +18,7 @@ services:
     environment:
       - NETWORK=${NETWORK}
       - MODE=${MODE}
+      # Passed through only when set; see "Client ID header" in the README.
+      - CLIENT_ID_HEADER
+      - CLIENT_ID_DEFAULT
     restart: unless-stopped 

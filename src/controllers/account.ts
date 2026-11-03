@@ -1,4 +1,3 @@
-import Axios from "axios";
 import Joi from "joi";
 import type Koa from "koa";
 import Router from "koa-router";
@@ -13,6 +12,7 @@ import { AccountBalanceRequest } from "../common/types/requests";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
+import { nodeAxios } from "../utils/clientIdHeader";
 import { VIP180Token } from "../utils/vip180Token";
 
 interface AccountResponse {
@@ -189,7 +189,7 @@ export class Account extends Router {
     private async getAccountBalance(account:string,blockid:string):Promise<Array<Amount>>{
         const result = new Array<Amount>();
         const url = this.connex.baseUrl + `/accounts/${account}`;
-        const response = await Axios({url:url,method:'Get',responseType:'json',params:{revision:blockid}});
+        const response = await nodeAxios({url:url,method:'Get',responseType:'json',params:{revision:blockid}});
         const data = response.data as unknown as AccountResponse;
         result.push({
             value:BigInt(data.balance).toString(10),

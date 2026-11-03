@@ -6,6 +6,7 @@
   "scripts": {
     "test": "jest",
     "test:e2e": "jest",
+    "test:unit": "jest -c jest.unit.config.js",
     "test:api": "jest --selectProjects api",
     "test:solo": "jest --selectProjects solo",
     "test:sdk-conformance": "E2E_RECORD_FILE=$PWD/tests/sdk-conformance/exchanges.jsonl jest && cd tests/sdk-conformance && go run . exchanges.jsonl",
@@ -44,7 +45,8 @@
     "koa-bodyparser": "^4.4.1",
     "koa-router": "^14.0.0",
     "log4js": "^6.9.1",
-    "thor-devkit": "^2.2.0"
+    "thor-devkit": "^2.2.0",
+    "ws": "^7.5.10"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
@@ -54,11 +56,14 @@
     "@types/koa": "^2.13.5",
     "@types/koa-bodyparser": "^4.3.7",
     "@types/koa-router": "^7.4.9",
+    "@types/supertest": "^7.2.0",
+    "@types/ws": "^7.4.7",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",
     "eslint": "^10.1.0",
     "eslint-plugin-jest": "^29.15.1",
     "jest": "^30.3.0",
+    "supertest": "^7.3.1",
     "ts-jest": "^29.4.6",
     "typescript": "^5.9.3"
   }

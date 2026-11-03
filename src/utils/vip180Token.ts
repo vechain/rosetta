@@ -1,6 +1,6 @@
-import Axios from "axios";
 import { abi } from "thor-devkit";
 import ConnexPro from "./connexPro";
+import { nodeAxios } from "./clientIdHeader";
 
 type AbiItem = abi.Function.Definition | abi.Event.Definition | { type: "constructor" };
 
@@ -75,7 +75,7 @@ export class VIP180Token {
 
     public async created(revision?:string|number):Promise<boolean>{
         const url = this.connex.baseUrl + '/accounts/' + this.address;
-        const acc = await Axios({url:url,method:'Get',responseType:'json',params:{revision:revision}});
+        const acc = await nodeAxios({url:url,method:'Get',responseType:'json',params:{revision:revision}});
         const data = acc.data as unknown as AccountDataResponse;
         return data.hasCode;
     }
