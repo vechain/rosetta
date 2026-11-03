@@ -6,7 +6,7 @@ Implementing Rosetta Data API of VeChainThor BlockChain
 [![](https://badgen.net/badge/Network/main,test?list=|)]()
 [![](https://badgen.net/badge/Rosetta/=1.4.12)]()
 
-[![](https://badgen.net/badge/node/>=16.6)]()
+[![](https://badgen.net/badge/node/=24.21.0)]()
 [![](https://badgen.net/badge/typescript/>=4.7.4?icon=typescript&label)]()
 [![](https://badgen.net/badge/docker/>=20.10.17?icon=docker&label)]()
 [![](https://badgen.net/badge/Status/testing/orange)]()
