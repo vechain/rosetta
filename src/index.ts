@@ -1,4 +1,3 @@
-import Axios from "axios";
 import Koa from 'koa';
 import bodyParser from "koa-bodyparser";
 import Router from "koa-router";
@@ -14,6 +13,7 @@ import { Network } from "./controllers/network";
 import { Search } from "./controllers/search";
 import { URLCodeMiddleware } from "./middlewares/uricodeMiddleware";
 import ConnexPro from "./utils/connexPro";
+import { clientIdMiddleware, nodeAxios, parseClientIdConfig, setClientIdConfig } from "./utils/clientIdHeader";
 import { Logger } from "./utils/logger";
 
 process.setMaxListeners(50);
@@ -66,6 +66,8 @@ class ApiServer {
         this.env.config.mode = (process.env['MODE'] || 'online') as string;
         this.env.config.network = (process.env['NETWORK'] || 'custom') as string;
         this.env.config.nodeApi = (process.env['NODEURL'] || '') as string;
+        this.env.config.clientId = parseClientIdConfig(process.env['CLIENT_ID_HEADER'], process.env['CLIENT_ID_DEFAULT']);
+        setClientIdConfig(this.env.config.clientId);
         this.env.config.serviceName = 'VeChain Rosetta API';
         this.env.logger = new Logger(this.env);
     }
@@ -98,7 +100,8 @@ class ApiServer {
                 process.exit();
             }
         } catch (error) {
-            console.error(`Connect vechain node ${this.env.config.nodeApi} failed.`, error);
+            // Log the message only: the error object can include the request headers.
+            console.error(`Connect vechain node ${this.env.config.nodeApi} failed: ${error instanceof Error ? error.message : String(error)}`);
             process.exit();
         }
     }
@@ -134,11 +137,17 @@ class ApiServer {
         const port = Number(this.env.config.port || 8000);
         const root = this.initRouter();
         const koaServer = new Koa();
+        koaServer.use(clientIdMiddleware());
         koaServer.use(async (ctx,next) => { await URLCodeMiddleware.URLDecoder(ctx,next);});
         koaServer.use(bodyParser());
         koaServer.use(async (ctx,next) => { await (this.env.logger as Logger).httpLoggerMiddleware(ctx,next);})
         koaServer.use(root.routes()).use(root.allowedMethods());
         koaServer.listen(port);
+        const clientId = this.env.config.clientId;
+        let clientIdInfo = '-';
+        if (clientId) {
+            clientIdInfo = `${clientId.header} (default ${clientId.defaultValue ? 'set' : 'not set'})`;
+        }
         console.info(`
             ******************** VeChain Rosetta API Server ********************
             |   Api               |   localhost:${port}
@@ -147,6 +156,7 @@ class ApiServer {
             |   Node URL          |   ${this.env.config.nodeApi}
             |   Node Version      |   ${this.env.config.nodeVersion}
             |   Network           |   ${this.env.config.network}
+            |   Client ID Header  |   ${clientIdInfo}
             *******************************************************************
             `);
         
@@ -177,7 +187,7 @@ class ApiServer {
 
     private async getApiVersion():Promise<string>{
         const url = this.env.config.nodeApi + '/blocks/0';
-        const response = await Axios({url:url,method:'Get',responseType:'json'});
+        const response = await nodeAxios({url:url,method:'Get',responseType:'json'});
         return response.headers['x-thorest-ver'] as string;
     }
 

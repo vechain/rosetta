@@ -1,4 +1,3 @@
-import Axios from "axios";
 import type Koa from "koa";
 import Router from "koa-router";
 import { VTHOCurrency } from "..";
@@ -11,6 +10,7 @@ import { MetadataRequest, NetworkRequest } from "../common/types/requests";
 import { ConvertJSONResponseMiddleware } from "../middlewares/convertJSONResponseMiddleware";
 import { RequestInfoVerifyMiddleware } from "../middlewares/requestInfoVerifyMiddleware";
 import ConnexPro from "../utils/connexPro";
+import { nodeAxios } from "../utils/clientIdHeader";
 
 interface PeerResponse {
     peerID: string;
@@ -121,7 +121,7 @@ export class Network extends Router {
         const result = new Array<{peerID:string,bestBlockID:string}>();
         try {
             const url = this.env.config.nodeApi + '/node/network/peers';
-            const response = await Axios<PeerResponse[] | undefined>({url:url,method:'Get',responseType:'json'});
+            const response = await nodeAxios<PeerResponse[] | undefined>({url:url,method:'Get',responseType:'json'});
             if(response.data != undefined){
                 const peers = response.data;
                 for(const peer of peers){

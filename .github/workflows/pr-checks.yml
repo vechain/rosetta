@@ -28,6 +28,9 @@ jobs:
       - name: Run lint
         run: npm run lint
 
+      - name: Run unit tests
+        run: npm run test:unit
+
   # Static API tests (tests/e2e/api) and thor cross-check tests (tests/e2e/solo),
   # run against one Rosetta + thor solo environment started by jest's globalSetup.
   # Every recorded exchange is then checked against rosetta-sdk-go v0.8.3
