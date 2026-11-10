@@ -6,7 +6,7 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 ARG THOR_REPO=https://github.com/vechain/thor.git
-ARG THOR_VERSION=v2.5.0
+ARG THOR_VERSION=v2.5.1
 
 WORKDIR /go/thor
 RUN git clone ${THOR_REPO} . && \
