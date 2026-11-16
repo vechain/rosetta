@@ -25,7 +25,7 @@ module.exports = [
         },
         rules: {
             "@typescript-eslint/explicit-function-return-type": "off",
-            "@typescript-eslint/no-explicit-any": "warn",
+            "@typescript-eslint/no-explicit-any": "error",
             "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
             "@typescript-eslint/no-require-imports": "off",
             "no-console": "off",
@@ -34,6 +34,8 @@ module.exports = [
             "jest/no-identical-title": "error",
             "jest/prefer-to-have-length": "warn",
             "jest/valid-expect": "error",
+            // schema.expectSchema throws on a schema violation, so it counts as an assertion.
+            "jest/expect-expect": ["warn", { assertFunctionNames: ["expect", "schema.expectSchema"] }],
             "jest/no-standalone-expect": ["error", { additionalTestBlockFunctions: ["knownBug"] }]
         }
     }),
@@ -57,7 +59,6 @@ module.exports = [
             "src/utils/**/*.ts"
         ],
         rules: {
-            "@typescript-eslint/no-explicit-any": "error",
             "@typescript-eslint/no-unsafe-argument": "error",
             "@typescript-eslint/no-unsafe-assignment": "error",
             "@typescript-eslint/no-unsafe-call": "error",

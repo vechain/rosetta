@@ -103,9 +103,9 @@ describe('Construction API vs thor', () => {
                 const history = await thor.feesHistory(50);
                 const baseFee = BigInt(history.baseFeePerGas[0]);
                 const reward = BigInt(history.reward?.[0][0] ?? '0');
-                expect(BigInt(metadata.maxPriorityFeePerGas)).toBe(reward);
-                expect(BigInt(metadata.maxFeePerGas)).toBe(baseFee + reward);
-                expect(BigInt(suggested_fee[0].value)).toBe(-BigInt(metadata.gas) * BigInt(metadata.maxFeePerGas));
+                expect(BigInt(metadata.maxPriorityFeePerGas!)).toBe(reward);
+                expect(BigInt(metadata.maxFeePerGas!)).toBe(baseFee + reward);
+                expect(BigInt(suggested_fee[0].value)).toBe(-BigInt(metadata.gas) * BigInt(metadata.maxFeePerGas!));
             });
         }
 

@@ -1,8 +1,9 @@
 import Koa from 'koa';
 import bodyParser from "koa-bodyparser";
-import Router from "koa-router";
+import Router from "@koa/router";
 import path from "path";
 import { Currency, TokenCurrency } from "./common/types/currency";
+import { Config, Env, NetworkName } from "./common/types/env";
 import { Account } from "./controllers/account";
 import { Block } from "./controllers/block";
 import { Call } from "./controllers/call";
@@ -63,8 +64,8 @@ class ApiServer {
 
     private initConfig(){
         this.env.config = config;
-        this.env.config.mode = (process.env['MODE'] || 'online') as string;
-        this.env.config.network = (process.env['NETWORK'] || 'custom') as string;
+        this.env.config.mode = (process.env['MODE'] || 'online') as Config['mode'];
+        this.env.config.network = (process.env['NETWORK'] || 'custom') as NetworkName;
         this.env.config.nodeApi = (process.env['NODEURL'] || '') as string;
         this.env.config.clientId = parseClientIdConfig(process.env['CLIENT_ID_HEADER'], process.env['CLIENT_ID_DEFAULT']);
         setClientIdConfig(this.env.config.clientId);
@@ -191,7 +192,7 @@ class ApiServer {
         return response.headers['x-thorest-ver'] as string;
     }
 
-    private env:any = {};
+    private env = {} as Env;
 }
 
 (new ApiServer()).run();

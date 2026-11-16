@@ -14,7 +14,7 @@ RUN git clone ${THOR_REPO} . && \
     make all
 
 # Node.js builder stage
-FROM node:24.21.0-alpine AS node-builder
+FROM node:26.13.1-alpine AS node-builder
 
 WORKDIR /usr/src/app/rosetta
 
@@ -39,8 +39,8 @@ RUN apt-get update && \
     apt-get --no-install-recommends install -y \
     ca-certificates \
     curl \
-    && curl --proto "=https" --tlsv1.2 -sSf -L https://deb.nodesource.com/setup_24.x | bash - \
-    && apt-get --no-install-recommends install -y nodejs=24.21.0-1nodesource1 \
+    && curl --proto "=https" --tlsv1.2 -sSf -L https://deb.nodesource.com/setup_26.x | bash - \
+    && apt-get --no-install-recommends install -y nodejs=26.13.1-1nodesource1 \
     && rm -rf /var/lib/apt/lists/*
 
 RUN groupadd -r rosettagroup && \
@@ -64,7 +64,7 @@ COPY --from=node-builder /usr/src/app/rosetta/config ./rosetta/config
 WORKDIR /usr/src/app
 RUN chmod +x start.sh
 
-RUN npm install --ignore-scripts -g pm2
+RUN npm install --ignore-scripts -g pm2@7.1.2
 
 EXPOSE 8080 8669 11235 11235/udp
 

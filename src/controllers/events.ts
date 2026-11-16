@@ -1,6 +1,6 @@
 import Joi from "joi";
 import type Koa from "koa";
-import Router from "koa-router";
+import Router from "@koa/router";
 import { getError } from "../common/errors";
 import { RequestContext } from "../common/types/context";
 import { Env } from "../common/types/env";

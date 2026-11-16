@@ -1,6 +1,6 @@
 import Joi from 'joi';
 import type Koa from 'koa';
-import Router from 'koa-router';
+import type { RouterContext } from '@koa/router';
 import { CheckSchema } from '../common/checkSchema';
 import { getError } from '../common/errors';
 import { RequestContext } from '../common/types/context';
@@ -14,7 +14,7 @@ export class RequestInfoVerifyMiddleware{
         this.env = env;
     }
 
-    public async checkNetwork(ctx:Router.IRouterContext,next:Koa.Next){
+    public async checkNetwork(ctx:RouterContext,next:Koa.Next){
         const check = CheckSchema.checkNetworkIdentifier(RequestInfoVerifyMiddleware.field(ctx,'network_identifier'));
         if(check.result == false){
             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(22,undefined,{
@@ -26,7 +26,7 @@ export class RequestInfoVerifyMiddleware{
     }
 
     // Runs after checkNetwork, so network_identifier is known to be valid here.
-    public async checkModeNetwork(ctx:Router.IRouterContext,next:Koa.Next){
+    public async checkModeNetwork(ctx:RouterContext,next:Koa.Next){
         if(this.env.config.mode == 'online'){
             const network = (RequestInfoVerifyMiddleware.field(ctx,'network_identifier') as NetworkIdentifier).network;
             if(network != this.env.config.network){
@@ -39,7 +39,7 @@ export class RequestInfoVerifyMiddleware{
         await next();
     }
 
-    public async checkAccount(ctx:Router.IRouterContext,next:Koa.Next){
+    public async checkAccount(ctx:RouterContext,next:Koa.Next){
         const check = CheckSchema.checkAccountIdentifier(RequestInfoVerifyMiddleware.field(ctx,'account_identifier'));
         if(check.result == false){
             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(23,undefined,{
@@ -50,7 +50,7 @@ export class RequestInfoVerifyMiddleware{
         await next();
     }
 
-    public async checkBlock(ctx:Router.IRouterContext,next:Koa.Next){
+    public async checkBlock(ctx:RouterContext,next:Koa.Next){
         const check = CheckSchema.checkBlockIdentifier(RequestInfoVerifyMiddleware.field(ctx,'block_identifier'));
         if(check.result == false){
             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(24,undefined,{
@@ -61,7 +61,7 @@ export class RequestInfoVerifyMiddleware{
         await next();
     }
 
-    public async checkTransaction(ctx:Router.IRouterContext,next:Koa.Next){
+    public async checkTransaction(ctx:RouterContext,next:Koa.Next){
         const check = CheckSchema.checkTransactionIdentifier(RequestInfoVerifyMiddleware.field(ctx,'transaction_identifier'));
         if(check.result == false){
             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(25,undefined,{
@@ -72,7 +72,7 @@ export class RequestInfoVerifyMiddleware{
         await next();
     }
 
-    public async checkSignedTransaction(ctx:Router.IRouterContext,next:Koa.Next){
+    public async checkSignedTransaction(ctx:RouterContext,next:Koa.Next){
         const check = CheckSchema.checkSignedTransaction(RequestInfoVerifyMiddleware.field(ctx,'signed_transaction'));
         if(check.result == false){
             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(12,undefined,{
@@ -83,7 +83,7 @@ export class RequestInfoVerifyMiddleware{
         await next();
     }
 
-    public async checkRunMode(ctx:Router.IRouterContext,next:Koa.Next){
+    public async checkRunMode(ctx:RouterContext,next:Koa.Next){
         if(this.env.config.mode == 'offline'){
             ConvertJSONResponseMiddleware.KnowErrorJSONResponse(ctx,getError(26)); 
             return;
@@ -109,7 +109,7 @@ export class RequestInfoVerifyMiddleware{
     }
 
     /** Reads one top-level field of the (not yet validated) request body. */
-    private static field(ctx:Router.IRouterContext,name:string):unknown{
+    private static field(ctx:RouterContext,name:string):unknown{
         const body = ctx.request.body as Record<string, unknown> | undefined;
         return body?.[name];
     }

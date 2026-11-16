@@ -2,6 +2,14 @@ import { ethers } from 'ethers';
 import { SoloAccount, VET } from '../config';
 import { rosetta } from './rosettaClient';
 import { ThorReceipt, thor } from './thorClient';
+import {
+    ConstructionCombineResponse,
+    ConstructionMetadataResponse,
+    ConstructionParseResponse,
+    ConstructionPayloadsResponse,
+    ConstructionPreprocessResponse,
+    SigningPayload
+} from './types';
 
 // Drives the Rosetta Construction API end to end:
 // preprocess -> metadata -> payloads -> parse -> combine -> parse -> hash.
@@ -23,21 +31,16 @@ export interface TransferIntent {
     delegator?: SoloAccount
 }
 
-export interface SigningPayload {
-    address: string,
-    account_identifier?: { address: string },
-    hex_bytes: string,
-    signature_type: string
-}
+export type { SigningPayload };
 
 export interface ConstructedTransfer {
     operations: object[],
-    preprocess: any,
-    metadata: any,
-    payloads: { unsigned_transaction: string, payloads: SigningPayload[] },
-    parsedUnsigned: any,
-    combine: { signed_transaction: string },
-    parsedSigned: any,
+    preprocess: ConstructionPreprocessResponse,
+    metadata: ConstructionMetadataResponse,
+    payloads: ConstructionPayloadsResponse,
+    parsedUnsigned: ConstructionParseResponse,
+    combine: ConstructionCombineResponse,
+    parsedSigned: ConstructionParseResponse,
     hash: string
 }
 
@@ -89,7 +92,7 @@ export const constructTransfer = async (intent: TransferIntent): Promise<Constru
     });
 
     const signers = [intent.from, ...(intent.delegator ? [intent.delegator] : [])];
-    const signatures = (payloads.payloads as SigningPayload[]).map((payload, i) => ({
+    const signatures = payloads.payloads.map((payload, i) => ({
         signing_payload: payload,
         public_key: publicKeys[i],
         signature_type: 'ecdsa_recovery',

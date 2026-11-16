@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { appendFileSync } from 'fs';
 import { ROSETTA_URL, networkIdentifier } from '../config';
+import { RosettaResponses } from './types';
 
 export interface RawResponse<T = unknown> {
     status: number,
@@ -19,8 +20,8 @@ export class RosettaClient {
     }
 
     /** POSTs and returns the body; throws on a non-2xx status. */
-    async post<T = any>(endpoint: string, data: object): Promise<T> {
-        const response = await this.postRaw<T>(endpoint, data);
+    async post<E extends keyof RosettaResponses>(endpoint: E, data: object): Promise<RosettaResponses[E]> {
+        const response = await this.postRaw<RosettaResponses[E]>(endpoint, data);
         if (response.status < 200 || response.status >= 300) {
             throw new Error(`Rosetta ${endpoint} returned ${response.status}: ${JSON.stringify(response.data)}`);
         }
@@ -43,8 +44,8 @@ export class RosettaClient {
     }
 
     /** POSTs with network_identifier filled in. */
-    async call<T = any>(endpoint: string, data: object = {}): Promise<T> {
-        return this.post<T>(endpoint, { network_identifier: networkIdentifier, ...data });
+    async call<E extends keyof RosettaResponses>(endpoint: E, data: object = {}): Promise<RosettaResponses[E]> {
+        return this.post(endpoint, { network_identifier: networkIdentifier, ...data });
     }
 
     /**
@@ -57,7 +58,7 @@ export class RosettaClient {
     async waitForBlock(index: number, timeoutMs = 60000): Promise<void> {
         const deadline = Date.now() + timeoutMs;
         while (Date.now() < deadline) {
-            const status = await this.call<{ current_block_identifier: { index: number } }>('/network/status');
+            const status = await this.call('/network/status');
             if (status.current_block_identifier.index >= index) {
                 return;
             }

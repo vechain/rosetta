@@ -1,5 +1,5 @@
 import type Koa from "koa";
-import Router from "koa-router";
+import Router from "@koa/router";
 import { getError } from "../common/errors";
 import { TransactionConverter } from '../common/transConverter';
 import { RequestContext } from "../common/types/context";
