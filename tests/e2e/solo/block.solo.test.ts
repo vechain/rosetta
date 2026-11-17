@@ -3,6 +3,7 @@ import { TransferIntent, sendTransfer, waitForPacked } from '../utils/constructi
 import { comparable, expectedOperations } from '../utils/expected';
 import { rosetta } from '../utils/rosettaClient';
 import { ThorReceipt, ThorTransaction, thor } from '../utils/thorClient';
+import { BlockResponse, ErrorResponse } from '../utils/types';
 
 const [sender, delegator] = SOLO_ACCOUNTS;
 
@@ -61,7 +62,7 @@ describe('Block API vs thor', () => {
             const { hash, receipt, tx: thorTx } = packed[name];
             const response = await rosetta.call('/block', { block_identifier: { hash: receipt.meta.blockID } });
             const tx = response.block.transactions.find((t: { transaction_identifier: { hash: string } }) => t.transaction_identifier.hash === hash);
-            expect(comparable(tx.operations)).toEqual(expectedOperations(receipt, thorTx));
+            expect(comparable(tx!.operations)).toEqual(expectedOperations(receipt, thorTx));
         });
 
         it('/block/transaction matches the transaction in /block', async () => {
@@ -95,7 +96,7 @@ describe('Block API chain head', () => {
         const receipt = await thor.waitForReceipt(hash);
         const thorBlock = await thor.block(receipt.meta.blockNumber);
 
-        const response = await rosetta.postRaw<any>('/block', {
+        const response = await rosetta.postRaw<BlockResponse & ErrorResponse>('/block', {
             network_identifier: networkIdentifier,
             block_identifier: { index: receipt.meta.blockNumber }
         });

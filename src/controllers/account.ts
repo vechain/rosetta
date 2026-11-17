@@ -1,6 +1,6 @@
 import Joi from "joi";
 import type Koa from "koa";
-import Router from "koa-router";
+import Router from "@koa/router";
 import { VETCurrency, VTHOCurrency } from "..";
 import { getError } from "../common/errors";
 import { Amount } from "../common/types/amount";

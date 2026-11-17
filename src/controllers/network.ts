@@ -1,5 +1,5 @@
 import type Koa from "koa";
-import Router from "koa-router";
+import Router from "@koa/router";
 import { VTHOCurrency } from "..";
 import { Errors, getError } from "../common/errors";
 import { Allow, ExemptionType } from "../common/types/allow";

@@ -47,7 +47,7 @@ describe('Mempool API vs thor', () => {
         const mempoolTx = await rosetta.call('/mempool/transaction', { transaction_identifier: { hash } });
         const fee = (mempoolTx.transaction.operations as Op[]).find(op => op.type === 'Fee')!;
         const { gas, maxFeePerGas } = constructed.metadata.metadata;
-        expect(BigInt(fee.amount.value)).toBe(-BigInt(gas) * BigInt(maxFeePerGas));
+        expect(BigInt(fee.amount.value)).toBe(-BigInt(gas) * BigInt(maxFeePerGas!));
     });
 
     it('a pending VTHO call with malformed transfer arguments is reported as a contract call', async () => {
@@ -80,7 +80,7 @@ describe('Mempool API vs thor', () => {
         expect(feeOps.map(op => ({ type: op.type, address: op.account.address, symbol: op.amount.currency.symbol })))
             .toEqual([{ type: 'FeeDelegation', address: payer.address, symbol: 'VTHO' }]);
         const { gas, maxFeePerGas } = constructed.metadata.metadata;
-        expect(BigInt(feeOps[0].amount.value)).toBe(-BigInt(gas) * BigInt(maxFeePerGas));
+        expect(BigInt(feeOps[0].amount.value)).toBe(-BigInt(gas) * BigInt(maxFeePerGas!));
     });
 });
 

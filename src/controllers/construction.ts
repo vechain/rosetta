@@ -3,7 +3,7 @@ import { randomBytes } from "crypto";
 import { ethers } from "ethers";
 import Joi from "joi";
 import type Koa from "koa";
-import Router from "koa-router";
+import Router from "@koa/router";
 import { RLP, Transaction as VeTransaction } from "thor-devkit";
 import { VETCurrency, VTHOCurrency } from "..";
 import { CheckSchema } from "../common/checkSchema";
